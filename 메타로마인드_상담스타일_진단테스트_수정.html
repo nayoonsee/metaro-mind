@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>메타로마인드 | 타로 상담사 스타일 진단 테스트</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--purple:#4A2C8C;--purple-light:#EDE7F6;--dark:#2C1A5C;--gold:#B8860B;--gold-light:#FDF6E3;--text:#333;--muted:#888;--gray:#F8F8F8;--white:#fff;--danger:#C0392B;--success:#1B5E20;--info:#1565C0;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;font-weight:300;background:#FAFAFA;color:var(--text);min-height:100vh;}
+.container{max-width:680px;margin:0 auto;padding:2rem 1.5rem;}
+/* INTRO */
+.intro{text-align:center;padding:3rem 0 2rem;}
+.brand{font-size:11px;letter-spacing:.3em;color:var(--muted);text-transform:uppercase;margin-bottom:1rem;}
+.ititle{font-family:'Noto Serif KR',serif;font-size:clamp(22px,5vw,32px);font-weight:300;color:var(--dark);line-height:1.5;margin-bottom:.75rem;}
+.isub{font-size:14px;color:var(--muted);line-height:1.9;margin-bottom:1.5rem;}
+.basis-box{background:var(--purple-light);border-left:4px solid var(--purple);border-radius:0 8px 8px 0;padding:.875rem 1rem;margin-bottom:1.5rem;text-align:left;}
+.basis-label{font-size:10px;letter-spacing:.15em;color:var(--purple);text-transform:uppercase;margin-bottom:.4rem;font-weight:500;}
+.basis-text{font-size:12px;color:var(--dark);line-height:1.7;}
+.start-btn{background:var(--purple);color:#fff;border:none;padding:12px 40px;border-radius:6px;font-size:15px;font-weight:500;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:opacity .2s;}
+.start-btn:hover{opacity:.85;}
+/* PROGRESS */
+.prog-wrap{margin-bottom:1.5rem;}
+.prog-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;}
+.prog-bar{height:4px;background:#E0E0E0;border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--purple);border-radius:99px;transition:width .4s ease;}
+/* QUESTION */
+.q-meta{margin-bottom:1rem;}
+.q-num{font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:.3rem;}
+.q-cat{font-size:12px;color:var(--purple);font-weight:500;margin-bottom:.2rem;}
+.q-basis{font-size:11px;color:var(--muted);font-style:italic;margin-bottom:1rem;line-height:1.6;}
+.q-text{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:400;color:var(--dark);line-height:1.65;margin-bottom:1.25rem;}
+.opts{display:flex;flex-direction:column;gap:8px;}
+.opt{background:#fff;border:1px solid #E0E0E0;border-radius:8px;padding:.875rem 1rem;cursor:pointer;display:flex;gap:12px;align-items:flex-start;transition:all .2s;}
+.opt:hover{border-color:var(--purple);background:var(--purple-light);}
+.opt.sel{border:2px solid var(--purple);background:var(--purple-light);}
+.opt-lbl{font-size:13px;font-weight:500;color:#aaa;min-width:18px;flex-shrink:0;margin-top:1px;}
+.opt.sel .opt-lbl{color:var(--purple);}
+.opt-txt{font-size:14px;color:#555;line-height:1.65;}
+.opt.sel .opt-txt{color:var(--dark);}
+.nav{display:flex;justify-content:space-between;margin-top:1.5rem;}
+.prev-btn{background:#fff;border:1px solid #DDD;color:#888;padding:9px 22px;border-radius:6px;font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .2s;}
+.prev-btn:hover{border-color:var(--purple);color:var(--purple);}
+.prev-btn:disabled{opacity:.3;cursor:not-allowed;}
+.next-btn{background:var(--purple);color:#fff;border:none;padding:9px 26px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:opacity .2s;}
+.next-btn:hover{opacity:.85;}
+.next-btn:disabled{opacity:.3;cursor:not-allowed;}
+/* RESULT */
+.r-head{text-align:center;padding:1.5rem 0 1rem;}
+.r-badge{display:inline-block;font-size:11px;padding:4px 14px;border-radius:99px;background:#F3F3F3;color:#888;border:1px solid #E0E0E0;margin-bottom:.75rem;}
+.r-main{font-family:'Noto Serif KR',serif;font-size:24px;font-weight:400;color:var(--dark);margin-bottom:.25rem;}
+.r-psy{font-size:12px;color:var(--muted);font-style:italic;margin-bottom:.5rem;}
+.r-combo{font-size:13px;color:#666;margin-bottom:.75rem;}
+.r-lv{display:inline-block;font-size:12px;padding:4px 14px;border-radius:99px;font-weight:500;}
+.lv-c{background:#FFF3E0;color:#E65100;}
+.lv-m{background:#E3F2FD;color:#1565C0;}
+.lv-p{background:#E8F5E9;color:#1B5E20;}
+.score-card{background:#F8F6FF;border-radius:10px;padding:1rem 1.25rem;margin:1rem 0;}
+.sc-title{font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:.875rem;}
+.srow{margin-bottom:.75rem;}.srow:last-child{margin-bottom:0;}
+.sinfo{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
+.sname{color:#666;}.snum{font-weight:500;color:var(--dark);}
+.sbar{height:5px;background:#E0E0E0;border-radius:99px;overflow:hidden;}
+.sfill{height:100%;border-radius:99px;transition:width .8s ease;}
+.lv-box{border-radius:8px;padding:.875rem 1rem;margin:.75rem 0;}
+.lv-box.lv-c{background:#FFF3E0;}
+.lv-box.lv-m{background:#E3F2FD;}
+.lv-box.lv-p{background:#E8F5E9;}
+.lv-title{font-size:12px;font-weight:500;margin-bottom:.3rem;}
+.lv-c .lv-title{color:#E65100;}.lv-m .lv-title{color:#1565C0;}.lv-p .lv-title{color:#1B5E20;}
+.lv-desc{font-size:12px;line-height:1.75;opacity:.9;}
+.lv-c .lv-desc{color:#BF360C;}.lv-m .lv-desc{color:#0D47A1;}.lv-p .lv-desc{color:#1B5E20;}
+.rcard{background:#fff;border:1px solid #E8E8E8;border-radius:10px;padding:1rem 1.25rem;margin-bottom:.75rem;}
+.rcard-title{font-size:13px;font-weight:500;color:var(--dark);margin-bottom:.5rem;}
+.rcard-text{font-size:13px;color:#555;line-height:1.8;}
+.rcard-text strong{color:var(--dark);font-weight:500;}
+.rcard-text em{color:var(--danger);font-style:normal;}
+.restart{width:100%;background:#fff;border:1px solid #DDD;color:#888;padding:10px;border-radius:6px;font-size:13px;cursor:pointer;margin-top:.75rem;font-family:'Noto Sans KR',sans-serif;transition:all .2s;}
+.restart:hover{border-color:var(--purple);color:var(--purple);}
+.hidden{display:none;}
+footer{text-align:center;padding:2rem;font-size:12px;color:#CCC;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div id="intro">
+  <div class="intro">
+    <div class="brand">Metaro Mind · 상담사 전용</div>
+    <h1 class="ititle">나의 상담 스타일은 무엇인가?<br>타로 상담사 스타일 진단 테스트</h1>
+    <p class="isub">실제 상담 현장 시나리오 15문항으로<br>나의 주 스타일, 보조 스타일, 현재 레벨까지 분석합니다.<br><br>정답은 없습니다.<br>지금 실제 상담에서 하는 행동을 기준으로 선택하세요.</p>
+    <div class="basis-box">
+      <div class="basis-label">심리학적 기반</div>
+      <div class="basis-text">행동 패턴 분석 · 진단적 질문 능력 이론 · 역전이 · 확증 편향 · 역할 역전 · 상담 개입 수준 이론</div>
+    </div>
+    <button class="start-btn" onclick="startTest()">진단 시작하기</button>
+  </div>
+</div>
+
+<div id="test" class="hidden">
+  <div class="prog-wrap">
+    <div class="prog-row"><span>진행 중</span><span id="prog-cnt">1 / 15</span></div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:7%"></div></div>
+  </div>
+  <div class="q-meta">
+    <div class="q-num" id="q-num">문항 01</div>
+    <div class="q-cat" id="q-cat"></div>
+    <div class="q-basis" id="q-basis"></div>
+  </div>
+  <div class="q-text" id="q-text"></div>
+  <div class="opts" id="opts"></div>
+  <div class="nav">
+    <button class="prev-btn" id="prev-btn" onclick="prevQ()" disabled>← 이전</button>
+    <button class="next-btn" id="next-btn" onclick="nextQ()" disabled>다음 →</button>
+  </div>
+</div>
+
+<div id="result" class="hidden">
+  <div class="r-head">
+    <div class="r-badge">나의 상담 스타일 진단 결과</div>
+    <div class="r-main" id="r-main"></div>
+    <div class="r-psy" id="r-psy"></div>
+    <div class="r-combo" id="r-combo"></div>
+    <div id="r-lv-badge"></div>
+  </div>
+  <div class="score-card">
+    <div class="sc-title">스타일별 점수</div>
+    <div id="score-bars"></div>
+  </div>
+  <div id="lv-detail"></div>
+  <div id="r-cards"></div>
+  <button class="restart" onclick="restart()">다시 진단하기</button>
+</div>
+
+</div>
+<footer>© METARO MIND · 메타로마인드 · 이나윤</footer>
+
+<script>
+var Qs=[
+  {num:"01",cat:"상담 주제 정제 능력",basis:"진단적 질문 능력 — 모호한 상담 주제를 날카롭게 만드는 것이 전문 상담사의 핵심 역량",
+   text:"내담자가 '남자친구가 저를 진짜 좋아하는 건지 모르겠어요'라고 했을 때, 나는?",
+   opts:[{l:"A",t:"카드를 뽑고 각각 설명하며 '이 카드들이 관계의 흐름을 보여주네요'라고 한다",s:"card",lv:0},
+         {l:"B",t:"'비슷한 상황에서 이런 분들이 많았는데요...'라며 사례부터 든다",s:"example",lv:0},
+         {l:"C",t:"'카드를 보니 그분이 마음은 있지만 표현이 서투른 상황이에요'라고 바로 말한다",s:"deductive",lv:1},
+         {l:"D",t:"'이 카드 보세요, 이게 그분의 마음을 정확히 보여주고 있어요'라며 핵심 카드를 짚는다",s:"point",lv:1},
+         {l:"E",t:"'지금 가장 불안한 게 그분의 마음인가요, 아니면 이 관계를 계속해야 할지 여부인가요?'라고 먼저 물어 상담 방향을 명확히 한다",s:"question",lv:2}]},
+  {num:"02",cat:"리딩 시작 방식",basis:"상담 개입 스타일 — 지시적 vs 비지시적 접근의 차이",
+   text:"상담이 시작되면 나는 주로 어떻게 첫 마디를 꺼내는가?",
+   opts:[{l:"A",t:"카드를 펼치며 '이 카드부터 하나씩 살펴볼게요'로 시작한다",s:"card",lv:0},
+         {l:"B",t:"'이런 배열이 나오면 보통 이런 상황인 경우가 많더라고요'라며 사례로 분위기를 연다",s:"example",lv:0},
+         {l:"C",t:"'카드를 보니 결론부터 말씀드리면...'으로 핵심부터 전달한다",s:"deductive",lv:1},
+         {l:"D",t:"배열 중 가장 강한 카드를 짚으며 '오늘의 핵심은 이 카드예요'로 시작한다",s:"point",lv:1},
+         {l:"E",t:"'오늘 가장 답이 필요한 부분이 어디예요?'라고 먼저 물어 상담 범위를 잡은 뒤 카드를 본다",s:"question",lv:2}]},
+  {num:"03",cat:"복잡한 배열 처리",basis:"인지적 처리 방식 — 전체→부분(하향식) vs 부분→전체(상향식)",
+   text:"5장 이상의 복잡한 카드 배열 앞에서 나는?",
+   opts:[{l:"A",t:"카드를 순서대로 하나씩 설명하며 전체를 다 커버한다",s:"card",lv:0},
+         {l:"B",t:"전체 흐름을 하나의 스토리로 엮어서 이야기하듯 전달한다",s:"example",lv:1},
+         {l:"C",t:"전체 흐름을 먼저 한 줄로 정리하고 카드별 근거를 설명한다",s:"deductive",lv:2},
+         {l:"D",t:"가장 강한 카드 하나를 먼저 짚고 나머지를 그 카드 중심으로 연결한다",s:"point",lv:2},
+         {l:"E",t:"'이 배열에서 가장 답이 필요한 부분이 어디예요?'라고 물어 리딩 범위를 좁힌 뒤 집중한다",s:"question",lv:2}]},
+  {num:"04",cat:"내담자 감정 대응",basis:"감정 조절 개입 이론 — 정서적 동조 vs 정서적 분리",
+   text:"리딩 중 내담자가 갑자기 눈물을 흘릴 때 나는?",
+   opts:[{l:"A",t:"잠시 멈추고 '이 카드가 그 감정을 담고 있는 것 같아요'라며 카드와 연결한다",s:"card",lv:1},
+         {l:"B",t:"'비슷한 감정을 느끼는 분들이 많아요...'라며 사례로 위로한다",s:"example",lv:1},
+         {l:"C",t:"감정을 인정하고 '그래서 카드가 이걸 말하는 거예요'로 빠르게 방향을 잡는다",s:"deductive",lv:2},
+         {l:"D",t:"'이 카드가 바로 그 감정이에요'라며 핵심 카드로 감정을 확실히 짚어준다",s:"point",lv:2},
+         {l:"E",t:"충분히 기다리며 '지금 이 감정이 어디서 오는 것 같으세요?'라고 감정의 뿌리를 함께 찾는다",s:"question",lv:2}]},
+  {num:"05",cat:"저항 내담자 대처",basis:"치료적 동맹 이론 — 저항을 다루는 방식이 상담 전문성을 드러냄",
+   text:"내담자가 '이 해석은 제 상황이랑 다른 것 같아요'라고 할 때 나는?",
+   opts:[{l:"A",t:"카드의 의미와 상징을 다시 상세히 설명하며 납득시키려 한다",s:"card",lv:0},
+         {l:"B",t:"'다른 시각으로 보면 이런 의미도 있어요'라며 새로운 예시를 든다",s:"example",lv:1},
+         {l:"C",t:"'카드가 이렇게 나온 데는 이유가 있어요'라며 흔들리지 않고 근거를 제시한다",s:"deductive",lv:2},
+         {l:"D",t:"다른 카드를 짚으며 '그러면 이 카드로 다시 볼까요?'라고 유연하게 전환한다",s:"point",lv:1},
+         {l:"E",t:"'어떤 부분이 다르게 느껴지셨어요?'라고 먼저 듣는다 — 그 답 안에 진짜 고민이 있기 때문에",s:"question",lv:2}]},
+  {num:"06",cat:"시간 구조화",basis:"상담 구조화 능력 — 시간 관리와 방향 설정은 상담사의 책임",
+   text:"10분 상담인데 내담자가 배경 설명을 길게 할 때 나는?",
+   opts:[{l:"A",t:"듣다가 관련 카드를 설명하며 자연스럽게 리딩으로 넘어간다",s:"card",lv:1},
+         {l:"B",t:"공감하며 듣다가 비슷한 사례를 들어 자연스럽게 정리한다",s:"example",lv:0},
+         {l:"C",t:"'네, 이해했어요. 카드는 이렇게 말하고 있어요'로 내가 먼저 정리하고 넘어간다",s:"deductive",lv:2},
+         {l:"D",t:"'잠깐, 이 카드가 지금 말씀하신 핵심을 담고 있어요'라며 흐름을 잡는다",s:"point",lv:2},
+         {l:"E",t:"'잠깐요, 오늘 가장 답이 필요한 부분이 어디예요?'라고 핵심을 정리해드린다",s:"question",lv:2}]},
+  {num:"07",cat:"상담 언어 패턴",basis:"언어적 개입 유형 분류 — 상담사의 언어 습관이 스타일을 결정함",
+   text:"내 상담에서 가장 자주 나오는 말 패턴은?",
+   opts:[{l:"A",t:"'이 카드는 ~를 의미해요, 저 카드는 ~를 나타내요'",s:"card",lv:0},
+         {l:"B",t:"'예를 들면 ~한 경우가 많더라고요, ~처럼 생각해보시면...'",s:"example",lv:0},
+         {l:"C",t:"'결론부터 말씀드리면 ~이에요, 왜냐하면 ~이기 때문이에요'",s:"deductive",lv:1},
+         {l:"D",t:"'이 카드가 핵심이에요, 이게 말하는 건 바로 ~이에요'",s:"point",lv:1},
+         {l:"E",t:"'~와 ~중에서 지금 더 중요한 건 어느 쪽이에요?' — 질문으로 상담 방향을 좁혀가는 패턴",s:"question",lv:2}]},
+  {num:"08",cat:"어려운 카드 처리",basis:"불안 관리 개입 이론 — 내담자 불안을 어떻게 다루는가",
+   text:"타워, 죽음, 악마 같은 부정 카드가 나왔을 때 나는?",
+   opts:[{l:"A",t:"카드의 공식적 의미와 긍정적 해석을 설명하며 불안을 줄인다",s:"card",lv:0},
+         {l:"B",t:"'이 카드가 나온 분들이 오히려 이런 변화가 있었어요'라며 사례를 든다",s:"example",lv:1},
+         {l:"C",t:"'이 카드가 말하는 건 ~이에요, 겁낼 필요 없어요'라고 직접 전달한다",s:"deductive",lv:2},
+         {l:"D",t:"'이 카드의 진짜 에너지는 ~이에요'라며 카드 하나에 집중해서 재해석한다",s:"point",lv:2},
+         {l:"E",t:"'지금 가장 걱정되는 부분이 정확히 어떤 상황이에요?'라고 물어 불안의 실체를 먼저 파악한다",s:"question",lv:2}]},
+  {num:"09",cat:"첫 상담 내담자 대응",basis:"라포 형성 이론 — 첫 만남에서 신뢰를 어떻게 구축하는가",
+   text:"처음 타로 상담을 받는 내담자가 어색해할 때 나는?",
+   opts:[{l:"A",t:"카드 하나씩 설명하며 타로를 알려주는 방식으로 자연스럽게 대화를 유도한다",s:"card",lv:1},
+         {l:"B",t:"'처음이시면 보통 이런 분들이 많아요'라며 편안한 사례를 먼저 들어준다",s:"example",lv:1},
+         {l:"C",t:"카드를 보고 '오늘 이런 상황이신 것 같아요'라며 내가 먼저 명확히 말한다",s:"deductive",lv:1},
+         {l:"D",t:"한 카드를 짚으며 '이 카드가 선생님 지금 마음 같아 보여요'라고 연결한다",s:"point",lv:2},
+         {l:"E",t:"'오늘 상담 오시면서 어떤 부분이 가장 해결됐으면 하셨어요?'라고 목적을 먼저 정리해드린다",s:"question",lv:2}]},
+  {num:"10",cat:"복합 주제 처리",basis:"상담 목표 설정 이론 — 여러 주제를 어떻게 우선순위화하는가",
+   text:"내담자가 '연애도 안 풀리고 직장도 걱정되고 가족 문제도 있어요'라며 한꺼번에 가져올 때 나는?",
+   opts:[{l:"A",t:"카드 배열로 전체를 보여주며 각 카드가 각 주제를 담당하는 방식으로 설명한다",s:"card",lv:0},
+         {l:"B",t:"비슷하게 복합적인 상황을 가져온 사례를 들며 공감한다",s:"example",lv:0},
+         {l:"C",t:"'오늘은 가장 시급한 것 하나에 집중해요, 카드는 이걸 말하고 있어요'라고 내가 정리한다",s:"deductive",lv:2},
+         {l:"D",t:"카드 중 가장 강한 에너지를 짚으며 '이게 오늘의 핵심이에요'라고 방향을 잡는다",s:"point",lv:2},
+         {l:"E",t:"'세 가지 중에서 오늘 이 시간에 가장 답이 필요한 것 하나만 고른다면 어느 것이에요?'라고 함께 정리한다",s:"question",lv:2}]},
+  {num:"11",cat:"단답형 주제 수용",basis:"질문 재구성 능력 — 닫힌 질문을 열린 리딩으로 전환하는 전문성",
+   text:"내담자가 '이 사람이 저한테 연락할까요?'라고 단답형으로 가져왔을 때 나는?",
+   opts:[{l:"A",t:"카드를 보며 상황을 설명하고 그 안에서 답을 끌어낸다",s:"card",lv:0},
+         {l:"B",t:"'보통 이런 질문을 가져오시는 분들은...'이라며 사례로 맥락을 만든다",s:"example",lv:0},
+         {l:"C",t:"'카드가 나온 것으로 보면 ~할 가능성이 높아요'라고 바로 답한다",s:"deductive",lv:1},
+         {l:"D",t:"핵심 카드를 짚으며 '이 카드가 그분의 현재 마음을 보여주고 있어요'라고 한다",s:"point",lv:1},
+         {l:"E",t:"'연락이 온다면 어떻게 하실 건지 이미 생각하고 계세요?'라고 되물어 진짜 고민을 먼저 파악한다",s:"question",lv:2}]},
+  {num:"12",cat:"상담 마무리",basis:"상담 종결 기술 — 마무리 방식이 내담자의 기억과 만족도를 결정함",
+   text:"상담을 마무리할 때 나는 주로 어떻게 끝내는가?",
+   opts:[{l:"A",t:"오늘 나온 카드들을 요약하며 각각의 의미를 다시 정리해준다",s:"card",lv:0},
+         {l:"B",t:"오늘 상담과 비슷한 상황의 마무리 사례를 들며 끝낸다",s:"example",lv:0},
+         {l:"C",t:"'오늘 핵심은 ~이에요, 이걸 기억해가세요'라며 한 줄로 명확하게 정리한다",s:"deductive",lv:2},
+         {l:"D",t:"핵심 카드 하나를 다시 짚으며 '이 카드 한 장이 오늘 상담의 전부예요'라고 마무리한다",s:"point",lv:2},
+         {l:"E",t:"'오늘 상담에서 가장 명확해진 부분이 어디예요?'라고 물어 내담자 스스로 정리하게 한다",s:"question",lv:2}]},
+  {num:"13",cat:"상담 후 자기 점검",basis:"메타인지 능력 — 자신의 패턴을 인식하는 것이 성장의 출발점",
+   text:"상담 후 가장 자주 드는 생각은?",
+   opts:[{l:"A",t:"'카드 설명은 잘 했는데, 내담자 상황과 연결이 됐을까?'",s:"card",lv:0},
+         {l:"B",t:"'내 얘기를 너무 많이 한 건 아닐까? 역전이가 된 건 아닐까?'",s:"example",lv:1},
+         {l:"C",t:"'결론은 명확하게 전달했는데, 너무 단정적이었던 건 아닐까?'",s:"deductive",lv:1},
+         {l:"D",t:"'그 카드를 짚은 게 맞았을까? 내담자가 제대로 받아들였을까?'",s:"point",lv:1},
+         {l:"E",t:"'상담 방향을 잘 잡아줬나? 너무 많이 물어서 결론이 흐려진 건 아닐까?'",s:"question",lv:1}]},
+  {num:"14",cat:"리딩 막힘 대처",basis:"스트레스 반응 이론 — 막힘 순간의 반응이 현재 레벨을 드러냄",
+   text:"카드를 보는데 갑자기 아무 말도 떠오르지 않는 순간, 나는?",
+   opts:[{l:"A",t:"카드 기본 의미를 떠올리며 '이 카드는...'으로 설명을 시작한다",s:"card",lv:0},
+         {l:"B",t:"'이런 카드가 나왔을 때 보통 이런 상황이 많더라고요'라며 사례로 넘긴다",s:"example",lv:0},
+         {l:"C",t:"잠깐 멈추고 핵심 한 줄을 추려서 '결론부터 말씀드리면...'으로 전환한다",s:"deductive",lv:2},
+         {l:"D",t:"배열에서 가장 눈에 띄는 카드 하나를 잡고 그 카드 중심으로 시작한다",s:"point",lv:1},
+         {l:"E",t:"'지금 이 배열에서 가장 신경 쓰이는 카드가 어떤 건가요?'라고 물어 내담자와 함께 방향을 잡는다",s:"question",lv:2}]},
+  {num:"15",cat:"나의 상담 목표",basis:"상담사 정체성 — 어떤 결과를 목표로 하는가가 스타일을 결정함",
+   text:"상담이 끝났을 때 내담자에게 이 말을 들으면 가장 뿌듯하다",
+   opts:[{l:"A",t:"'카드를 이렇게 자세히 알 수 있어서 좋았어요'",s:"card",lv:0},
+         {l:"B",t:"'예시가 딱 제 얘기 같아서 너무 공감됐어요'",s:"example",lv:1},
+         {l:"C",t:"'시원해요, 명확하게 답을 주셔서 좋았어요'",s:"deductive",lv:2},
+         {l:"D",t:"'어떻게 바로 핵심을 아셨어요? 소름 돋았어요'",s:"point",lv:2},
+         {l:"E",t:"'질문 하나에 제 머릿속이 정리됐어요, 생각 못 했던 부분을 보게 됐어요'",s:"question",lv:2}]}
+];
+
+var SD={
+  card:{name:"카드설명형",psy:"정보 전달형 (Psychoeducation Style)",color:"#7B68EE",
+    strength:"체계적이고 안정감 있는 리딩. 카드 지식이 자연스럽게 드러나며 신뢰감을 형성합니다.",
+    risk:"카드 설명에만 몰두하다 내담자 고민과의 연결 고리를 놓치기 쉽습니다. 내담자가 '카드 뜻은 알겠는데 제 얘기인지 모르겠어요'라고 느낄 수 있습니다.",
+    upgrade:"카드 설명 후 반드시 연결 문장 추가 — '이 카드가 선생님 상황에 비춰보면...' 설명에서 해석으로 전환하는 다리를 의식적으로 넣으세요.",
+    good:"'카드를 자세히 알려주셔서 이해가 됐어요'",bad:"'책 읽어주는 것 같아요' / '카드 뜻은 알겠는데 제 얘기인지 모르겠어요'"},
+  example:{name:"예시전달형",psy:"내러티브형 (Narrative Style)",color:"#9B59B6",
+    strength:"내담자 이해도가 높고 공감대 형성이 빠릅니다. 추상적인 카드 메시지를 구체적 언어로 전달해 기억에 오래 남는 리딩을 만듭니다.",
+    risk:"역전이(Countertransference) 위험 — 상담사 자신의 경험이 의도치 않게 섞이면 내담자 상황이 아닌 상담사 이야기가 됩니다.",
+    upgrade:"예시 1개 후 반드시 내담자에게 공을 넘기기 — '선생님 경우는 어떠세요?' 예시는 이해를 돕는 도구이지 메인이 아닙니다.",
+    good:"'너무 공감됐어요, 딱 제 얘기 같았어요'",bad:"'상담사 얘기를 들으러 온 건 아닌데...' / '예시가 너무 많아서 핵심을 모르겠어요'"},
+  deductive:{name:"두괄식형",psy:"직접 개입형 (Directive Style)",color:"#E67E22",
+    strength:"명확하고 시원한 리딩. 내담자 만족도가 높고 시간이 효율적입니다. 전문가적 확신이 느껴집니다.",
+    risk:"근거 없이 결론만 던지면 찍기형 리딩이 됩니다. 내담자가 저항할 때 대처 미숙하면 리딩 전체가 무너질 수 있습니다.",
+    upgrade:"결론 + 근거 + 내담자 반응 확인의 3단계 구조를 유지하세요. 결론 후 '선생님은 어떻게 느끼세요?'로 반드시 확인하세요.",
+    good:"'시원해요, 딱 제가 듣고 싶은 말이었어요'",bad:"'근거가 없어 보여요' / '제 말은 안 듣고 결론만 내리네요'"},
+  point:{name:"포인트지목형",psy:"초점 집중형 (Focused Intervention Style)",color:"#E74C3C",
+    strength:"임팩트 있는 리딩. 핵심 메시지가 강하게 전달되며 상담사의 직관이 드러나 신뢰감을 형성합니다.",
+    risk:"자기 확신 편향(Confirmation Bias) 주의 — 처음 지목한 카드가 틀렸어도 수정하지 못하고 계속 그 방향으로 해석하는 경향이 있습니다.",
+    upgrade:"지목 + 근거 + 전체 연결의 3단계 — '이 카드가 열쇠인 이유는 다른 카드들과 이렇게 연결되기 때문이에요.'",
+    good:"'어떻게 바로 핵심을 아셨어요? 소름 돋았어요'",bad:"'왜 그 카드만 보세요?' / '다른 카드들은요?'"},
+  question:{name:"질문형",psy:"진단적 질문형 (Diagnostic Questioning Style)",color:"#2980B9",
+    strength:"모호한 상담 주제를 날카롭게 정제하는 전략적 질문 능력이 핵심입니다. 내담자 스스로 핵심을 발견하게 합니다. 심리상담에서 가장 고급 기술 중 하나입니다.",
+    risk:"역할 역전 주의 — 전략적 질문이 아닌 단순히 모르니까 묻는 질문이 되면 내담자가 상담사를 리드하는 상황이 됩니다.",
+    upgrade:"질문 2-3개 후 반드시 카드로 결론을 확실히 짚어주세요 — '카드가 이야기하는 건 이거예요.' 질문 후 반드시 리딩으로 답해야 합니다.",
+    good:"'질문 하나에 제 머릿속이 정리됐어요'",bad:"'상담사도 잘 모르는 것 같아요' / '질문만 하시더니 결론이 없어요'"}
+};
+
+var LV={
+  0:{label:"입문~초보 단계",cls:"lv-c",title:"지금 가장 중요한 것",
+    desc:"이 스타일이 내 성향이어서 나오는 것인지, 아직 다른 방법을 몰라서 나오는 것인지 구분이 필요한 시점입니다.",
+    action:"다음 상담에서 의식적으로 다른 스타일 1가지를 섞어 적용해보세요."},
+  1:{label:"중급 성장 단계",cls:"lv-m",title:"지금 필요한 것",
+    desc:"이 스타일을 인식하고 어느 정도 의도적으로 사용하고 있는 단계입니다. 내담자 유형별로 보조 스타일을 조합하는 훈련이 필요합니다.",
+    action:"내담자 유형별로 스타일을 다르게 적용하는 연습을 해보세요."},
+  2:{label:"전문가 수준",cls:"lv-p",title:"지금 집중해야 할 것",
+    desc:"이 스타일을 자유자재로 쓰고 있는 단계입니다. 어떤 내담자에게 어떤 조합을, 어느 타이밍에 전환할 것인가를 정교화하는 단계입니다.",
+    action:"보조 스타일의 완성도를 높이고 조합 전환 타이밍을 정교화하세요."}
+};
+
+var combos={
+  "question+point":"상담 방향을 질문으로 정제한 뒤 핵심 카드로 강하게 카드로 결론을 확실히 짚어주세요. 방향 설정 + 임팩트의 가장 전문적인 조합 중 하나입니다.",
+  "point+question":"핵심 카드로 임팩트를 준 뒤 질문으로 내담자 반응을 확인하는 균형 잡힌 구조입니다.",
+  "deductive+question":"결론을 먼저 던지고 질문으로 저항을 부드럽게 풀어가는 전략적 조합입니다.",
+  "question+deductive":"질문으로 방향을 잡고 명확한 결론으로 마무리. 참여도와 명확성을 동시에 가져갑니다.",
+  "card+point":"전체 카드 설명으로 신뢰를 쌓고 마지막에 핵심 카드로 임팩트를 주는 조합입니다.",
+  "point+deductive":"핵심 카드를 짚고 바로 결론을 전달하는 가장 직설적인 사이다 조합입니다.",
+  "deductive+point":"결론 후 핵심 카드로 근거를 시각화하는 설득력 있는 조합입니다.",
+  "example+question":"스토리텔링으로 공감을 쌓고 질문으로 내담자를 참여시키는 따뜻한 조합입니다.",
+  "card+deductive":"체계적 설명 후 명확한 결론을 도출하는 신뢰감 있는 조합입니다.",
+  "question+example":"방향을 잡고 예시로 공감을 더하는 따뜻하고 이해하기 쉬운 조합입니다."
+};
+
+var cur=0,ans=new Array(15).fill(null);
+
+function startTest(){document.getElementById('intro').classList.add('hidden');document.getElementById('test').classList.remove('hidden');render();}
+
+function render(){
+  var q=Qs[cur];
+  document.getElementById('q-num').textContent='문항 '+q.num;
+  document.getElementById('q-cat').textContent=q.cat;
+  document.getElementById('q-basis').textContent=q.basis;
+  document.getElementById('q-text').textContent=q.text;
+  document.getElementById('prog-cnt').textContent=(cur+1)+' / 15';
+  document.getElementById('prog-fill').style.width=Math.round(((cur+1)/15)*100)+'%';
+  var o=document.getElementById('opts');o.innerHTML='';
+  q.opts.forEach(function(opt,i){
+    var d=document.createElement('div');
+    d.className='opt'+(ans[cur]===i?' sel':'');
+    d.innerHTML='<span class="opt-lbl">'+opt.l+'</span><span class="opt-txt">'+opt.t+'</span>';
+    d.onclick=function(){select(i);};
+    o.appendChild(d);
+  });
+  document.getElementById('prev-btn').disabled=cur===0;
+  document.getElementById('next-btn').disabled=ans[cur]===null;
+  document.getElementById('next-btn').textContent=cur===14?'결과 보기':'다음 →';
+}
+
+function select(i){ans[cur]=i;document.querySelectorAll('.opt').forEach(function(el,idx){el.classList.toggle('sel',idx===i);});document.getElementById('next-btn').disabled=false;}
+function nextQ(){if(cur<14){cur++;render();}else showResult();}
+function prevQ(){if(cur>0){cur--;render();}}
+
+function showResult(){
+  document.getElementById('test').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  var sc={card:0,example:0,deductive:0,point:0,question:0};
+  var lvA={card:[],example:[],deductive:[],point:[],question:[]};
+  Qs.forEach(function(q,i){if(ans[i]!==null){var o=q.opts[ans[i]];sc[o.s]++;lvA[o.s].push(o.lv);}});
+  var sorted=Object.entries(sc).sort(function(a,b){return b[1]-a[1];});
+  var main=sorted[0][0],sub=sorted[1][0];
+  var md=SD[main],sd=SD[sub];
+  var mls=lvA[main];
+  var avgLv=mls.length?Math.round(mls.reduce(function(a,b){return a+b;},0)/mls.length):0;
+  var lv=LV[avgLv];
+  document.getElementById('r-main').textContent=md.name;
+  document.getElementById('r-psy').textContent=md.psy;
+  document.getElementById('r-combo').textContent='보조 스타일: '+sd.name+'  ·  조합: '+md.name+' + '+sd.name;
+  document.getElementById('r-lv-badge').innerHTML='<span class="r-lv '+lv.cls+'">'+lv.label+'</span>';
+  var bc={card:'#7B68EE',example:'#9B59B6',deductive:'#E67E22',point:'#E74C3C',question:'#2980B9'};
+  var bo=[{k:'card',l:'카드설명형'},{k:'example',l:'예시전달형'},{k:'deductive',l:'두괄식형'},{k:'point',l:'포인트지목형'},{k:'question',l:'질문형'}];
+  document.getElementById('score-bars').innerHTML=bo.map(function(b){return '<div class="srow"><div class="sinfo"><span class="sname">'+b.l+'</span><span class="snum">'+sc[b.k]+'점</span></div><div class="sbar"><div class="sfill" style="width:'+Math.round((sc[b.k]/15)*100)+'%;background:'+bc[b.k]+'"></div></div></div>';}).join('');
+  document.getElementById('lv-detail').innerHTML='<div class="lv-box '+lv.cls+'"><div class="lv-title">'+lv.title+' — '+lv.label+'</div><div class="lv-desc">'+lv.desc+'</div><div class="lv-desc" style="margin-top:.5rem;font-weight:500">✦ 지금 할 것: '+lv.action+'</div></div>';
+  var ck=main+'+'+sub;
+  var cd=combos[ck]||(md.name+' + '+sd.name+' 조합으로 리딩하는 스타일입니다.');
+  document.getElementById('r-cards').innerHTML=
+    '<div class="rcard"><div class="rcard-title">나의 주 스타일 강점</div><div class="rcard-text">'+md.strength+'</div></div>'+
+    '<div class="rcard"><div class="rcard-title">지금 가장 주의할 위험 신호</div><div class="rcard-text"><em>'+md.risk+'</em></div></div>'+
+    '<div class="rcard"><div class="rcard-title">교정 & 업그레이드 팁</div><div class="rcard-text"><strong>'+md.upgrade+'</strong></div></div>'+
+    '<div class="rcard"><div class="rcard-title">내담자가 실제로 느끼는 것</div><div class="rcard-text">잘 쓸 때: <strong>'+md.good+'</strong><br>못 쓸 때: <em>'+md.bad+'</em></div></div>'+
+    '<div class="rcard"><div class="rcard-title">'+md.name+' + '+sd.name+' 조합 분석</div><div class="rcard-text">'+cd+'</div></div>';
+}
+
+function restart(){cur=0;ans=new Array(15).fill(null);document.getElementById('result').classList.add('hidden');document.getElementById('intro').classList.remove('hidden');}
+</script>
+</body>
+</html>
