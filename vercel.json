@@ -1,12 +1,11 @@
 {
-  "functions": {
-    "api/reading.js": {
-      "memory": 256,
-      "maxDuration": 30
-    }
-  },
-  "rewrites": [
-    { "source": "/api/reading", "destination": "/api/reading" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  "version": 2,
+  "builds": [
+    { "src": "api/reading.js", "use": "@vercel/node" },
+    { "src": "public/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/reading", "dest": "/api/reading.js" },
+    { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }
