@@ -3,9 +3,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { messages, system } = req.body;
-
   try {
+    const { messages, system } = req.body;
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -16,14 +16,21 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1500,
-        system,
-        messages,
+        system: system,
+        messages: messages,
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Anthropic API error:', errorData);
+      return res.status(response.status).json({ error: errorData });
+    }
+
     const data = await response.json();
-    res.status(200).json(data);
+    return res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({ error: 'API 호출 실패' });
+    console.error('Handler error:', error);
+    return res.status(500).json({ error: error.message });
   }
 }
