@@ -1,7 +1,12 @@
 {
-  "outputDirectory": "public",
+  "functions": {
+    "api/reading.js": {
+      "memory": 256,
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     { "source": "/api/reading", "destination": "/api/reading" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
