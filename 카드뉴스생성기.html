@@ -1,5 +1,3 @@
-$ cat "/home/user/metaro-mind/카드뉴스생성기.html"
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -28,9 +26,15 @@ textarea:focus{outline:none;border-color:#6C3CE9}
 .field-row input[type="text"]{width:100%;font-size:14px;padding:9px 12px;border-radius:8px;border:1px solid #E2DDF5;font-family:'Noto Sans KR',sans-serif}
 .field-row input[type="text"]:focus{outline:none;border-color:#6C3CE9}
 
+.style-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.7rem;margin-top:.6rem}
+.style-card{border:2px solid #E2DDF5;border-radius:10px;padding:.7rem;cursor:pointer;font-size:12px;color:#555;transition:border-color .15s}
+.style-card.active{border-color:#6C3CE9;background:#F8F5FF}
+.style-card b{display:block;font-size:13px;color:#1A1033;margin-bottom:2px}
+.style-swatch{display:flex;gap:4px;margin-top:.5rem}
+.style-swatch span{width:16px;height:16px;border-radius:4px;display:inline-block;border:1px solid rgba(0,0,0,.08)}
+
 .opts-row{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1rem}
 .opt-chip{display:flex;align-items:center;gap:.4rem;font-size:13px;color:#555}
-select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #E2DDF5;background:#fff}
 
 .gen-btn{display:block;width:100%;background:#1A1033;color:#fff;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:1.25rem;font-family:'Noto Sans KR',sans-serif;transition:opacity .2s}
 .gen-btn:hover{opacity:.85}
@@ -48,68 +52,67 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 .card-num{font-size:11px;color:#999;letter-spacing:.1em}
 
 .card{width:300px;height:375px;border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:46px var(--card-pad-x,26px) var(--card-pad-bottom,26px);box-shadow:0 6px 24px rgba(0,0,0,.12)}
-.card-tag{position:absolute;top:18px;left:22px;font-size:9.5px;font-weight:600;letter-spacing:.04em;opacity:.8;z-index:3}
-.card-page{position:absolute;top:18px;right:22px;font-size:10.5px;font-weight:500;opacity:.8;z-index:3}
+.card-tag{position:absolute;top:18px;left:22px;font-size:9.5px;font-weight:700;letter-spacing:.04em;color:var(--accent);z-index:3}
+.card-page{position:absolute;top:18px;right:22px;font-size:10.5px;font-weight:500;opacity:.6;z-index:3}
 
-/* 모서리 폴드 장식 - 단색 원형 대신 코너에 살짝 접힌 듯한 액센트 형태 */
-.card-fold{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 64px 64px 0;border-color:transparent var(--accent) transparent transparent;opacity:.18;z-index:1}
+/* 모서리 폴드 장식 */
+.card-fold{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 60px 60px 0;border-color:transparent var(--accent) transparent transparent;opacity:.16;z-index:1}
 
 .card-content{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
 
-.card-accent-bar{width:28px;height:4px;border-radius:2px;background:var(--accent);margin-bottom:12px}
+.card-next{position:absolute;bottom:16px;right:20px;font-size:11px;font-weight:500;opacity:.7;z-index:3;display:flex;align-items:center;gap:3px}
 
-.card-next{position:absolute;bottom:16px;right:20px;font-size:11px;font-weight:500;opacity:.75;z-index:3;display:flex;align-items:center;gap:3px}
+/* 포인트 강조 - 본문보다 크고 굵게, 포인트 컬러 */
+.accent{color:var(--accent);font-weight:800;font-size:1.18em;line-height:1.3}
 
-/* ::cover - 표지: 제목 가장 크게, 시리즈명은 작게, 넓은 여백 */
-.card-cover .card-content{justify-content:center;padding-top:8px}
-.cover-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:23px;line-height:1.45;margin-bottom:14px;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.cover-sub{font-size:13.5px;line-height:1.75;opacity:.85;white-space:pre-wrap;word-break:keep-all;text-align:left}
+/* ::cover - 제목이 카드 중앙보다 살짝 위, 길이에 관계없이 하단으로 밀리지 않는다 */
+.card-cover .card-content{display:flex;flex-direction:column}
+.cover-spacer-top{flex:0 0 16%}
+.cover-spacer-bottom{flex:1 1 auto}
+.cover-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:25px;line-height:1.42;margin-bottom:14px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.cover-sub{font-size:13px;line-height:1.75;opacity:.8;white-space:pre-wrap;word-break:keep-all;text-align:left}
 
-/* ::content - 본문: 통일된 글씨/행간, 좌측 정렬, 가독성 우선 */
+/* ::content / ::highlight 공용 본문 - 박스 없이 깔끔하게 */
 .card-body{font-size:var(--body-fs,12px);line-height:var(--body-lh,1.8);letter-spacing:var(--body-ls,0);opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
 .card-body p{margin-bottom:var(--p-gap,12px)}
 .card-body p:last-child{margin-bottom:0}
-.accent{color:var(--accent);font-weight:700}
 
-/* ::highlight - 카드/키워드 강조: 큰 제목 + 강조 박스 */
-.highlight-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:22px;line-height:1.4;margin-bottom:12px;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.highlight-box{background:rgba(255,255,255,.08);border:1px solid var(--accent);border-radius:12px;padding:14px 16px}
-.highlight-box p{font-size:var(--body-fs,13px);line-height:var(--body-lh,1.85);letter-spacing:var(--body-ls,0);margin-bottom:var(--p-gap,10px)}
-.highlight-box p:last-child{margin-bottom:0}
+/* ::highlight - 카드/키워드 이름만 제목처럼 크게, 본문은 여백 안에 자연스럽게 */
+.highlight-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:23px;line-height:1.4;margin-bottom:16px;white-space:pre-wrap;word-break:keep-all;text-align:left}
 
-/* ::quote - 한 문장 강조: 큰 글씨, 중앙 정렬, 넓은 여백 */
+/* ::quote - 큰 글씨, 중앙 정렬, 넓은 여백 */
 .card-quote .card-content{justify-content:center;align-items:center;text-align:center}
-.quote-mark{font-family:'Noto Serif KR',serif;font-size:42px;color:var(--accent);opacity:.5;line-height:1;margin-bottom:6px}
+.quote-mark{font-family:'Noto Serif KR',serif;font-size:40px;color:var(--accent);opacity:.55;line-height:1;margin-bottom:6px}
 .quote-text{font-family:'Noto Serif KR',serif;font-weight:700;font-size:21px;line-height:1.6;white-space:pre-wrap;word-break:keep-all;text-align:center}
 
-/* ::cta - 마지막 행동 유도: 본문과 다른 전용 레이아웃 */
+/* ::cta - 유일하게 박스를 적극 사용하는 슬라이드 */
 .card-cta .card-content{justify-content:center}
-.cta-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:19px;line-height:1.5;margin-bottom:12px;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.cta-box{background:rgba(255,255,255,.1);border:1.5px solid var(--accent);border-radius:14px;padding:14px 16px;margin-bottom:14px}
-.cta-box p{font-size:13px;line-height:1.75;font-weight:500;white-space:pre-wrap;word-break:keep-all;text-align:left;margin-bottom:6px}
-.cta-box p:last-child{margin-bottom:0}
-.cta-footer{font-size:10.5px;opacity:.7;text-align:left}
+.cta-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:20px;line-height:1.5;margin-bottom:14px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.cta-box{background:rgba(127,127,127,.1);border:1.5px solid var(--accent);border-radius:14px;padding:13px 16px;margin-bottom:10px}
+.cta-box p{font-size:13px;line-height:1.7;font-weight:700;white-space:pre-wrap;word-break:keep-all;text-align:left;margin-bottom:0}
+.cta-footer{font-size:10.5px;opacity:.65;text-align:left;margin-top:6px}
 
-.theme-mystic{--accent:#C9B8FF;background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
-.theme-mystic .card-tag{color:#C9B8FF}
-.theme-mystic::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 10%,rgba(255,255,255,.08),transparent 60%);z-index:1}
+/* ===== 디자인 스타일 5종: 표지/본문/CTA 배경을 의도적으로 다르게 ===== */
+.style-a{--accent:#D4AF37}
+.style-a.card-cover,.style-a.card-cta{background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
+.style-a.card-content,.style-a.card-highlight,.style-a.card-quote{background:#FBF7F0;color:#2E1B4D}
 
-.theme-blush{--accent:#E0577A;background:linear-gradient(160deg,#FFE9EF 0%,#FFF6F0 100%);color:#3A2230}
-.theme-blush .card-tag{color:#C0566F}
-.theme-blush .cover-title,.theme-blush .highlight-title,.theme-blush .cta-title{color:#7A2E45}
+.style-b{--accent:#6C3CE9}
+.style-b.card{border:1px solid #ECECEC}
+.style-b.card-cover,.style-b.card-cta,.style-b.card-content,.style-b.card-highlight,.style-b.card-quote{background:#fff;color:#1A1033}
 
-.theme-mono{--accent:#6C3CE9;background:#fff;color:#1A1A1A;border:1px solid #EEE}
-.theme-mono .card-tag{color:#6C3CE9}
-.theme-mono .cover-title,.theme-mono .highlight-title,.theme-mono .cta-title{color:#111}
+.style-c{--accent:#C98B7A}
+.style-c.card-cover,.style-c.card-cta{background:#F3E6D2;color:#4B2E55}
+.style-c.card-content,.style-c.card-highlight,.style-c.card-quote{background:#FAF3E8;color:#4B2E55}
 
-.theme-forest{--accent:#6FD897;background:linear-gradient(160deg,#1F3D2B 0%,#0F2118 100%);color:#fff}
-.theme-forest .card-tag{color:#9FD9B4}
+.style-d{--accent:#E8C76F}
+.style-d.card-cover,.style-d.card-cta{background:linear-gradient(160deg,#171A3D 0%,#2B1A4A 100%);color:#fff}
+.style-d.card-content,.style-d.card-highlight,.style-d.card-quote{background:#EDEAF8;color:#241B40}
 
-.theme-sunset{--accent:#FFD15C;background:linear-gradient(160deg,#FF7B6B 0%,#8C2F6B 100%);color:#fff}
-.theme-sunset .card-tag{color:#FFD9C7}
-
-.theme-ocean{--accent:#7FE0E0;background:linear-gradient(160deg,#123A6B 0%,#0A1A33 100%);color:#fff}
-.theme-ocean .card-tag{color:#9FD3FF}
+.style-e{--accent:#1A1033}
+.style-e.card{border:1px solid #ECECEC}
+.style-e.card-cover,.style-e.card-content,.style-e.card-highlight,.style-e.card-quote{background:#fff;color:#171717}
+.style-e.card-cta{background:#171717;color:#fff}
 
 .dl-one{font-size:12px;background:#fff;border:1px solid #DDD;color:#666;padding:6px 16px;border-radius:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 .dl-one:hover{border-color:#6C3CE9;color:#6C3CE9}
@@ -131,6 +134,33 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
     </div>
 
     <div class="field-row">
+      <label class="field-label">디자인 스타일 선택</label>
+      <div class="style-picker" id="style-picker">
+        <div class="style-card active" data-style="style-a">
+          <b>A. 딥퍼플 감성형</b>표지 진보라+흰글씨 · 본문 아이보리 · 포인트 골드
+          <div class="style-swatch"><span style="background:#1A1033"></span><span style="background:#FBF7F0"></span><span style="background:#D4AF37"></span></div>
+        </div>
+        <div class="style-card" data-style="style-b">
+          <b>B. 미니멀 화이트형</b>표지/본문 모두 화이트 · 포인트 보라
+          <div class="style-swatch"><span style="background:#fff"></span><span style="background:#1A1033"></span><span style="background:#6C3CE9"></span></div>
+        </div>
+        <div class="style-card" data-style="style-c">
+          <b>C. 따뜻한 크림형</b>표지/본문 크림톤 · 포인트 로즈골드
+          <div class="style-swatch"><span style="background:#F3E6D2"></span><span style="background:#4B2E55"></span><span style="background:#C98B7A"></span></div>
+        </div>
+        <div class="style-card" data-style="style-d">
+          <b>D. 밤하늘 타로형</b>표지 네이비보라 그라데이션 · 본문 라벤더 · 포인트 별빛골드
+          <div class="style-swatch"><span style="background:#2B1A4A"></span><span style="background:#EDEAF8"></span><span style="background:#E8C76F"></span></div>
+        </div>
+        <div class="style-card" data-style="style-e">
+          <b>E. 매거진형</b>큰 제목 중심의 잡지 스타일 · 포인트 블랙/딥퍼플
+          <div class="style-swatch"><span style="background:#fff"></span><span style="background:#171717"></span><span style="background:#1A1033"></span></div>
+        </div>
+      </div>
+      <input type="hidden" id="style" value="style-a">
+    </div>
+
+    <div class="field-row">
       <label class="field-label">① 원고 입력 (슬라이드 타입 문법 사용)</label>
       <textarea id="content" placeholder="::cover
 #01 타로 심리노트
@@ -141,43 +171,34 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
 사랑은 참 신기해.
 
 같은 사람을 좋아해도,
-누군가는 먼저 다가가고...
+**사랑하는 방식이 달라서일 때가 많아.**
 
 ::highlight
 👑 컵의 퀸
 감정이 풍부하고 다정한 사랑꾼.
-상대의 마음을 먼저 살피는 타입이에요.
+**상대의 마음을 먼저 살피는 타입이에요.**
 
 ::quote
 사랑은 받는 것이 아니라 알아채는 것
 
 ::cta
-무료 PDF 다운로드
-내 퀸 카드로 보는 연애 심리 가이드 받아보기
+무료 연애성향 PDF 받아보기
+
+무료 연애성향 PDF
+
+1:1 타로 상담 신청하기
+
 프로필 링크에서 확인하세요 →"></textarea>
       <p class="hint">
         원고는 작성한 그대로 배치만 합니다. 문장을 새로 쓰거나 의미를 바꾸지 않아요.<br>
-        · <code>::cover</code> 표지 — 제목을 가장 크게, 시리즈명은 작게, 부제는 제목 아래<br>
-        · <code>::content</code> 일반 본문 — 좌측 정렬, 통일된 글씨/행간으로 가독성 우선<br>
-        · <code>::highlight</code> 카드/키워드 강조 — 첫 줄은 큰 제목, 나머지는 강조 박스 안에 배치<br>
+        · <code>::cover</code> 표지 — 제목이 카드 중앙보다 살짝 위에, 가장 크게 2~3줄, 시리즈명은 상단 작게, 부제는 제목 아래 작게<br>
+        · <code>::content</code> 일반 본문 — 박스 없이 좌측 정렬, 통일된 글씨/행간으로 가독성 우선<br>
+        · <code>::highlight</code> 카드/키워드 강조 — 박스 없이 아이콘+이름만 제목처럼 크게, 본문은 여백 안에 자연스럽게<br>
         · <code>::quote</code> 한 문장 강조 — 큰 글씨로 중앙 정렬<br>
-        · <code>::cta</code> 행동 유도 — 첫 줄은 CTA 제목, 마지막 줄은 하단 안내 문구, 중간은 강조 박스<br>
-        · <code>**강조할 문구**</code> → 포인트 색으로 강조 표시<br>
+        · <code>::cta</code> 행동 유도 — 첫 줄은 CTA 제목, 빈 줄로 구분한 문단마다 카드형 박스로 강조, 마지막 줄은 하단 프로필 안내<br>
+        · <code>**강조할 문구**</code> → 포인트 컬러 + 더 큰 글씨(약 18%) + 굵게. 한 슬라이드에 1~2개까지만 사용하세요<br>
         · 본문 폰트 크기는 전체 슬라이드에서 고정이며, 1~3줄 정도만 넘치면 문단 간격·행간·자간·여백을 아주 조금만 조정해서 맞춥니다. 그래도 안 들어가면 다음 슬라이드로 자연스럽게 이어집니다.
       </p>
-    </div>
-
-    <div class="opts-row">
-      <div class="opt-chip">테마
-        <select id="theme">
-          <option value="theme-mystic">미스틱 퍼플</option>
-          <option value="theme-blush">블러시 핑크</option>
-          <option value="theme-mono">모노 화이트</option>
-          <option value="theme-forest">딥 포레스트</option>
-          <option value="theme-sunset">선셋 코랄</option>
-          <option value="theme-ocean">딥 오션</option>
-        </select>
-      </div>
     </div>
 
     <button class="gen-btn" id="generate">카드뉴스 만들기</button>
@@ -197,8 +218,15 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
 
 <script>
 const TYPE_MARKER = /^::(cover|content|highlight|quote|cta)\s*$/i;
-// 본문 텍스트 흐름이 있어 줄바꿈/분량 조정이 필요한 타입만 자동 보정·분할 대상이다.
 const FLOWABLE_TYPES = ['content', 'highlight'];
+
+document.querySelectorAll('.style-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.style-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    document.getElementById('style').value = card.dataset.style;
+  });
+});
 
 function escapeHTML(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -216,7 +244,6 @@ function paragraphsOf(block) {
   return block.split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
 }
 
-// ::cover 블록 첫 줄에 #이 있으면 시리즈 라벨로 분리하고, 다음 줄을 제목/부제로 둔다.
 function buildCoverSlide(block) {
   const lines = nonEmptyLines(block);
   let tag = '';
@@ -243,11 +270,18 @@ function buildQuoteSlide(block) {
 }
 
 function buildCtaSlide(block) {
-  const lines = nonEmptyLines(block);
-  const title = lines[0] || '';
-  const footer = lines.length > 1 ? lines[lines.length - 1] : '';
-  const desc = lines.length > 2 ? lines.slice(1, -1) : [];
-  return { type: 'cta', title, desc, footer };
+  const rawLines = block.split('\n');
+  const nonEmptyIdx = rawLines.map((l, i) => ({ l: l.trim(), i })).filter(o => o.l).map(o => o.i);
+  if (!nonEmptyIdx.length) return { type: 'cta', title: '', boxes: [], footer: '' };
+
+  const titleIdx = nonEmptyIdx[0];
+  const footerIdx = nonEmptyIdx[nonEmptyIdx.length - 1];
+  const title = rawLines[titleIdx].trim();
+  const footer = footerIdx !== titleIdx ? rawLines[footerIdx].trim() : '';
+  const middleEnd = footerIdx !== titleIdx ? footerIdx : titleIdx + 1;
+  const middle = rawLines.slice(titleIdx + 1, middleEnd).join('\n');
+  const boxes = paragraphsOf(middle);
+  return { type: 'cta', title, boxes, footer };
 }
 
 function buildSlide(type, block) {
@@ -258,7 +292,6 @@ function buildSlide(type, block) {
   return buildContentSlide(block);
 }
 
-// 새 ::타입 문법으로 작성된 원고를 슬라이드 단위로 분리한다.
 function parseTypedSlides(raw) {
   const lines = raw.split('\n');
   const markers = [];
@@ -282,27 +315,29 @@ function parseTypedSlides(raw) {
 
 function buildContentHTML(s) {
   if (s.type === 'cover') {
-    return `<div class="cover-title">${applyAccent(s.title)}</div>
-      ${s.sub ? `<div class="cover-sub">${applyAccent(s.sub)}</div>` : ''}`;
+    return `<div class="cover-spacer-top"></div>
+      <div class="cover-title">${applyAccent(s.title)}</div>
+      ${s.sub ? `<div class="cover-sub">${applyAccent(s.sub)}</div>` : ''}
+      <div class="cover-spacer-bottom"></div>`;
   }
   if (s.type === 'highlight') {
     return `<div class="highlight-title">${applyAccent(s.title)}</div>
-      <div class="highlight-box">${s.paragraphs.map(p => `<p>${applyAccent(p)}</p>`).join('')}</div>`;
+      <div class="card-body">${s.paragraphs.map(p => `<p>${applyAccent(p)}</p>`).join('')}</div>`;
   }
   if (s.type === 'quote') {
-    return `<div class="quote-mark">“</div><div class="quote-text">${applyAccent(s.text)}</div>`;
+    return `<div class="quote-mark">"</div><div class="quote-text">${applyAccent(s.text)}</div>`;
   }
   if (s.type === 'cta') {
     return `<div class="cta-title">${applyAccent(s.title)}</div>
-      ${s.desc.length ? `<div class="cta-box">${s.desc.map(p => `<p>${applyAccent(p)}</p>`).join('')}</div>` : ''}
+      ${s.boxes.map(b => `<div class="cta-box"><p>${applyAccent(b)}</p></div>`).join('')}
       ${s.footer ? `<div class="cta-footer">${applyAccent(s.footer)}</div>` : ''}`;
   }
   return `<div class="card-body">${s.paragraphs.map(p => `<p>${applyAccent(p)}</p>`).join('')}</div>`;
 }
 
-function measureOverflow(theme, s, styleVars) {
+function measureOverflow(styleClass, s, styleVars) {
   const probe = document.createElement('div');
-  probe.className = `card ${theme}`;
+  probe.className = `card ${styleClass} card-${s.type}`;
   probe.style.position = 'absolute';
   probe.style.left = '-9999px';
   probe.style.top = '0';
@@ -315,8 +350,6 @@ function measureOverflow(theme, s, styleVars) {
   return overflowed;
 }
 
-// 1~3줄 정도의 작은 초과는 새 슬라이드를 만들기 전에 아래 우선순위로 미세 조정해본다.
-// 문단 간격 → 행간 → 자간 → 패딩 → 폰트 크기(최대 1px) 순서로 아주 조금씩만 줄인다.
 const ADJUST_STEPS = [
   { pGap: 10 },
   { pGap: 8 },
@@ -341,18 +374,16 @@ function buildStyleVars(o) {
   return parts.join(';');
 }
 
-function findFittingAdjustment(theme, slideTemplate) {
+function findFittingAdjustment(styleClass, slideTemplate) {
   let merged = {};
   for (const step of ADJUST_STEPS) {
     merged = { ...merged, ...step };
     const styleVars = buildStyleVars(merged);
-    if (!measureOverflow(theme, slideTemplate, styleVars)) return styleVars;
+    if (!measureOverflow(styleClass, slideTemplate, styleVars)) return styleVars;
   }
   return null;
 }
 
-// 전체 단락을 단어 단위로 펼쳐서, 카드에 들어가는 만큼만 자연스럽게 채우고
-// 나머지는 끊긴 문장부터 이어지도록 다음 슬라이드로 넘긴다.
 function flattenWords(paragraphs) {
   const tokens = [];
   paragraphs.forEach((p, pIdx) => {
@@ -382,14 +413,13 @@ function makeFlowSlide(type, paragraphs) {
   return type === 'highlight' ? { type: 'highlight', title: '', paragraphs } : { type: 'content', paragraphs };
 }
 
-// 단어 개수를 이분 탐색해 카드에 들어가는 최대 단어 수를 찾는다.
-function fitWordCount(theme, type, tokens) {
+function fitWordCount(styleClass, type, tokens) {
   let lo = 0, hi = tokens.length, best = 0;
   while (lo <= hi) {
     const mid = Math.floor((lo + hi) / 2);
     const candidateParagraphs = rebuildParagraphs(tokens.slice(0, mid));
     const candidate = makeFlowSlide(type, candidateParagraphs.length ? candidateParagraphs : ['']);
-    if (!measureOverflow(theme, candidate)) {
+    if (!measureOverflow(styleClass, candidate)) {
       best = mid;
       lo = mid + 1;
     } else {
@@ -399,19 +429,17 @@ function fitWordCount(theme, type, tokens) {
   return best;
 }
 
-function splitOverflowingSlides(slides, theme) {
+function splitOverflowingSlides(slides, styleClass) {
   const result = [];
   let forcedNotice = false;
 
   for (const original of slides) {
     if (!FLOWABLE_TYPES.includes(original.type)) {
-      if (measureOverflow(theme, original)) forcedNotice = true;
+      if (measureOverflow(styleClass, original)) forcedNotice = true;
       result.push(original);
       continue;
     }
 
-    // highlight는 제목 카드와 본문 카드를 분리해 다룬다 (제목은 분할되지 않는다).
-    const titleOnly = original.type === 'highlight' ? { type: 'highlight', title: original.title, paragraphs: [] } : null;
     let tokens = flattenWords(original.paragraphs);
     if (!tokens.length) { result.push(original); continue; }
 
@@ -422,18 +450,18 @@ function splitOverflowingSlides(slides, theme) {
         ? { type: 'highlight', title: original.title, paragraphs }
         : makeFlowSlide(original.type, paragraphs);
 
-      if (!measureOverflow(theme, withTitle)) {
+      if (!measureOverflow(styleClass, withTitle)) {
         result.push(withTitle);
         tokens = [];
         break;
       }
-      const styleVars = findFittingAdjustment(theme, withTitle);
+      const styleVars = findFittingAdjustment(styleClass, withTitle);
       if (styleVars) {
         result.push({ ...withTitle, styleVars });
         tokens = [];
         break;
       }
-      const fit = fitWordCount(theme, isFirstChunk ? original.type : 'content', tokens);
+      const fit = fitWordCount(styleClass, isFirstChunk ? original.type : 'content', tokens);
       if (fit === 0) {
         forcedNotice = true;
         result.push(withTitle);
@@ -451,8 +479,8 @@ function splitOverflowingSlides(slides, theme) {
   return { slides: result, forcedNotice };
 }
 
-function renderCards(rawSlides, tag, theme) {
-  const { slides, forcedNotice } = splitOverflowingSlides(rawSlides, theme);
+function renderCards(rawSlides, tag, styleClass) {
+  const { slides, forcedNotice } = splitOverflowingSlides(rawSlides, styleClass);
   const cardsEl = document.getElementById('cards');
   cardsEl.innerHTML = '';
 
@@ -461,7 +489,7 @@ function renderCards(rawSlides, tag, theme) {
     block.className = 'card-block';
     const isLast = i === slides.length - 1;
     block.innerHTML = `
-      <div class="card ${theme} card-${s.type}" id="card-${i}" ${s.styleVars ? `style="${s.styleVars}"` : ''}>
+      <div class="card ${styleClass} card-${s.type}" id="card-${i}" ${s.styleVars ? `style="${s.styleVars}"` : ''}>
         <span class="card-fold"></span>
         ${tag ? `<span class="card-tag">${escapeHTML(tag)}</span>` : ''}
         <span class="card-page">${i + 1} / ${slides.length}</span>
@@ -502,13 +530,13 @@ async function downloadCard(idx) {
 document.getElementById('generate').addEventListener('click', () => {
   const raw = document.getElementById('content').value;
   const manualTag = document.getElementById('series-tag').value.trim();
-  const theme = document.getElementById('theme').value;
+  const styleClass = document.getElementById('style').value;
   const parsed = parseTypedSlides(raw);
   if (!parsed || !parsed.slides.length) {
     alert('::cover, ::content 같은 슬라이드 타입 문법으로 원고를 입력해주세요.');
     return;
   }
-  renderCards(parsed.slides, manualTag || parsed.autoTag, theme);
+  renderCards(parsed.slides, manualTag || parsed.autoTag, styleClass);
   document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
 });
 
