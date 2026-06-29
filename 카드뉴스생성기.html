@@ -4,119 +4,136 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>메타로마인드 | 카드뉴스 생성기</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans KR',sans-serif;background:#F4F2FA;color:#222;min-height:100vh}
+body{font-family:'Pretendard',sans-serif;background:#F4F2FA;color:#222;min-height:100vh}
 .wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
 header{text-align:center;margin-bottom:2rem}
-.brand{font-size:11px;letter-spacing:.3em;color:#888;text-transform:uppercase;margin-bottom:.6rem}
-h1{font-family:'Noto Serif KR',serif;font-size:clamp(22px,4vw,30px);color:#1A1033;margin-bottom:.4rem}
-.desc{font-size:13px;color:#777;line-height:1.7}
+.brand{font-size:11px;font-weight:500;letter-spacing:.3em;color:#888;text-transform:uppercase;margin-bottom:.6rem}
+h1{font-weight:800;font-size:clamp(22px,4vw,30px);color:#1A1033;margin-bottom:.4rem}
+.desc{font-size:13px;font-weight:400;color:#777;line-height:1.7}
 
 .panel{background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,.05);margin-bottom:1.5rem}
-textarea{width:100%;min-height:280px;border:1px solid #E2DDF5;border-radius:10px;padding:1rem;font-size:14px;line-height:1.7;font-family:'Noto Sans KR',sans-serif;resize:vertical}
+textarea{width:100%;min-height:320px;border:1px solid #E2DDF5;border-radius:10px;padding:1rem;font-size:14px;line-height:1.7;font-family:'Pretendard',sans-serif;resize:vertical}
 textarea:focus{outline:none;border-color:#6C3CE9}
-.hint{font-size:12px;color:#999;margin-top:.6rem;line-height:1.7}
+.hint{font-size:12px;font-weight:400;color:#999;margin-top:.6rem;line-height:1.8}
 .hint code{background:#F4F2FA;padding:1px 5px;border-radius:4px;color:#6C3CE9}
 
 .field-row{margin-top:1.1rem}
-.field-label{font-size:12px;font-weight:500;color:#555;margin-bottom:.4rem;display:block}
-.field-row input[type="text"]{width:100%;font-size:14px;padding:9px 12px;border-radius:8px;border:1px solid #E2DDF5;font-family:'Noto Sans KR',sans-serif}
+.field-label{font-size:12px;font-weight:600;color:#555;margin-bottom:.4rem;display:block}
+.field-row input[type="text"]{width:100%;font-size:14px;padding:9px 12px;border-radius:8px;border:1px solid #E2DDF5;font-family:'Pretendard',sans-serif}
 .field-row input[type="text"]:focus{outline:none;border-color:#6C3CE9}
 
 .style-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.7rem;margin-top:.6rem}
-.style-card{border:2px solid #E2DDF5;border-radius:10px;padding:.7rem;cursor:pointer;font-size:12px;color:#555;transition:border-color .15s}
+.style-card{border:2px solid #E2DDF5;border-radius:10px;padding:.7rem;cursor:pointer;font-size:12px;font-weight:400;color:#555;transition:border-color .15s}
 .style-card.active{border-color:#6C3CE9;background:#F8F5FF}
-.style-card b{display:block;font-size:13px;color:#1A1033;margin-bottom:2px}
+.style-card b{display:block;font-size:13px;font-weight:700;color:#1A1033;margin-bottom:2px}
 .style-swatch{display:flex;gap:4px;margin-top:.5rem}
 .style-swatch span{width:16px;height:16px;border-radius:4px;display:inline-block;border:1px solid rgba(0,0,0,.08)}
 
-.opts-row{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1rem}
-.opt-chip{display:flex;align-items:center;gap:.4rem;font-size:13px;color:#555}
-
-.gen-btn{display:block;width:100%;background:#1A1033;color:#fff;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:1.25rem;font-family:'Noto Sans KR',sans-serif;transition:opacity .2s}
+.gen-btn{display:block;width:100%;background:#1A1033;color:#fff;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:1.25rem;font-family:'Pretendard',sans-serif;transition:opacity .2s}
 .gen-btn:hover{opacity:.85}
 
-.notice{display:none;background:#FFF4E5;border:1px solid #FFD8A8;color:#8A5A00;font-size:13px;padding:.8rem 1rem;border-radius:8px;margin-top:1rem;line-height:1.6}
+.notice{display:none;background:#FFF4E5;border:1px solid #FFD8A8;color:#8A5A00;font-size:13px;font-weight:400;padding:.8rem 1rem;border-radius:8px;margin-top:1rem;line-height:1.6}
 
 #result{display:none}
 .result-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
 .result-bar h2{font-size:14px;color:#1A1033;font-weight:700}
-.dl-all{background:#6C3CE9;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.dl-all{background:#6C3CE9;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Pretendard',sans-serif}
 .dl-all:hover{opacity:.85}
 
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem}
 .card-block{display:flex;flex-direction:column;align-items:center;gap:.6rem}
-.card-num{font-size:11px;color:#999;letter-spacing:.1em}
+.card-num{font-size:11px;font-weight:400;color:#999;letter-spacing:.1em}
 
-.card{width:300px;height:375px;border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:46px var(--card-pad-x,26px) var(--card-pad-bottom,26px);box-shadow:0 6px 24px rgba(0,0,0,.12)}
-.card-tag{position:absolute;top:18px;left:22px;font-size:9.5px;font-weight:700;letter-spacing:.04em;color:var(--accent);z-index:3}
-.card-page{position:absolute;top:18px;right:22px;font-size:10.5px;font-weight:500;opacity:.6;z-index:3}
-
-/* 모서리 폴드 장식 */
-.card-fold{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 60px 60px 0;border-color:transparent var(--accent) transparent transparent;opacity:.16;z-index:1}
+/* Safe area: 충분한 상하좌우 여백 확보 */
+.card{width:300px;height:375px;border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:48px var(--card-pad-x,28px) var(--card-pad-bottom,30px);box-shadow:0 6px 24px rgba(0,0,0,.12);font-family:'Pretendard',sans-serif}
+.card-tag{position:absolute;top:20px;left:24px;font-size:9.5px;font-weight:500;letter-spacing:.06em;color:var(--accent);z-index:3}
+.card-page{position:absolute;top:20px;right:24px;font-size:10px;font-weight:300;opacity:.55;z-index:3}
 
 .card-content{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
 
-.card-next{position:absolute;bottom:16px;right:20px;font-size:11px;font-weight:500;opacity:.7;z-index:3;display:flex;align-items:center;gap:3px}
+.card-next{position:absolute;bottom:18px;right:22px;font-size:10.5px;font-weight:300;opacity:.65;z-index:3;display:flex;align-items:center;gap:3px}
 
-/* 포인트 강조 - 본문보다 크고 굵게, 포인트 컬러 */
-.accent{color:var(--accent);font-weight:800;font-size:1.18em;line-height:1.3}
+/* 강조 문장: 본문보다 크게, SemiBold, 포인트 컬러 */
+.accent{color:var(--accent);font-weight:600;font-size:1.16em;line-height:1.35}
 
-/* ::cover - 제목이 카드 중앙보다 살짝 위, 길이에 관계없이 하단으로 밀리지 않는다 */
+/* ::cover - 메인 제목이 카드 중앙보다 살짝 위, 길이와 무관하게 하단으로 밀리지 않는다 */
 .card-cover .card-content{display:flex;flex-direction:column}
-.cover-spacer-top{flex:0 0 16%}
+.cover-spacer-top{flex:0 0 18%}
 .cover-spacer-bottom{flex:1 1 auto}
-.cover-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:25px;line-height:1.42;margin-bottom:14px;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.cover-sub{font-size:13px;line-height:1.75;opacity:.8;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.cover-title{font-weight:800;font-size:26px;line-height:1.42;margin-bottom:14px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.cover-sub{font-weight:500;font-size:13px;line-height:1.75;opacity:.78;white-space:pre-wrap;word-break:keep-all;text-align:left}
 
-/* ::content / ::highlight 공용 본문 - 박스 없이 깔끔하게 */
-.card-body{font-size:var(--body-fs,12px);line-height:var(--body-lh,1.8);letter-spacing:var(--body-ls,0);opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
+/* ::content / ::highlight 공용 본문 - 박스 없이, 굵기와 여백만으로 구성 */
+.content-title{font-weight:700;font-size:18.5px;line-height:1.45;margin-bottom:14px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body{font-weight:400;font-size:var(--body-fs,12px);line-height:var(--body-lh,1.8);letter-spacing:var(--body-ls,0);opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
 .card-body p{margin-bottom:var(--p-gap,12px)}
 .card-body p:last-child{margin-bottom:0}
 
-/* ::highlight - 카드/키워드 이름만 제목처럼 크게, 본문은 여백 안에 자연스럽게 */
-.highlight-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:23px;line-height:1.4;margin-bottom:16px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+/* ::highlight - 카드/키워드 이름만 제목처럼 크게(Bold), 본문은 여백과 굵기의 리듬으로 */
+.highlight-title{font-weight:700;font-size:22px;line-height:1.4;margin-bottom:16px;white-space:pre-wrap;word-break:keep-all;text-align:left}
 
 /* ::quote - 큰 글씨, 중앙 정렬, 넓은 여백 */
 .card-quote .card-content{justify-content:center;align-items:center;text-align:center}
-.quote-mark{font-family:'Noto Serif KR',serif;font-size:40px;color:var(--accent);opacity:.55;line-height:1;margin-bottom:6px}
-.quote-text{font-family:'Noto Serif KR',serif;font-weight:700;font-size:21px;line-height:1.6;white-space:pre-wrap;word-break:keep-all;text-align:center}
+.quote-mark{font-size:38px;font-weight:800;color:var(--accent);opacity:.5;line-height:1;margin-bottom:6px}
+.quote-text{font-weight:700;font-size:20px;line-height:1.6;white-space:pre-wrap;word-break:keep-all;text-align:center}
 
-/* ::cta - 유일하게 박스를 적극 사용하는 슬라이드 */
+/* ::cta - 브랜드 안내 카드. 버튼/입력창/앱 화면 느낌을 피하고, 구분선으로 항목을 나눈다 */
 .card-cta .card-content{justify-content:center}
-.cta-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:20px;line-height:1.5;margin-bottom:14px;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.cta-box{background:rgba(127,127,127,.1);border:1.5px solid var(--accent);border-radius:14px;padding:13px 16px;margin-bottom:10px}
-.cta-box p{font-size:13px;line-height:1.7;font-weight:700;white-space:pre-wrap;word-break:keep-all;text-align:left;margin-bottom:0}
-.cta-footer{font-size:10.5px;opacity:.65;text-align:left;margin-top:6px}
+.cta-title{font-weight:800;font-size:19px;line-height:1.5;margin-bottom:18px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.cta-item{padding:13px 0;border-top:1px solid currentColor;border-top-color:rgba(127,127,127,.22)}
+.cta-item:first-of-type{border-top:none;padding-top:0}
+.cta-item p{font-weight:500;font-size:13px;line-height:1.75;white-space:pre-wrap;word-break:keep-all;text-align:left;margin:0}
+.cta-footer{font-weight:300;font-size:10.5px;opacity:.6;text-align:left;margin-top:16px;white-space:pre-wrap;word-break:keep-all}
 
-/* ===== 디자인 스타일 5종: 표지/본문/CTA 배경을 의도적으로 다르게 ===== */
-.style-a{--accent:#D4AF37}
-.style-a.card-cover,.style-a.card-cta{background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
-.style-a.card-content,.style-a.card-highlight,.style-a.card-quote{background:#FBF7F0;color:#2E1B4D}
+/* ===== 디자인 테마 10종: 색상뿐 아니라 표지/본문/CTA 배경 대비를 함께 정의 ===== */
+.theme-minimal{--accent:#6C3CE9}
+.theme-minimal.card{border:1px solid #ECECEC}
+.theme-minimal.card-cover,.theme-minimal.card-cta,.theme-minimal.card-content,.theme-minimal.card-highlight,.theme-minimal.card-quote{background:#fff;color:#1A1033}
 
-.style-b{--accent:#6C3CE9}
-.style-b.card{border:1px solid #ECECEC}
-.style-b.card-cover,.style-b.card-cta,.style-b.card-content,.style-b.card-highlight,.style-b.card-quote{background:#fff;color:#1A1033}
+.theme-deeppurple{--accent:#D4AF37}
+.theme-deeppurple.card-cover,.theme-deeppurple.card-cta{background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
+.theme-deeppurple.card-content,.theme-deeppurple.card-highlight,.theme-deeppurple.card-quote{background:#FBF7F0;color:#2E1B4D}
 
-.style-c{--accent:#C98B7A}
-.style-c.card-cover,.style-c.card-cta{background:#F3E6D2;color:#4B2E55}
-.style-c.card-content,.style-c.card-highlight,.style-c.card-quote{background:#FAF3E8;color:#4B2E55}
+.theme-cream{--accent:#A9784C}
+.theme-cream.card-cover,.theme-cream.card-cta{background:#F3E6D2;color:#4B3422}
+.theme-cream.card-content,.theme-cream.card-highlight,.theme-cream.card-quote{background:#FBF3E7;color:#4B3422}
 
-.style-d{--accent:#E8C76F}
-.style-d.card-cover,.style-d.card-cta{background:linear-gradient(160deg,#171A3D 0%,#2B1A4A 100%);color:#fff}
-.style-d.card-content,.style-d.card-highlight,.style-d.card-quote{background:#EDEAF8;color:#241B40}
+.theme-night{--accent:#E8C76F}
+.theme-night.card-cover,.theme-night.card-cta{background:linear-gradient(160deg,#10142E 0%,#241B40 100%);color:#fff}
+.theme-night.card-content,.theme-night.card-highlight,.theme-night.card-quote{background:#EDEAF8;color:#221C3D}
 
-.style-e{--accent:#1A1033}
-.style-e.card{border:1px solid #ECECEC}
-.style-e.card-cover,.style-e.card-content,.style-e.card-highlight,.style-e.card-quote{background:#fff;color:#171717}
-.style-e.card-cta{background:#171717;color:#fff}
+.theme-magazine{--accent:#1A1033}
+.theme-magazine.card{border:1px solid #ECECEC}
+.theme-magazine.card-cover,.theme-magazine.card-cta,.theme-magazine.card-content,.theme-magazine.card-highlight,.theme-magazine.card-quote{background:#fff;color:#171717}
+.theme-magazine .cover-title{font-size:30px;letter-spacing:-.01em}
+.theme-magazine.card{padding-left:32px;padding-right:32px}
 
-.dl-one{font-size:12px;background:#fff;border:1px solid #DDD;color:#666;padding:6px 16px;border-radius:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.theme-luxury{--accent:#D4AF37}
+.theme-luxury.card-cover,.theme-luxury.card-cta,.theme-luxury.card-content,.theme-luxury.card-highlight,.theme-luxury.card-quote{background:#0E0E0E;color:#EDE3C8}
+
+.theme-diary{--accent:#C98B7A}
+.theme-diary.card-cover,.theme-diary.card-cta{background:#F6ECE3;color:#5B4536}
+.theme-diary.card-content,.theme-diary.card-highlight,.theme-diary.card-quote{background:#FBF6F0;color:#5B4536}
+
+.theme-vintage{--accent:#8A5A33}
+.theme-vintage.card-cover,.theme-vintage.card-cta{background:#EFE6D8;color:#4A3525}
+.theme-vintage.card-content,.theme-vintage.card-highlight,.theme-vintage.card-quote{background:#F6F0E6;color:#4A3525}
+
+.theme-nordic{--accent:#5B7A8C}
+.theme-nordic.card{border:1px solid #EEE}
+.theme-nordic.card-cover,.theme-nordic.card-cta,.theme-nordic.card-content,.theme-nordic.card-highlight,.theme-nordic.card-quote{background:#FAFAFA;color:#222}
+.theme-nordic.card{padding-top:54px;padding-left:32px;padding-right:32px}
+
+.theme-branding{--accent:#FFD56B}
+.theme-branding.card-cover,.theme-branding.card-cta,.theme-branding.card-content,.theme-branding.card-highlight,.theme-branding.card-quote{background:#6C3CE9;color:#fff}
+
+.dl-one{font-size:12px;font-weight:500;background:#fff;border:1px solid #DDD;color:#666;padding:6px 16px;border-radius:6px;cursor:pointer;font-family:'Pretendard',sans-serif}
 .dl-one:hover{border-color:#6C3CE9;color:#6C3CE9}
-footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
+footer{text-align:center;padding:2rem;font-size:12px;font-weight:400;color:#BBB}
 </style>
 </head>
 <body>
@@ -134,69 +151,109 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
     </div>
 
     <div class="field-row">
-      <label class="field-label">디자인 스타일 선택</label>
+      <label class="field-label">디자인 테마 선택</label>
       <div class="style-picker" id="style-picker">
-        <div class="style-card active" data-style="style-a">
-          <b>A. 딥퍼플 감성형</b>표지 진보라+흰글씨 · 본문 아이보리 · 포인트 골드
-          <div class="style-swatch"><span style="background:#1A1033"></span><span style="background:#FBF7F0"></span><span style="background:#D4AF37"></span></div>
-        </div>
-        <div class="style-card" data-style="style-b">
-          <b>B. 미니멀 화이트형</b>표지/본문 모두 화이트 · 포인트 보라
+        <div class="style-card active" data-style="theme-minimal">
+          <b>① 미니멀 화이트</b>화이트 배경 · 블랙/딥퍼플 글씨
           <div class="style-swatch"><span style="background:#fff"></span><span style="background:#1A1033"></span><span style="background:#6C3CE9"></span></div>
         </div>
-        <div class="style-card" data-style="style-c">
-          <b>C. 따뜻한 크림형</b>표지/본문 크림톤 · 포인트 로즈골드
-          <div class="style-swatch"><span style="background:#F3E6D2"></span><span style="background:#4B2E55"></span><span style="background:#C98B7A"></span></div>
+        <div class="style-card" data-style="theme-deeppurple">
+          <b>② 딥퍼플 타로</b>딥퍼플 중심 · 골드 포인트
+          <div class="style-swatch"><span style="background:#1A1033"></span><span style="background:#FBF7F0"></span><span style="background:#D4AF37"></span></div>
         </div>
-        <div class="style-card" data-style="style-d">
-          <b>D. 밤하늘 타로형</b>표지 네이비보라 그라데이션 · 본문 라벤더 · 포인트 별빛골드
-          <div class="style-swatch"><span style="background:#2B1A4A"></span><span style="background:#EDEAF8"></span><span style="background:#E8C76F"></span></div>
+        <div class="style-card" data-style="theme-cream">
+          <b>③ 크림 베이지</b>따뜻한 크림톤 · 브라운 포인트
+          <div class="style-swatch"><span style="background:#F3E6D2"></span><span style="background:#4B3422"></span><span style="background:#A9784C"></span></div>
         </div>
-        <div class="style-card" data-style="style-e">
-          <b>E. 매거진형</b>큰 제목 중심의 잡지 스타일 · 포인트 블랙/딥퍼플
+        <div class="style-card" data-style="theme-night">
+          <b>④ 밤하늘 타로</b>네이비 · 별빛 골드
+          <div class="style-swatch"><span style="background:#241B40"></span><span style="background:#EDEAF8"></span><span style="background:#E8C76F"></span></div>
+        </div>
+        <div class="style-card" data-style="theme-magazine">
+          <b>⑤ 모던 매거진</b>잡지 스타일 · 큰 제목 · 넓은 여백
           <div class="style-swatch"><span style="background:#fff"></span><span style="background:#171717"></span><span style="background:#1A1033"></span></div>
         </div>
+        <div class="style-card" data-style="theme-luxury">
+          <b>⑥ 블랙 럭셔리</b>블랙 · 골드
+          <div class="style-swatch"><span style="background:#0E0E0E"></span><span style="background:#EDE3C8"></span><span style="background:#D4AF37"></span></div>
+        </div>
+        <div class="style-card" data-style="theme-diary">
+          <b>⑦ 감성 노트</b>다이어리 느낌 · 따뜻한 분위기
+          <div class="style-swatch"><span style="background:#F6ECE3"></span><span style="background:#5B4536"></span><span style="background:#C98B7A"></span></div>
+        </div>
+        <div class="style-card" data-style="theme-vintage">
+          <b>⑧ 타로 저널</b>빈티지 종이 · 브라운 포인트
+          <div class="style-swatch"><span style="background:#EFE6D8"></span><span style="background:#4A3525"></span><span style="background:#8A5A33"></span></div>
+        </div>
+        <div class="style-card" data-style="theme-nordic">
+          <b>⑨ 북유럽 미니멀</b>밝은 배경 · 여백 중심
+          <div class="style-swatch"><span style="background:#FAFAFA"></span><span style="background:#222"></span><span style="background:#5B7A8C"></span></div>
+        </div>
+        <div class="style-card" data-style="theme-branding">
+          <b>⑩ 브랜딩형</b>인플루언서 피드용 · 반복 사용하기 좋은 디자인
+          <div class="style-swatch"><span style="background:#6C3CE9"></span><span style="background:#fff"></span><span style="background:#FFD56B"></span></div>
+        </div>
       </div>
-      <input type="hidden" id="style" value="style-a">
+      <input type="hidden" id="style" value="theme-minimal">
     </div>
 
     <div class="field-row">
-      <label class="field-label">① 원고 입력 (슬라이드 타입 문법 사용)</label>
+      <label class="field-label">① 원고 입력 (마크다운 문법 사용)</label>
       <textarea id="content" placeholder="::cover
-#01 타로 심리노트
-나는 사랑할 때 어떤 퀸일까?
-퀸 카드 4장으로 보는 여자의 사랑 방식
+
+# 타로 심리노트 #01
+
+## 나는 사랑할 때
+어떤 퀸일까?
+
+### 퀸 카드 4장으로 보는 여자의 사랑 방식
 
 ::content
-사랑은 참 신기해.
 
-같은 사람을 좋아해도,
-**사랑하는 방식이 달라서일 때가 많아.**
+#### 사랑이 힘든 이유
+
+사랑이 힘든 건
+
+마음이 없어서가 아니라,
+
+**사랑하는 방식이
+서로 다르기 때문일지도 몰라.**
 
 ::highlight
-👑 컵의 퀸
+
+#### 👑 컵의 퀸
+
 감정이 풍부하고 다정한 사랑꾼.
+
 **상대의 마음을 먼저 살피는 타입이에요.**
 
 ::quote
+
 사랑은 받는 것이 아니라 알아채는 것
 
 ::cta
-무료 연애성향 PDF 받아보기
 
-무료 연애성향 PDF
+✨ 더 자세히 알고 싶다면
 
-1:1 타로 상담 신청하기
+🎁 무료 연애성향 PDF
+내 연애 스타일을
+먼저 알아보기
 
-프로필 링크에서 확인하세요 →"></textarea>
+🃏 1:1 타로 상담
+조금 더 깊이
+내 마음을 이해하고 싶다면
+
+프로필 링크에서
+확인하세요."></textarea>
       <p class="hint">
-        원고는 작성한 그대로 배치만 합니다. 문장을 새로 쓰거나 의미를 바꾸지 않아요.<br>
-        · <code>::cover</code> 표지 — 제목이 카드 중앙보다 살짝 위에, 가장 크게 2~3줄, 시리즈명은 상단 작게, 부제는 제목 아래 작게<br>
-        · <code>::content</code> 일반 본문 — 박스 없이 좌측 정렬, 통일된 글씨/행간으로 가독성 우선<br>
-        · <code>::highlight</code> 카드/키워드 강조 — 박스 없이 아이콘+이름만 제목처럼 크게, 본문은 여백 안에 자연스럽게<br>
+        원고는 작성한 그대로 배치만 합니다. 문장을 새로 쓰거나 줄바꿈을 삭제하지 않아요.<br>
+        · <code>#</code> 시리즈 라벨 (가장 작게) · <code>##</code> 메인 제목 (가장 크게, ExtraBold) · <code>###</code> 부제 (메인 제목보다 작게) · <code>####</code> 슬라이드 제목(선택, 카드명/키워드/질문 등 자유롭게)<br>
+        · <code>::cover</code> 표지 — ##는 두 줄이 되어도 동일한 크기·굵기 유지, 제목은 카드 중앙보다 살짝 위에 배치<br>
+        · <code>::content</code> 일반 본문 — 박스 없이 좌측 정렬, 굵기와 여백으로 가독성 우선<br>
+        · <code>::highlight</code> 카드/키워드 강조 — 박스 없이 #### 제목만 크게(Bold), 본문은 여백과 굵기의 리듬으로<br>
         · <code>::quote</code> 한 문장 강조 — 큰 글씨로 중앙 정렬<br>
-        · <code>::cta</code> 행동 유도 — 첫 줄은 CTA 제목, 빈 줄로 구분한 문단마다 카드형 박스로 강조, 마지막 줄은 하단 프로필 안내<br>
-        · <code>**강조할 문구**</code> → 포인트 컬러 + 더 큰 글씨(약 18%) + 굵게. 한 슬라이드에 1~2개까지만 사용하세요<br>
+        · <code>::cta</code> 브랜드 안내 카드 — 버튼/입력창/앱 화면처럼 만들지 않고, 구분선으로 항목을 나눠 자연스럽게 제안<br>
+        · <code>**강조할 문구**</code> → 포인트 컬러 + SemiBold + 살짝 큰 글씨. 한 슬라이드에 1~2개까지만 사용하세요<br>
         · 본문 폰트 크기는 전체 슬라이드에서 고정이며, 1~3줄 정도만 넘치면 문단 간격·행간·자간·여백을 아주 조금만 조정해서 맞춥니다. 그래도 안 들어가면 다음 슬라이드로 자연스럽게 이어집니다.
       </p>
     </div>
@@ -244,21 +301,52 @@ function paragraphsOf(block) {
   return block.split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
 }
 
+function parseHeadingBlock(block) {
+  const lines = block.split('\n');
+  const headings = { 1: [], 2: [], 3: [], 4: [] };
+  let current = null;
+  const bodyLines = [];
+  lines.forEach(line => {
+    const m = line.match(/^(#{1,4})\s+(.*)$/);
+    if (m) {
+      current = m[1].length;
+      headings[current].push(m[2].trim());
+    } else if (current) {
+      if (line.trim() === '') {
+        current = null;
+        bodyLines.push(line);
+      } else {
+        headings[current][headings[current].length - 1] += '\n' + line.trim();
+      }
+    } else {
+      bodyLines.push(line);
+    }
+  });
+  return { headings, body: bodyLines.join('\n').trim() };
+}
+
 function buildCoverSlide(block) {
+  const { headings } = parseHeadingBlock(block);
+  if (headings[2][0]) {
+    return { type: 'cover', autoTag: headings[1][0] || '', title: headings[2][0], sub: headings[3][0] || '' };
+  }
   const lines = nonEmptyLines(block);
   let tag = '';
-  if (lines.length && /#/.test(lines[0])) {
-    tag = lines.shift().replace(/^[^\w가-힣#]+/, '').trim();
-  }
-  return { type: 'cover', title: lines[0] || '', sub: lines.slice(1).join('\n'), autoTag: tag };
+  if (lines.length && /^#/.test(lines[0])) tag = lines.shift().replace(/^#+\s*/, '').trim();
+  return { type: 'cover', autoTag: tag, title: lines[0] || '', sub: lines.slice(1).join('\n') };
 }
 
 function buildContentSlide(block) {
-  return { type: 'content', paragraphs: paragraphsOf(block) };
+  const { headings, body } = parseHeadingBlock(block);
+  return { type: 'content', title: headings[4][0] || '', paragraphs: paragraphsOf(body) };
 }
 
 function buildHighlightSlide(block) {
-  const paragraphs = paragraphsOf(block);
+  const { headings, body } = parseHeadingBlock(block);
+  if (headings[4][0]) {
+    return { type: 'highlight', title: headings[4][0], paragraphs: paragraphsOf(body) };
+  }
+  const paragraphs = paragraphsOf(body);
   const titleLine = paragraphs.length ? paragraphs[0].split('\n')[0] : '';
   const firstParaRest = paragraphs.length ? paragraphs[0].split('\n').slice(1).join('\n').trim() : '';
   const bodyParagraphs = firstParaRest ? [firstParaRest, ...paragraphs.slice(1)] : paragraphs.slice(1);
@@ -272,7 +360,7 @@ function buildQuoteSlide(block) {
 function buildCtaSlide(block) {
   const rawLines = block.split('\n');
   const nonEmptyIdx = rawLines.map((l, i) => ({ l: l.trim(), i })).filter(o => o.l).map(o => o.i);
-  if (!nonEmptyIdx.length) return { type: 'cta', title: '', boxes: [], footer: '' };
+  if (!nonEmptyIdx.length) return { type: 'cta', title: '', items: [], footer: '' };
 
   const titleIdx = nonEmptyIdx[0];
   const footerIdx = nonEmptyIdx[nonEmptyIdx.length - 1];
@@ -280,8 +368,8 @@ function buildCtaSlide(block) {
   const footer = footerIdx !== titleIdx ? rawLines[footerIdx].trim() : '';
   const middleEnd = footerIdx !== titleIdx ? footerIdx : titleIdx + 1;
   const middle = rawLines.slice(titleIdx + 1, middleEnd).join('\n');
-  const boxes = paragraphsOf(middle);
-  return { type: 'cta', title, boxes, footer };
+  const items = paragraphsOf(middle);
+  return { type: 'cta', title, items, footer };
 }
 
 function buildSlide(type, block) {
@@ -321,7 +409,7 @@ function buildContentHTML(s) {
       <div class="cover-spacer-bottom"></div>`;
   }
   if (s.type === 'highlight') {
-    return `<div class="highlight-title">${applyAccent(s.title)}</div>
+    return `${s.title ? `<div class="highlight-title">${applyAccent(s.title)}</div>` : ''}
       <div class="card-body">${s.paragraphs.map(p => `<p>${applyAccent(p)}</p>`).join('')}</div>`;
   }
   if (s.type === 'quote') {
@@ -329,10 +417,11 @@ function buildContentHTML(s) {
   }
   if (s.type === 'cta') {
     return `<div class="cta-title">${applyAccent(s.title)}</div>
-      ${s.boxes.map(b => `<div class="cta-box"><p>${applyAccent(b)}</p></div>`).join('')}
+      ${s.items.map(b => `<div class="cta-item"><p>${applyAccent(b)}</p></div>`).join('')}
       ${s.footer ? `<div class="cta-footer">${applyAccent(s.footer)}</div>` : ''}`;
   }
-  return `<div class="card-body">${s.paragraphs.map(p => `<p>${applyAccent(p)}</p>`).join('')}</div>`;
+  return `${s.title ? `<div class="content-title">${applyAccent(s.title)}</div>` : ''}
+    <div class="card-body">${s.paragraphs.map(p => `<p>${applyAccent(p)}</p>`).join('')}</div>`;
 }
 
 function measureOverflow(styleClass, s, styleVars) {
@@ -357,8 +446,8 @@ const ADJUST_STEPS = [
   { lh: 1.72 },
   { ls: -0.15 },
   { ls: -0.3 },
-  { padX: 24, padBottom: 24 },
-  { padX: 22, padBottom: 22 },
+  { padX: 26, padBottom: 28 },
+  { padX: 24, padBottom: 26 },
   { fs: 11.5 },
   { fs: 11 }
 ];
@@ -409,8 +498,8 @@ function rebuildParagraphs(tokens) {
   return paragraphs;
 }
 
-function makeFlowSlide(type, paragraphs) {
-  return type === 'highlight' ? { type: 'highlight', title: '', paragraphs } : { type: 'content', paragraphs };
+function makeFlowSlide(type, paragraphs, title) {
+  return { type, title: title || '', paragraphs };
 }
 
 function fitWordCount(styleClass, type, tokens) {
@@ -446,9 +535,9 @@ function splitOverflowingSlides(slides, styleClass) {
     let isFirstChunk = true;
     while (tokens.length) {
       const paragraphs = rebuildParagraphs(tokens);
-      const withTitle = original.type === 'highlight' && isFirstChunk
-        ? { type: 'highlight', title: original.title, paragraphs }
-        : makeFlowSlide(original.type, paragraphs);
+      const currentType = isFirstChunk ? original.type : (original.type === 'highlight' ? 'content' : original.type);
+      const currentTitle = isFirstChunk ? (original.title || '') : '';
+      const withTitle = makeFlowSlide(currentType, paragraphs, currentTitle);
 
       if (!measureOverflow(styleClass, withTitle)) {
         result.push(withTitle);
@@ -461,7 +550,7 @@ function splitOverflowingSlides(slides, styleClass) {
         tokens = [];
         break;
       }
-      const fit = fitWordCount(styleClass, isFirstChunk ? original.type : 'content', tokens);
+      const fit = fitWordCount(styleClass, currentType, tokens);
       if (fit === 0) {
         forcedNotice = true;
         result.push(withTitle);
@@ -469,9 +558,7 @@ function splitOverflowingSlides(slides, styleClass) {
         break;
       }
       const chunkParagraphs = rebuildParagraphs(tokens.slice(0, fit));
-      result.push(isFirstChunk && original.type === 'highlight'
-        ? { type: 'highlight', title: original.title, paragraphs: chunkParagraphs }
-        : makeFlowSlide(original.type, chunkParagraphs));
+      result.push(makeFlowSlide(currentType, chunkParagraphs, currentTitle));
       tokens = tokens.slice(fit);
       isFirstChunk = false;
     }
@@ -490,7 +577,6 @@ function renderCards(rawSlides, tag, styleClass) {
     const isLast = i === slides.length - 1;
     block.innerHTML = `
       <div class="card ${styleClass} card-${s.type}" id="card-${i}" ${s.styleVars ? `style="${s.styleVars}"` : ''}>
-        <span class="card-fold"></span>
         ${tag ? `<span class="card-tag">${escapeHTML(tag)}</span>` : ''}
         <span class="card-page">${i + 1} / ${slides.length}</span>
         <div class="card-content">${buildContentHTML(s)}</div>
