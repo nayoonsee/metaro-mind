@@ -1,4 +1,4 @@
-$ cat "/home/user/metaro-mind/카드뉴스생성기.html"
+$ cat "카드뉴스생성기.html"
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -42,27 +42,27 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 .dl-all{background:#6C3CE9;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 .dl-all:hover{opacity:.85}
 
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem}
 .card-block{display:flex;flex-direction:column;align-items:center;gap:.6rem}
 .card-num{font-size:11px;color:#999;letter-spacing:.1em}
 
-/* 카드는 높이를 고정하지 않고 내용 길이에 맞춰 자동으로 늘어납니다 (절대 잘리지 않음) */
-.card{width:320px;min-height:400px;border-radius:16px;position:relative;display:flex;flex-direction:column;padding:54px 28px 34px;box-shadow:0 6px 24px rgba(0,0,0,.12)}
-.card-tag{position:absolute;top:20px;left:24px;font-size:10px;font-weight:500;letter-spacing:.04em;opacity:.75;z-index:3}
-.card-page{position:absolute;top:20px;right:24px;font-size:11px;font-weight:500;opacity:.8;z-index:3}
+/* 인스타그램 카드뉴스 표준 비율(4:5)로 모든 카드 크기를 통일 */
+.card{width:300px;height:375px;border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:46px 26px 26px;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.card-tag{position:absolute;top:18px;left:22px;font-size:9.5px;font-weight:500;letter-spacing:.04em;opacity:.75;z-index:3}
+.card-page{position:absolute;top:18px;right:22px;font-size:10.5px;font-weight:500;opacity:.8;z-index:3}
 
-.card-content{position:relative;z-index:2}
-.card-cover .card-content{margin-top:auto}
+.card-content{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
+.card-cover .card-content{justify-content:flex-start}
 
-.card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:21px;line-height:1.5;margin-bottom:10px;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-sub{font-size:13px;line-height:1.7;opacity:.85;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-body{font-size:14px;line-height:1.85;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-body p{margin-bottom:14px}
+.card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:18px;line-height:1.5;margin-bottom:8px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-sub{font-size:12px;line-height:1.65;opacity:.85;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body{font-size:12.5px;line-height:1.75;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body p{margin-bottom:11px}
 .card-body p:last-child{margin-bottom:0}
 
 .theme-mystic{background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
 .theme-mystic .card-tag{color:#C9B8FF}
-.theme-mystic::before{content:"";position:absolute;inset:0;border-radius:16px;background:radial-gradient(circle at 80% 10%,rgba(255,255,255,.08),transparent 60%);z-index:1}
+.theme-mystic::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 10%,rgba(255,255,255,.08),transparent 60%);z-index:1}
 
 .theme-blush{background:linear-gradient(160deg,#FFE9EF 0%,#FFF6F0 100%);color:#3A2230}
 .theme-blush .card-tag{color:#C0566F}
@@ -113,10 +113,9 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
       <p class="hint">
         원본 캐러셀 텍스트를 그대로 붙여넣으면 자동으로 인식돼요.<br>
         · <code>#</code>이 포함된 첫 줄 → 좌측 상단 시리즈 라벨로 자동 분리<br>
-        · 그 다음 줄들 → 첫 슬라이드의 제목/부제<br>
+        · 그 다음 줄들 → 첫 슬라이드의 제목/부제 (제목은 카드 맨 위에 표시)<br>
         · <code>2페이지</code>, <code>3페이지</code>... → 다음 슬라이드 시작 표시 (이 줄 자체는 카드에 표시되지 않음)<br>
-        · 한 줄씩 띄어 쓰면 그 줄바꿈 그대로 카드에 표시됩니다.<br>
-        · 글이 얼마나 길든 카드 높이가 자동으로 늘어나서 잘리지 않아요.
+        · 모든 카드는 인스타그램 카드뉴스 표준 비율(4:5)로 통일됩니다.
       </p>
     </div>
 
@@ -221,6 +220,25 @@ function renderCards(slides, tag, theme) {
   cardsEl.querySelectorAll('.dl-one').forEach(btn => {
     btn.addEventListener('click', () => downloadCard(parseInt(btn.dataset.idx, 10)));
   });
+
+  cardsEl.querySelectorAll('.card').forEach(fitCardText);
+}
+
+// 카드 크기는 고정(인스타 표준 비율)하고, 글이 넘치면 글씨만 살짝 더 줄여서 항상 카드 안에 맞춥니다.
+function fitCardText(cardEl) {
+  const content = cardEl.querySelector('.card-content');
+  const targets = content.querySelectorAll('.card-title, .card-sub, .card-body');
+  if (!targets.length) return;
+
+  const baseSizes = Array.from(targets).map(el => parseFloat(getComputedStyle(el).fontSize));
+  let scale = 1;
+
+  while (content.scrollHeight > content.clientHeight && scale > 0.6) {
+    scale -= 0.05;
+    targets.forEach((el, idx) => {
+      el.style.fontSize = (baseSizes[idx] * scale) + 'px';
+    });
+  }
 }
 
 async function downloadCard(idx) {
