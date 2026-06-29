@@ -47,7 +47,7 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 .card-block{display:flex;flex-direction:column;align-items:center;gap:.6rem}
 .card-num{font-size:11px;color:#999;letter-spacing:.1em}
 
-.card{width:300px;height:375px;border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:46px 26px 26px;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.card{width:300px;height:375px;border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:46px var(--card-pad-x,26px) var(--card-pad-bottom,26px);box-shadow:0 6px 24px rgba(0,0,0,.12)}
 .card-tag{position:absolute;top:18px;left:22px;font-size:9.5px;font-weight:600;letter-spacing:.04em;opacity:.8;z-index:3}
 .card-page{position:absolute;top:18px;right:22px;font-size:10.5px;font-weight:500;opacity:.8;z-index:3}
 
@@ -61,8 +61,8 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 
 .card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:21px;line-height:1.45;margin-bottom:10px;white-space:pre-wrap;word-break:keep-all;text-align:left}
 .card-sub{font-size:13px;line-height:1.7;opacity:.85;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-body{font-size:12px;line-height:1.8;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-body p{margin-bottom:12px}
+.card-body{font-size:var(--body-fs,12px);line-height:var(--body-lh,1.8);letter-spacing:var(--body-ls,0);opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body p{margin-bottom:var(--p-gap,12px)}
 .card-body p:last-child{margin-bottom:0}
 .accent{color:var(--accent);font-weight:700}
 .card-title .accent{font-weight:700}
@@ -227,18 +227,55 @@ function buildContentHTML(s) {
   return `<div class="card-body">${s.paragraphs.map(p => `<p>${applyAccent(p)}</p>`).join('')}</div>`;
 }
 
-function measureOverflow(theme, s) {
+function measureOverflow(theme, s, styleVars) {
   const probe = document.createElement('div');
   probe.className = `card ${theme}`;
   probe.style.position = 'absolute';
   probe.style.left = '-9999px';
   probe.style.top = '0';
+  if (styleVars) probe.style.cssText += `;${styleVars}`;
   probe.innerHTML = `<div class="card-content">${buildContentHTML(s)}</div>`;
   document.body.appendChild(probe);
   const content = probe.querySelector('.card-content');
   const overflowed = content.scrollHeight > content.clientHeight + 1;
   document.body.removeChild(probe);
   return overflowed;
+}
+
+// 1~3줄 정도의 작은 초과는 새 슬라이드를 만들기 전에 아래 우선순위로 미세 조정해본다.
+// 문단 간격 → 행간 → 자간 → 패딩 → 폰트 크기(최대 1px) 순서로 아주 조금씩만 줄인다.
+const ADJUST_STEPS = [
+  { pGap: 10 },
+  { pGap: 8 },
+  { lh: 1.76 },
+  { lh: 1.72 },
+  { ls: -0.15 },
+  { ls: -0.3 },
+  { padX: 24, padBottom: 24 },
+  { padX: 22, padBottom: 22 },
+  { fs: 11.5 },
+  { fs: 11 }
+];
+
+function buildStyleVars(o) {
+  const parts = [];
+  if (o.pGap != null) parts.push(`--p-gap:${o.pGap}px`);
+  if (o.lh != null) parts.push(`--body-lh:${o.lh}`);
+  if (o.ls != null) parts.push(`--body-ls:${o.ls}px`);
+  if (o.padX != null) parts.push(`--card-pad-x:${o.padX}px`);
+  if (o.padBottom != null) parts.push(`--card-pad-bottom:${o.padBottom}px`);
+  if (o.fs != null) parts.push(`--body-fs:${o.fs}px`);
+  return parts.join(';');
+}
+
+function findFittingAdjustment(theme, paragraphs) {
+  let merged = {};
+  for (const step of ADJUST_STEPS) {
+    merged = { ...merged, ...step };
+    const styleVars = buildStyleVars(merged);
+    if (!measureOverflow(theme, { cover: false, paragraphs }, styleVars)) return styleVars;
+  }
+  return null;
 }
 
 // 전체 단락을 단어 단위로 펼쳐서, 카드에 들어가는 만큼만 자연스럽게 채우고
@@ -301,8 +338,15 @@ function splitOverflowingSlides(slides, theme) {
     if (!tokens.length) { result.push(original); continue; }
 
     while (tokens.length) {
-      if (!measureOverflow(theme, { cover: false, paragraphs: rebuildParagraphs(tokens) })) {
-        result.push({ cover: false, paragraphs: rebuildParagraphs(tokens) });
+      const paragraphs = rebuildParagraphs(tokens);
+      if (!measureOverflow(theme, { cover: false, paragraphs })) {
+        result.push({ cover: false, paragraphs });
+        tokens = [];
+        break;
+      }
+      const styleVars = findFittingAdjustment(theme, paragraphs);
+      if (styleVars) {
+        result.push({ cover: false, paragraphs, styleVars });
         tokens = [];
         break;
       }
@@ -331,7 +375,7 @@ function renderCards(rawSlides, tag, theme) {
     block.className = 'card-block';
     const isLast = i === slides.length - 1;
     block.innerHTML = `
-      <div class="card ${theme} ${s.cover ? 'card-cover' : ''}" id="card-${i}">
+      <div class="card ${theme} ${s.cover ? 'card-cover' : ''}" id="card-${i}" ${s.styleVars ? `style="${s.styleVars}"` : ''}>
         <span class="card-fold"></span>
         ${tag ? `<span class="card-tag">${escapeHTML(tag)}</span>` : ''}
         <span class="card-page">${i + 1} / ${slides.length}</span>
