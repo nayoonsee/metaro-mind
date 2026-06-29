@@ -1,3 +1,5 @@
+$ cat "/home/user/metaro-mind/카드뉴스생성기.html"
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -49,9 +51,8 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 .card-tag{position:absolute;top:18px;left:22px;font-size:9.5px;font-weight:600;letter-spacing:.04em;opacity:.8;z-index:3}
 .card-page{position:absolute;top:18px;right:22px;font-size:10.5px;font-weight:500;opacity:.8;z-index:3}
 
-.card-deco{position:absolute;width:120px;height:120px;border-radius:50%;background:var(--accent);opacity:.16;z-index:1}
-.card-deco-1{top:-40px;right:-40px}
-.card-deco-2{width:70px;height:70px;bottom:-25px;left:-25px;opacity:.12}
+/* 모서리 폴드 장식 - 단색 원형 대신 코너에 살짝 접힌 듯한 액센트 형태 */
+.card-fold{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 64px 64px 0;border-color:transparent var(--accent) transparent transparent;opacity:.18;z-index:1}
 
 .card-content{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
 .card-cover .card-content{padding-top:16px}
@@ -60,11 +61,13 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 
 .card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:21px;line-height:1.45;margin-bottom:10px;white-space:pre-wrap;word-break:keep-all;text-align:left}
 .card-sub{font-size:13px;line-height:1.7;opacity:.85;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-body{font-size:15px;line-height:1.8;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body{font-size:12px;line-height:1.8;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
 .card-body p{margin-bottom:12px}
 .card-body p:last-child{margin-bottom:0}
 .accent{color:var(--accent);font-weight:700}
 .card-title .accent{font-weight:700}
+
+.card-next{position:absolute;bottom:16px;right:20px;font-size:11px;font-weight:500;opacity:.75;z-index:3;display:flex;align-items:center;gap:3px}
 
 .theme-mystic{--accent:#C9B8FF;background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
 .theme-mystic .card-tag{color:#C9B8FF}
@@ -129,7 +132,7 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
         · <code>2페이지</code>, <code>3페이지</code>... → 다음 슬라이드 시작 표시 (이 줄 자체는 카드에 표시되지 않음)<br>
         · <code>**강조할 문구**</code> → 포인트 색으로 강조 표시<br>
         · 모든 카드는 인스타그램 카드뉴스 표준 비율(4:5)로 통일되고, 폰트 크기는 고정입니다.<br>
-        · 한 슬라이드의 글이 영역을 넘치면 자동으로 다음 슬라이드로 이어서 배치됩니다.
+        · 한 슬라이드의 글이 영역을 넘치면 자연스럽게 이어지도록 다음 슬라이드로 자동 분배됩니다.
       </p>
     </div>
 
@@ -238,33 +241,81 @@ function measureOverflow(theme, s) {
   return overflowed;
 }
 
+// 전체 단락을 단어 단위로 펼쳐서, 카드에 들어가는 만큼만 자연스럽게 채우고
+// 나머지는 끊긴 문장부터 이어지도록 다음 슬라이드로 넘긴다.
+function flattenWords(paragraphs) {
+  // [{pIdx, word}] 형태로 전체 단어를 펼친다. 단락 경계는 pIdx 변화로 구분.
+  const tokens = [];
+  paragraphs.forEach((p, pIdx) => {
+    p.split(/\s+/).filter(Boolean).forEach(word => tokens.push({ pIdx, word }));
+  });
+  return tokens;
+}
+
+function rebuildParagraphs(tokens) {
+  if (!tokens.length) return [];
+  const paragraphs = [];
+  let current = [];
+  let curIdx = tokens[0].pIdx;
+  tokens.forEach(t => {
+    if (t.pIdx !== curIdx) {
+      paragraphs.push(current.join(' '));
+      current = [];
+      curIdx = t.pIdx;
+    }
+    current.push(t.word);
+  });
+  if (current.length) paragraphs.push(current.join(' '));
+  return paragraphs;
+}
+
+// 단어 개수를 이분 탐색해 카드에 들어가는 최대 단어 수를 찾는다.
+function fitWordCount(theme, isCover, tokens) {
+  let lo = 0, hi = tokens.length, best = 0;
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const candidateParagraphs = rebuildParagraphs(tokens.slice(0, mid));
+    const candidate = { cover: false, paragraphs: candidateParagraphs.length ? candidateParagraphs : [''] };
+    if (!measureOverflow(theme, candidate)) {
+      best = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return best;
+}
+
 function splitOverflowingSlides(slides, theme) {
   const result = [];
   let forcedNotice = false;
 
   for (const original of slides) {
-    let current = { ...original };
-    while (true) {
-      if (current.cover || !current.paragraphs || current.paragraphs.length <= 1) {
-        if (measureOverflow(theme, current) && (!current.paragraphs || current.paragraphs.length <= 1)) {
-          forcedNotice = true;
-        }
-        result.push(current);
+    if (original.cover) {
+      if (measureOverflow(theme, original)) forcedNotice = true;
+      result.push(original);
+      continue;
+    }
+
+    let tokens = flattenWords(original.paragraphs);
+    if (!tokens.length) { result.push(original); continue; }
+
+    while (tokens.length) {
+      if (!measureOverflow(theme, { cover: false, paragraphs: rebuildParagraphs(tokens) })) {
+        result.push({ cover: false, paragraphs: rebuildParagraphs(tokens) });
+        tokens = [];
         break;
       }
-      if (!measureOverflow(theme, current)) {
-        result.push(current);
-        break;
-      }
-      const paragraphs = current.paragraphs.slice();
-      const moved = paragraphs.pop();
-      if (!paragraphs.length) {
+      const fit = fitWordCount(theme, false, tokens);
+      if (fit === 0) {
+        // 단어 하나도 들어가지 않는 극단적인 경우 - 더 쪼갤 수 없으니 그대로 둔다.
         forcedNotice = true;
-        result.push(current);
+        result.push({ cover: false, paragraphs: rebuildParagraphs(tokens) });
+        tokens = [];
         break;
       }
-      result.push({ cover: false, paragraphs });
-      current = { cover: false, paragraphs: [moved] };
+      result.push({ cover: false, paragraphs: rebuildParagraphs(tokens.slice(0, fit)) });
+      tokens = tokens.slice(fit);
     }
   }
   return { slides: result, forcedNotice };
@@ -278,13 +329,14 @@ function renderCards(rawSlides, tag, theme) {
   slides.forEach((s, i) => {
     const block = document.createElement('div');
     block.className = 'card-block';
+    const isLast = i === slides.length - 1;
     block.innerHTML = `
       <div class="card ${theme} ${s.cover ? 'card-cover' : ''}" id="card-${i}">
-        <span class="card-deco card-deco-1"></span>
-        <span class="card-deco card-deco-2"></span>
+        <span class="card-fold"></span>
         ${tag ? `<span class="card-tag">${escapeHTML(tag)}</span>` : ''}
         <span class="card-page">${i + 1} / ${slides.length}</span>
         <div class="card-content">${buildContentHTML(s)}</div>
+        ${!isLast ? `<span class="card-next">👉 넘겨봐</span>` : ''}
       </div>
       <span class="card-num">SLIDE ${i + 1}</span>
       <button class="dl-one" data-idx="${i}">이미지 다운로드</button>
