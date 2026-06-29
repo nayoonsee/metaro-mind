@@ -81,14 +81,26 @@ textarea:focus{outline:none;border-color:#6C3CE9}
 .quote-mark{font-size:38px;font-weight:800;color:var(--accent);opacity:.5;line-height:1;margin-bottom:6px}
 .quote-text{font-weight:700;font-size:20px;line-height:1.6;white-space:pre-wrap;word-break:keep-all;text-align:center}
 
-/* ::cta - 브랜드 안내 카드. 버튼/입력창/앱 화면 느낌을 피하고, 구분선으로 항목을 나눈다 */
+/* ::cta - 브랜드의 마지막 안내 페이지. 박스/버튼/구분선 없이 여백 > 굵기 > 크기 > 컬러 순서로만 강조한다 */
 .card-cta .card-content{justify-content:center}
-.cta-title{font-weight:800;font-size:20px;line-height:1.5;margin-bottom:20px;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.cta-item{padding:14px 0;border-top:1px solid currentColor;border-top-color:rgba(127,127,127,.22)}
-.cta-item:first-of-type{border-top:none;padding-top:0}
-.cta-item-title{font-weight:700;font-size:15px;line-height:1.5;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.cta-item-desc{font-weight:400;font-size:11.5px;line-height:1.6;opacity:.7;margin-top:3px;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.cta-footer{font-weight:300;font-size:10.5px;opacity:.6;text-align:left;margin-top:16px;white-space:pre-wrap;word-break:keep-all}
+.cta-title{font-weight:700;font-size:16px;line-height:1.55;margin-bottom:26px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.cta-item{margin-bottom:22px}
+.cta-item:last-of-type{margin-bottom:0}
+.cta-item-title{font-weight:600;font-size:13.5px;line-height:1.5;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.cta-item-desc{font-weight:400;font-size:11px;line-height:1.6;opacity:.62;margin-top:4px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.cta-footer{margin-top:30px}
+.cta-profile{font-weight:400;font-size:10.5px;opacity:.6;text-align:left;white-space:pre-wrap;word-break:keep-all}
+.cta-comment{font-weight:300;font-size:10px;opacity:.5;text-align:left;margin-top:4px;white-space:pre-wrap;word-break:keep-all}
+
+/* CTA 스타일 5종 - 강조는 여백·굵기·크기·포인트컬러 순서로만, 절대 박스/버튼화 하지 않는다 */
+.card-cta.cta-brand .cta-item{background:rgba(127,127,127,.06);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.card-cta.cta-magazine .cta-title{font-size:19px;letter-spacing:-.01em;margin-bottom:32px}
+.card-cta.cta-magazine .cta-item-title{font-size:14.5px}
+.card-cta.cta-magazine .cta-item{margin-bottom:28px}
+.card-cta.cta-premium .cta-item-title{color:var(--accent);letter-spacing:.02em}
+.card-cta.cta-premium .cta-title{letter-spacing:.03em}
+.card-cta.cta-emotional .cta-title{line-height:1.7}
+.card-cta.cta-emotional .cta-item-desc{font-size:11.5px;opacity:.72;line-height:1.75}
 
 /* ===== 디자인 테마 10종: 색상뿐 아니라 표지/본문/CTA 배경 대비를 함께 정의 ===== */
 .theme-minimal{--accent:#6C3CE9}
@@ -199,6 +211,27 @@ footer{text-align:center;padding:2rem;font-size:12px;font-weight:400;color:#BBB}
     </div>
 
     <div class="field-row">
+      <label class="field-label">CTA(마지막 안내 페이지) 스타일 선택</label>
+      <div class="style-picker" id="cta-style-picker">
+        <div class="style-card active" data-cta-style="cta-minimal">
+          <b>① 미니멀</b>여백 중심, 가장 단순하게
+        </div>
+        <div class="style-card" data-cta-style="cta-brand">
+          <b>② 브랜드 카드</b>옅은 면으로 항목을 부드럽게 구분
+        </div>
+        <div class="style-card" data-cta-style="cta-magazine">
+          <b>③ 매거진</b>제목을 살짝 더 크게, 넓은 여백
+        </div>
+        <div class="style-card" data-cta-style="cta-premium">
+          <b>④ 프리미엄</b>포인트 컬러와 자간으로 고급스럽게
+        </div>
+        <div class="style-card" data-cta-style="cta-emotional">
+          <b>⑤ 감성</b>여유로운 줄간격, 차분한 분위기
+        </div>
+      </div>
+      <input type="hidden" id="cta-style" value="cta-minimal">
+    </div>
+        <div class="field-row">
       <label class="field-label">① 원고 입력 (마크다운 문법 사용)</label>
       <textarea id="content" placeholder="::cover
 
@@ -242,7 +275,8 @@ footer{text-align:center;padding:2rem;font-size:12px;font-weight:400;color:#BBB}
 🃏 1:1 타로 상담
 내 마음의 흐름 깊이 보기
 
-프로필 링크에서 확인해줘."></textarea>
+프로필 링크에서 확인해줘.
+어떤 카드가 마음에 들었는지 댓글로 알려줘."></textarea>
       <p class="hint">
         원고는 작성한 그대로 배치만 합니다. 문장을 새로 쓰거나 줄바꿈을 삭제하지 않아요.<br>
         · <code>#</code> 시리즈 라벨 (가장 작게) · <code>##</code> 메인 제목 (가장 크게, ExtraBold) · <code>###</code> 부제 (메인 제목보다 작게) · <code>####</code> 슬라이드 제목(선택, 카드명/키워드/질문 등 자유롭게)<br>
@@ -250,7 +284,7 @@ footer{text-align:center;padding:2rem;font-size:12px;font-weight:400;color:#BBB}
         · <code>::content</code> 일반 본문 — 박스 없이 좌측 정렬, 굵기와 여백으로 가독성 우선<br>
         · <code>::highlight</code> 카드/키워드 강조 — 박스 없이 #### 제목만 크게(Bold), 본문은 여백과 굵기의 리듬으로<br>
         · <code>::quote</code> 한 문장 강조 — 큰 글씨로 중앙 정렬<br>
-        · <code>::cta</code> 브랜드 안내 카드 — 버튼/입력창/앱 화면처럼 만들지 않고, 구분선으로 항목을 나눠 자연스럽게 제안. 첫 줄은 항목 제목(크게), 둘째 줄부터는 짧은 설명(작게)으로 적어주세요. 의미만 유지한 채 짧게 요약해도 좋습니다<br>
+        · <code>::cta</code> 브랜드의 마지막 안내 페이지 — 앱/로그인/입력폼/버튼처럼 만들지 않고 여백·굵기·크기·포인트컬러 순서로만 차분하게 강조합니다. 구성: 제목 → 안내 항목 1 → 안내 항목 2 → 프로필 링크 안내 → 댓글 유도(선택). 각 항목은 첫 줄(제목, 크게)과 둘째 줄(설명, 작게)로 적어주세요. 의미만 유지한 채 짧게 요약해도 좋습니다<br>
         · <code>**강조할 문구**</code> → 포인트 컬러 + SemiBold + 살짝 큰 글씨. 한 슬라이드에 1~2개까지만 사용하세요<br>
         · 본문 폰트 크기는 전체 슬라이드에서 고정이며, 1~3줄 정도만 넘치면 문단 간격·행간·자간·여백을 아주 조금만 조정해서 맞춥니다. 그래도 안 들어가면 다음 슬라이드로 자연스럽게 이어집니다.
       </p>
@@ -273,13 +307,22 @@ footer{text-align:center;padding:2rem;font-size:12px;font-weight:400;color:#BBB}
 
 <script>
 const TYPE_MARKER = /^::(cover|content|highlight|quote|cta)\s*$/i;
+// 본문 텍스트 흐름이 있어 줄바꿈/분량 조정이 필요한 타입만 자동 보정·분할 대상이다.
 const FLOWABLE_TYPES = ['content', 'highlight'];
 
-document.querySelectorAll('.style-card').forEach(card => {
+document.querySelectorAll('#style-picker .style-card').forEach(card => {
   card.addEventListener('click', () => {
-    document.querySelectorAll('.style-card').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#style-picker .style-card').forEach(c => c.classList.remove('active'));
     card.classList.add('active');
     document.getElementById('style').value = card.dataset.style;
+  });
+});
+
+document.querySelectorAll('#cta-style-picker .style-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('#cta-style-picker .style-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    document.getElementById('cta-style').value = card.dataset.ctaStyle;
   });
 });
 
@@ -299,6 +342,8 @@ function paragraphsOf(block) {
   return block.split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
 }
 
+// #(라벨) / ##(메인제목) / ###(부제) / ####(슬라이드 제목) 마크다운을 파싱한다.
+// 마크 다음 줄부터 빈 줄 전까지는 같은 헤딩의 연속(줄바꿈 유지)으로 취급한다.
 function parseHeadingBlock(block) {
   const lines = block.split('\n');
   const headings = { 1: [], 2: [], 3: [], 4: [] };
@@ -328,6 +373,7 @@ function buildCoverSlide(block) {
   if (headings[2][0]) {
     return { type: 'cover', autoTag: headings[1][0] || '', title: headings[2][0], sub: headings[3][0] || '' };
   }
+  // 마크다운 헤딩이 없는 구식 입력에 대한 호환 처리
   const lines = nonEmptyLines(block);
   let tag = '';
   if (lines.length && /^#/.test(lines[0])) tag = lines.shift().replace(/^#+\s*/, '').trim();
@@ -344,6 +390,7 @@ function buildHighlightSlide(block) {
   if (headings[4][0]) {
     return { type: 'highlight', title: headings[4][0], paragraphs: paragraphsOf(body) };
   }
+  // #### 가 없는 구식 입력은 첫 줄을 제목으로 취급
   const paragraphs = paragraphsOf(body);
   const titleLine = paragraphs.length ? paragraphs[0].split('\n')[0] : '';
   const firstParaRest = paragraphs.length ? paragraphs[0].split('\n').slice(1).join('\n').trim() : '';
@@ -355,19 +402,25 @@ function buildQuoteSlide(block) {
   return { type: 'quote', text: nonEmptyLines(block).join('\n') };
 }
 
+// 구성: 제목 → 안내 항목들(문단) → 마지막 문단(프로필 링크 안내 + 댓글 유도, 줄바꿈으로 구분)
 function buildCtaSlide(block) {
-  const rawLines = block.split('\n');
-  const nonEmptyIdx = rawLines.map((l, i) => ({ l: l.trim(), i })).filter(o => o.l).map(o => o.i);
-  if (!nonEmptyIdx.length) return { type: 'cta', title: '', items: [], footer: '' };
+  const paragraphs = paragraphsOf(block);
+  if (!paragraphs.length) return { type: 'cta', title: '', items: [], profileLink: '', commentPrompt: '' };
 
-  const titleIdx = nonEmptyIdx[0];
-  const footerIdx = nonEmptyIdx[nonEmptyIdx.length - 1];
-  const title = rawLines[titleIdx].trim();
-  const footer = footerIdx !== titleIdx ? rawLines[footerIdx].trim() : '';
-  const middleEnd = footerIdx !== titleIdx ? footerIdx : titleIdx + 1;
-  const middle = rawLines.slice(titleIdx + 1, middleEnd).join('\n');
-  const items = paragraphsOf(middle);
-  return { type: 'cta', title, items, footer };
+  const firstLines = paragraphs[0].split('\n');
+  const title = firstLines[0].trim();
+  const titleRest = firstLines.slice(1).join('\n').trim();
+  let rest = paragraphs.slice(1);
+
+  let profileLink = '', commentPrompt = '';
+  if (rest.length) {
+    const footerLines = rest[rest.length - 1].split('\n').map(l => l.trim()).filter(Boolean);
+    profileLink = footerLines[0] || '';
+    commentPrompt = footerLines.slice(1).join('\n');
+    rest = rest.slice(0, -1);
+  }
+  const items = titleRest ? [titleRest, ...rest] : rest;
+  return { type: 'cta', title, items, profileLink, commentPrompt };
 }
 
 function buildSlide(type, block) {
@@ -378,6 +431,7 @@ function buildSlide(type, block) {
   return buildContentSlide(block);
 }
 
+// ::타입 마커로 작성된 원고를 슬라이드 단위로 분리한다. 사용자가 나눈 슬라이드 구조는 그대로 유지한다.
 function parseTypedSlides(raw) {
   const lines = raw.split('\n');
   const markers = [];
@@ -424,7 +478,10 @@ function buildContentHTML(s) {
           ${itemDesc ? `<div class="cta-item-desc">${applyAccent(itemDesc)}</div>` : ''}
         </div>`;
       }).join('')}
-      ${s.footer ? `<div class="cta-footer">${applyAccent(s.footer)}</div>` : ''}`;
+      ${(s.profileLink || s.commentPrompt) ? `<div class="cta-footer">
+        ${s.profileLink ? `<div class="cta-profile">${applyAccent(s.profileLink)}</div>` : ''}
+        ${s.commentPrompt ? `<div class="cta-comment">${applyAccent(s.commentPrompt)}</div>` : ''}
+      </div>` : ''}`;
   }
   return `${s.title ? `<div class="content-title">${applyAccent(s.title)}</div>` : ''}
     <div class="card-body">${s.paragraphs.map(p => `<p>${applyAccent(p)}</p>`).join('')}</div>`;
@@ -445,6 +502,8 @@ function measureOverflow(styleClass, s, styleVars) {
   return overflowed;
 }
 
+// 1~3줄 정도의 작은 초과는 새 슬라이드를 만들기 전에 아래 우선순위로 미세 조정해본다.
+// ① 문단 간격 ② 행간 ③ 자간 ④ 내부 여백 ⑤ 폰트 크기(최대 1px) 순으로 아주 조금씩만 줄인다.
 const ADJUST_STEPS = [
   { pGap: 10 },
   { pGap: 8 },
@@ -479,6 +538,8 @@ function findFittingAdjustment(styleClass, slideTemplate) {
   return null;
 }
 
+// 전체 단락을 단어 단위로 펼쳐서, 카드에 들어가는 만큼만 자연스럽게 채우고
+// 나머지는 끊긴 문장부터 이어지도록 다음 슬라이드로 넘긴다(줄바꿈/문단 구조는 유지).
 function flattenWords(paragraphs) {
   const tokens = [];
   paragraphs.forEach((p, pIdx) => {
@@ -508,6 +569,7 @@ function makeFlowSlide(type, paragraphs, title) {
   return { type, title: title || '', paragraphs };
 }
 
+// 단어 개수를 이분 탐색해 카드에 들어가는 최대 단어 수를 찾는다.
 function fitWordCount(styleClass, type, tokens) {
   let lo = 0, hi = tokens.length, best = 0;
   while (lo <= hi) {
@@ -572,7 +634,7 @@ function splitOverflowingSlides(slides, styleClass) {
   return { slides: result, forcedNotice };
 }
 
-function renderCards(rawSlides, tag, styleClass) {
+function renderCards(rawSlides, tag, styleClass, ctaStyleClass) {
   const { slides, forcedNotice } = splitOverflowingSlides(rawSlides, styleClass);
   const cardsEl = document.getElementById('cards');
   cardsEl.innerHTML = '';
@@ -581,8 +643,9 @@ function renderCards(rawSlides, tag, styleClass) {
     const block = document.createElement('div');
     block.className = 'card-block';
     const isLast = i === slides.length - 1;
+    const cardClass = `card ${styleClass} card-${s.type}${s.type === 'cta' ? ' ' + ctaStyleClass : ''}`;
     block.innerHTML = `
-      <div class="card ${styleClass} card-${s.type}" id="card-${i}" ${s.styleVars ? `style="${s.styleVars}"` : ''}>
+      <div class="${cardClass}" id="card-${i}" ${s.styleVars ? `style="${s.styleVars}"` : ''}>
         ${tag ? `<span class="card-tag">${escapeHTML(tag)}</span>` : ''}
         <span class="card-page">${i + 1} / ${slides.length}</span>
         <div class="card-content">${buildContentHTML(s)}</div>
@@ -623,12 +686,13 @@ document.getElementById('generate').addEventListener('click', () => {
   const raw = document.getElementById('content').value;
   const manualTag = document.getElementById('series-tag').value.trim();
   const styleClass = document.getElementById('style').value;
+  const ctaStyleClass = document.getElementById('cta-style').value;
   const parsed = parseTypedSlides(raw);
   if (!parsed || !parsed.slides.length) {
     alert('::cover, ::content 같은 슬라이드 타입 문법으로 원고를 입력해주세요.');
     return;
   }
-  renderCards(parsed.slides, manualTag || parsed.autoTag, styleClass);
+  renderCards(parsed.slides, manualTag || parsed.autoTag, styleClass, ctaStyleClass);
   document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
 });
 
