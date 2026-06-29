@@ -50,15 +50,15 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 .card-tag{position:absolute;top:18px;left:20px;font-size:10px;font-weight:500;letter-spacing:.04em;opacity:.75;z-index:3}
 .card-page{position:absolute;top:18px;right:20px;font-size:11px;font-weight:500;opacity:.8;z-index:3}
 
-.card-body-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2}
-.card-inner{padding:0 26px}
-.card-cover .card-body-wrap{justify-content:flex-end;padding-bottom:30px}
+.card-body-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2;overflow:hidden;padding-top:42px;padding-bottom:20px}
+.card-inner{padding:0 24px}
+.card-cover .card-body-wrap{justify-content:flex-end}
 
 .card-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-bottom:10px}
-.card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:20px;line-height:1.45;margin-bottom:10px;white-space:pre-wrap;word-break:keep-all}
-.card-sub{font-size:12.5px;line-height:1.65;opacity:.85;white-space:pre-wrap;word-break:keep-all}
-.card-body{font-size:13px;line-height:2;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:center}
-.card-body p{margin-bottom:14px}
+.card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:20px;line-height:1.45;margin-bottom:10px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-sub{font-size:12.5px;line-height:1.65;opacity:.85;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body{font-size:13px;line-height:1.85;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body p{margin-bottom:12px}
 .card-body p:last-child{margin-bottom:0}
 
 .theme-mystic{background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
@@ -116,7 +116,8 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
         · <code>#</code>이 포함된 첫 줄 → 좌측 상단 시리즈 라벨로 자동 분리<br>
         · 그 다음 줄들 → 첫 슬라이드의 제목/부제<br>
         · <code>2페이지</code>, <code>3페이지</code>... → 다음 슬라이드 시작 표시 (이 줄 자체는 카드에 표시되지 않음)<br>
-        · 직접 슬라이드를 나누고 싶으면 빈 줄 하나에 <code>===</code> 만 입력해도 됩니다.
+        · 직접 슬라이드를 나누고 싶으면 빈 줄 하나에 <code>===</code> 만 입력해도 됩니다.<br>
+        · 글이 길면 카드 안에 맞도록 글씨 크기가 자동으로 줄어들어요.
       </p>
     </div>
 
@@ -165,13 +166,11 @@ function autoDetectTag(headerLines) {
 }
 
 function parseSlides(raw) {
-  // 1) explicit manual delimiter takes priority
   if (/\n[ \t]*={3,}[ \t]*\n/.test(raw)) {
     const blocks = raw.split(/\n[ \t]*={3,}[ \t]*\n/).map(b => b.trim()).filter(Boolean);
     return { slides: blocks.map((b, i) => toSlide(b, i === 0)), autoTag: '' };
   }
 
-  // 2) auto-detect "N페이지" markers from the original carousel format
   const lines = raw.split('\n');
   const markerIdx = [];
   lines.forEach((l, i) => { if (PAGE_MARKER.test(l)) markerIdx.push(i); });
@@ -189,7 +188,6 @@ function parseSlides(raw) {
     return { slides, autoTag: tag };
   }
 
-  // 3) fallback: blank-line separated blocks, first block is the cover
   const blocks = raw.split(/\n\s*\n+/).map(b => b.trim()).filter(Boolean);
   return { slides: blocks.map((b, i) => toSlide(b, i === 0)), autoTag: '' };
 }
@@ -200,8 +198,7 @@ function renderCards(slides, tag, theme) {
 
   slides.forEach((s, i) => {
     const inner = s.cover
-      ? `<div class="card-eyebrow"></div>
-         <div class="card-title">${s.title}</div>
+      ? `<div class="card-title">${s.title}</div>
          ${s.sub ? `<div class="card-sub">${s.sub}</div>` : ''}`
       : `<div class="card-body">${s.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>`;
 
@@ -225,6 +222,25 @@ function renderCards(slides, tag, theme) {
   cardsEl.querySelectorAll('.dl-one').forEach(btn => {
     btn.addEventListener('click', () => downloadCard(parseInt(btn.dataset.idx, 10)));
   });
+
+  cardsEl.querySelectorAll('.card').forEach(fitCardText);
+}
+
+function fitCardText(cardEl) {
+  const wrap = cardEl.querySelector('.card-body-wrap');
+  const inner = cardEl.querySelector('.card-inner');
+  const targets = inner.querySelectorAll('.card-title, .card-sub, .card-body');
+  if (!targets.length) return;
+
+  const baseSizes = Array.from(targets).map(el => parseFloat(getComputedStyle(el).fontSize));
+  let scale = 1;
+
+  while (inner.scrollHeight > wrap.clientHeight && scale > 0.55) {
+    scale -= 0.05;
+    targets.forEach((el, idx) => {
+      el.style.fontSize = (baseSizes[idx] * scale) + 'px';
+    });
+  }
 }
 
 async function downloadCard(idx) {
