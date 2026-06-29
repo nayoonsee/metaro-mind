@@ -42,39 +42,38 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 .dl-all{background:#6C3CE9;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 .dl-all:hover{opacity:.85}
 
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1.5rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem}
 .card-block{display:flex;flex-direction:column;align-items:center;gap:.6rem}
 .card-num{font-size:11px;color:#999;letter-spacing:.1em}
 
-.card{width:270px;height:337.5px;border-radius:14px;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 6px 24px rgba(0,0,0,.12)}
-.card-tag{position:absolute;top:18px;left:20px;font-size:10px;font-weight:500;letter-spacing:.04em;opacity:.75;z-index:3}
-.card-page{position:absolute;top:18px;right:20px;font-size:11px;font-weight:500;opacity:.8;z-index:3}
+/* 카드는 높이를 고정하지 않고 내용 길이에 맞춰 자동으로 늘어납니다 (절대 잘리지 않음) */
+.card{width:320px;min-height:400px;border-radius:16px;position:relative;display:flex;flex-direction:column;padding:54px 28px 34px;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.card-tag{position:absolute;top:20px;left:24px;font-size:10px;font-weight:500;letter-spacing:.04em;opacity:.75;z-index:3}
+.card-page{position:absolute;top:20px;right:24px;font-size:11px;font-weight:500;opacity:.8;z-index:3}
 
-.card-body-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2;overflow:hidden;padding-top:42px;padding-bottom:20px}
-.card-inner{padding:0 24px}
-.card-cover .card-body-wrap{justify-content:flex-end}
+.card-content{position:relative;z-index:2}
+.card-cover .card-content{margin-top:auto}
 
-.card-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-bottom:10px}
-.card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:20px;line-height:1.45;margin-bottom:10px;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-sub{font-size:12.5px;line-height:1.65;opacity:.85;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-body{font-size:13px;line-height:1.85;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-body p{margin-bottom:12px}
+.card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:21px;line-height:1.5;margin-bottom:10px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-sub{font-size:13px;line-height:1.7;opacity:.85;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body{font-size:14px;line-height:1.85;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body p{margin-bottom:14px}
 .card-body p:last-child{margin-bottom:0}
 
 .theme-mystic{background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
-.theme-mystic .card-eyebrow,.theme-mystic .card-tag{color:#C9B8FF}
-.theme-mystic::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 10%,rgba(255,255,255,.08),transparent 60%);z-index:1}
+.theme-mystic .card-tag{color:#C9B8FF}
+.theme-mystic::before{content:"";position:absolute;inset:0;border-radius:16px;background:radial-gradient(circle at 80% 10%,rgba(255,255,255,.08),transparent 60%);z-index:1}
 
 .theme-blush{background:linear-gradient(160deg,#FFE9EF 0%,#FFF6F0 100%);color:#3A2230}
-.theme-blush .card-eyebrow,.theme-blush .card-tag{color:#C0566F}
+.theme-blush .card-tag{color:#C0566F}
 .theme-blush .card-title{color:#7A2E45}
 
 .theme-mono{background:#fff;color:#1A1A1A;border:1px solid #EEE}
-.theme-mono .card-eyebrow,.theme-mono .card-tag{color:#6C3CE9}
+.theme-mono .card-tag{color:#6C3CE9}
 .theme-mono .card-title{color:#111}
 
 .theme-forest{background:linear-gradient(160deg,#1F3D2B 0%,#0F2118 100%);color:#fff}
-.theme-forest .card-eyebrow,.theme-forest .card-tag{color:#9FD9B4}
+.theme-forest .card-tag{color:#9FD9B4}
 
 .dl-one{font-size:12px;background:#fff;border:1px solid #DDD;color:#666;padding:6px 16px;border-radius:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 .dl-one:hover{border-color:#6C3CE9;color:#6C3CE9}
@@ -116,8 +115,8 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
         · <code>#</code>이 포함된 첫 줄 → 좌측 상단 시리즈 라벨로 자동 분리<br>
         · 그 다음 줄들 → 첫 슬라이드의 제목/부제<br>
         · <code>2페이지</code>, <code>3페이지</code>... → 다음 슬라이드 시작 표시 (이 줄 자체는 카드에 표시되지 않음)<br>
-        · 직접 슬라이드를 나누고 싶으면 빈 줄 하나에 <code>===</code> 만 입력해도 됩니다.<br>
-        · 글이 길면 카드 안에 맞도록 글씨 크기가 자동으로 줄어들어요.
+        · 한 줄씩 띄어 쓰면 그 줄바꿈 그대로 카드에 표시됩니다.<br>
+        · 글이 얼마나 길든 카드 높이가 자동으로 늘어나서 잘리지 않아요.
       </p>
     </div>
 
@@ -197,7 +196,7 @@ function renderCards(slides, tag, theme) {
   cardsEl.innerHTML = '';
 
   slides.forEach((s, i) => {
-    const inner = s.cover
+    const content = s.cover
       ? `<div class="card-title">${s.title}</div>
          ${s.sub ? `<div class="card-sub">${s.sub}</div>` : ''}`
       : `<div class="card-body">${s.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>`;
@@ -208,7 +207,7 @@ function renderCards(slides, tag, theme) {
       <div class="card ${theme} ${s.cover ? 'card-cover' : ''}" id="card-${i}">
         ${tag ? `<span class="card-tag">${tag}</span>` : ''}
         <span class="card-page">${i + 1} / ${slides.length}</span>
-        <div class="card-body-wrap"><div class="card-inner">${inner}</div></div>
+        <div class="card-content">${content}</div>
       </div>
       <span class="card-num">SLIDE ${i + 1}</span>
       <button class="dl-one" data-idx="${i}">이미지 다운로드</button>
@@ -222,25 +221,6 @@ function renderCards(slides, tag, theme) {
   cardsEl.querySelectorAll('.dl-one').forEach(btn => {
     btn.addEventListener('click', () => downloadCard(parseInt(btn.dataset.idx, 10)));
   });
-
-  cardsEl.querySelectorAll('.card').forEach(fitCardText);
-}
-
-function fitCardText(cardEl) {
-  const wrap = cardEl.querySelector('.card-body-wrap');
-  const inner = cardEl.querySelector('.card-inner');
-  const targets = inner.querySelectorAll('.card-title, .card-sub, .card-body');
-  if (!targets.length) return;
-
-  const baseSizes = Array.from(targets).map(el => parseFloat(getComputedStyle(el).fontSize));
-  let scale = 1;
-
-  while (inner.scrollHeight > wrap.clientHeight && scale > 0.55) {
-    scale -= 0.05;
-    targets.forEach((el, idx) => {
-      el.style.fontSize = (baseSizes[idx] * scale) + 'px';
-    });
-  }
 }
 
 async function downloadCard(idx) {
