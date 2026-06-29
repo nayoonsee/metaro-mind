@@ -1,0 +1,212 @@
+$ cat "/home/user/metaro-mind/카드뉴스생성기.html"
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>메타로마인드 | 카드뉴스 생성기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;700&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:#F4F2FA;color:#222;min-height:100vh}
+.wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+header{text-align:center;margin-bottom:2rem}
+.brand{font-size:11px;letter-spacing:.3em;color:#888;text-transform:uppercase;margin-bottom:.6rem}
+h1{font-family:'Noto Serif KR',serif;font-size:clamp(22px,4vw,30px);color:#1A1033;margin-bottom:.4rem}
+.desc{font-size:13px;color:#777;line-height:1.7}
+
+.panel{background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,.05);margin-bottom:1.5rem}
+.panel-title{font-size:13px;font-weight:700;color:#1A1033;margin-bottom:.75rem;display:flex;align-items:center;gap:6px}
+textarea{width:100%;min-height:220px;border:1px solid #E2DDF5;border-radius:10px;padding:1rem;font-size:14px;line-height:1.7;font-family:'Noto Sans KR',sans-serif;resize:vertical}
+textarea:focus{outline:none;border-color:#6C3CE9}
+.hint{font-size:12px;color:#999;margin-top:.6rem;line-height:1.7}
+.hint code{background:#F4F2FA;padding:1px 5px;border-radius:4px;color:#6C3CE9}
+
+.opts-row{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1rem}
+.opt-chip{display:flex;align-items:center;gap:.4rem;font-size:13px;color:#555}
+select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #E2DDF5;background:#fff}
+
+.gen-btn{display:block;width:100%;background:#1A1033;color:#fff;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:1.25rem;font-family:'Noto Sans KR',sans-serif;transition:opacity .2s}
+.gen-btn:hover{opacity:.85}
+
+#result{display:none}
+.result-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.result-bar h2{font-size:14px;color:#1A1033;font-weight:700}
+.dl-all{background:#6C3CE9;color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.dl-all:hover{opacity:.85}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1.5rem}
+.card-block{display:flex;flex-direction:column;align-items:center;gap:.6rem}
+.card-num{font-size:11px;color:#999;letter-spacing:.1em}
+
+.card{width:270px;height:337.5px;border-radius:14px;overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:flex-end;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.card-inner{padding:28px 26px;position:relative;z-index:2}
+.card-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-bottom:10px}
+.card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:20px;line-height:1.45;margin-bottom:10px;white-space:pre-wrap;word-break:keep-all}
+.card-body{font-size:12.5px;line-height:1.75;opacity:.92;white-space:pre-wrap;word-break:keep-all}
+.card-page{position:absolute;top:20px;right:22px;font-size:11px;font-weight:500;opacity:.8;z-index:2}
+
+.theme-mystic{background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
+.theme-mystic .card-eyebrow{color:#C9B8FF}
+.theme-mystic::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 10%,rgba(255,255,255,.08),transparent 60%);z-index:1}
+
+.theme-blush{background:linear-gradient(160deg,#FFE9EF 0%,#FFF6F0 100%);color:#3A2230}
+.theme-blush .card-eyebrow{color:#C0566F}
+.theme-blush .card-title{color:#7A2E45}
+
+.theme-mono{background:#fff;color:#1A1A1A;border:1px solid #EEE}
+.theme-mono .card-eyebrow{color:#6C3CE9}
+.theme-mono .card-title{color:#111}
+
+.theme-forest{background:linear-gradient(160deg,#1F3D2B 0%,#0F2118 100%);color:#fff}
+.theme-forest .card-eyebrow{color:#9FD9B4}
+
+.dl-one{font-size:12px;background:#fff;border:1px solid #DDD;color:#666;padding:6px 16px;border-radius:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.dl-one:hover{border-color:#6C3CE9;color:#6C3CE9}
+footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Metaro Mind · Tools</div>
+    <h1>캐러셀 카드뉴스 생성기</h1>
+    <p class="desc">캐러셀 콘텐츠 텍스트를 붙여넣으면 인스타그램용 카드뉴스로 자동 변환해드려요.</p>
+  </header>
+
+  <div class="panel">
+    <div class="panel-title">① 캐러셀 내용 입력</div>
+    <textarea id="content" placeholder="첫 번째 슬라이드 제목
+첫 번째 슬라이드 본문 내용을 자유롭게 적어주세요.
+
+두 번째 슬라이드 제목
+두 번째 슬라이드 본문...
+
+세 번째 슬라이드 제목
+세 번째 슬라이드 본문..."></textarea>
+    <p class="hint">슬라이드는 <code>빈 줄</code>로 구분합니다. 각 슬라이드 블록의 첫 줄은 <strong>제목</strong>, 나머지 줄은 <strong>본문</strong>으로 인식돼요.</p>
+
+    <div class="opts-row">
+      <div class="opt-chip">테마
+        <select id="theme">
+          <option value="theme-mystic">미스틱 퍼플</option>
+          <option value="theme-blush">블러시 핑크</option>
+          <option value="theme-mono">모노 화이트</option>
+          <option value="theme-forest">딥 포레스트</option>
+        </select>
+      </div>
+      <div class="opt-chip">상단 라벨
+        <select id="eyebrow-mode">
+          <option value="auto">자동 (CARD 01, 02...)</option>
+          <option value="custom">직접 입력</option>
+        </select>
+      </div>
+      <input id="eyebrow-custom" type="text" placeholder="예: METARO MIND" style="display:none;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #E2DDF5">
+    </div>
+
+    <button class="gen-btn" id="generate">카드뉴스 만들기</button>
+  </div>
+
+  <div id="result" class="panel">
+    <div class="result-bar">
+      <h2 id="result-count">생성된 카드뉴스</h2>
+      <button class="dl-all" id="dl-all">전체 이미지 다운로드</button>
+    </div>
+    <div class="cards" id="cards"></div>
+  </div>
+
+  <footer>Metaro Mind</footer>
+</div>
+
+<script>
+const themeEyebrowDefault = {
+  'theme-mystic': 'METARO MIND',
+  'theme-blush': 'METARO MIND',
+  'theme-mono': 'METARO MIND',
+  'theme-forest': 'METARO MIND'
+};
+
+document.getElementById('eyebrow-mode').addEventListener('change', e => {
+  document.getElementById('eyebrow-custom').style.display = e.target.value === 'custom' ? 'block' : 'none';
+});
+
+function parseSlides(raw) {
+  return raw
+    .split(/\n\s*\n+/)
+    .map(b => b.trim())
+    .filter(Boolean)
+    .map(block => {
+      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+      return { title: lines[0] || '', body: lines.slice(1).join('\n') };
+    });
+}
+
+function renderCards(slides) {
+  const theme = document.getElementById('theme').value;
+  const eyebrowMode = document.getElementById('eyebrow-mode').value;
+  const customEyebrow = document.getElementById('eyebrow-custom').value.trim();
+  const cardsEl = document.getElementById('cards');
+  cardsEl.innerHTML = '';
+
+  slides.forEach((s, i) => {
+    const eyebrow = eyebrowMode === 'custom' && customEyebrow
+      ? customEyebrow
+      : `CARD ${String(i + 1).padStart(2, '0')}`;
+
+    const block = document.createElement('div');
+    block.className = 'card-block';
+    block.innerHTML = `
+      <div class="card ${theme}" id="card-${i}">
+        <span class="card-page">${i + 1} / ${slides.length}</span>
+        <div class="card-inner">
+          <div class="card-eyebrow">${eyebrow}</div>
+          <div class="card-title">${s.title}</div>
+          ${s.body ? `<div class="card-body">${s.body}</div>` : ''}
+        </div>
+      </div>
+      <span class="card-num">SLIDE ${i + 1}</span>
+      <button class="dl-one" data-idx="${i}">이미지 다운로드</button>
+    `;
+    cardsEl.appendChild(block);
+  });
+
+  document.getElementById('result-count').textContent = `생성된 카드뉴스 (${slides.length}장)`;
+  document.getElementById('result').style.display = 'block';
+
+  cardsEl.querySelectorAll('.dl-one').forEach(btn => {
+    btn.addEventListener('click', () => downloadCard(parseInt(btn.dataset.idx, 10)));
+  });
+}
+
+async function downloadCard(idx) {
+  const node = document.getElementById(`card-${idx}`);
+  const canvas = await html2canvas(node, { scale: 4, backgroundColor: null });
+  const link = document.createElement('a');
+  link.download = `card-news-${String(idx + 1).padStart(2, '0')}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+document.getElementById('generate').addEventListener('click', () => {
+  const raw = document.getElementById('content').value;
+  const slides = parseSlides(raw);
+  if (!slides.length) {
+    alert('카드뉴스로 만들 내용을 입력해주세요.');
+    return;
+  }
+  renderCards(slides);
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+});
+
+document.getElementById('dl-all').addEventListener('click', async () => {
+  const cards = document.querySelectorAll('.card');
+  for (let i = 0; i < cards.length; i++) {
+    await downloadCard(i);
+    await new Promise(r => setTimeout(r, 250));
+  }
+});
+</script>
+</body>
+</html>
