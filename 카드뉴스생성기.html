@@ -19,10 +19,15 @@ h1{font-family:'Noto Serif KR',serif;font-size:clamp(22px,4vw,30px);color:#1A103
 
 .panel{background:#fff;border-radius:14px;padding:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,.05);margin-bottom:1.5rem}
 .panel-title{font-size:13px;font-weight:700;color:#1A1033;margin-bottom:.75rem;display:flex;align-items:center;gap:6px}
-textarea{width:100%;min-height:220px;border:1px solid #E2DDF5;border-radius:10px;padding:1rem;font-size:14px;line-height:1.7;font-family:'Noto Sans KR',sans-serif;resize:vertical}
+textarea{width:100%;min-height:260px;border:1px solid #E2DDF5;border-radius:10px;padding:1rem;font-size:14px;line-height:1.7;font-family:'Noto Sans KR',sans-serif;resize:vertical}
 textarea:focus{outline:none;border-color:#6C3CE9}
 .hint{font-size:12px;color:#999;margin-top:.6rem;line-height:1.7}
 .hint code{background:#F4F2FA;padding:1px 5px;border-radius:4px;color:#6C3CE9}
+
+.field-row{margin-top:1.1rem}
+.field-label{font-size:12px;font-weight:500;color:#555;margin-bottom:.4rem;display:block}
+.field-row input[type="text"]{width:100%;font-size:14px;padding:9px 12px;border-radius:8px;border:1px solid #E2DDF5;font-family:'Noto Sans KR',sans-serif}
+.field-row input[type="text"]:focus{outline:none;border-color:#6C3CE9}
 
 .opts-row{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1rem}
 .opt-chip{display:flex;align-items:center;gap:.4rem;font-size:13px;color:#555}
@@ -41,27 +46,35 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 .card-block{display:flex;flex-direction:column;align-items:center;gap:.6rem}
 .card-num{font-size:11px;color:#999;letter-spacing:.1em}
 
-.card{width:270px;height:337.5px;border-radius:14px;overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:flex-end;box-shadow:0 6px 24px rgba(0,0,0,.12)}
-.card-inner{padding:28px 26px;position:relative;z-index:2}
+.card{width:270px;height:337.5px;border-radius:14px;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.card-tag{position:absolute;top:18px;left:20px;font-size:10px;font-weight:500;letter-spacing:.04em;opacity:.75;z-index:3}
+.card-page{position:absolute;top:18px;right:20px;font-size:11px;font-weight:500;opacity:.8;z-index:3}
+
+.card-body-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2}
+.card-inner{padding:0 26px}
+.card-cover .card-body-wrap{justify-content:flex-end;padding-bottom:30px}
+
 .card-eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.75;margin-bottom:10px}
 .card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:20px;line-height:1.45;margin-bottom:10px;white-space:pre-wrap;word-break:keep-all}
-.card-body{font-size:12.5px;line-height:1.75;opacity:.92;white-space:pre-wrap;word-break:keep-all}
-.card-page{position:absolute;top:20px;right:22px;font-size:11px;font-weight:500;opacity:.8;z-index:2}
+.card-sub{font-size:12.5px;line-height:1.65;opacity:.85;white-space:pre-wrap;word-break:keep-all}
+.card-body{font-size:13px;line-height:2;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:center}
+.card-body p{margin-bottom:14px}
+.card-body p:last-child{margin-bottom:0}
 
 .theme-mystic{background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
-.theme-mystic .card-eyebrow{color:#C9B8FF}
+.theme-mystic .card-eyebrow,.theme-mystic .card-tag{color:#C9B8FF}
 .theme-mystic::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 10%,rgba(255,255,255,.08),transparent 60%);z-index:1}
 
 .theme-blush{background:linear-gradient(160deg,#FFE9EF 0%,#FFF6F0 100%);color:#3A2230}
-.theme-blush .card-eyebrow{color:#C0566F}
+.theme-blush .card-eyebrow,.theme-blush .card-tag{color:#C0566F}
 .theme-blush .card-title{color:#7A2E45}
 
 .theme-mono{background:#fff;color:#1A1A1A;border:1px solid #EEE}
-.theme-mono .card-eyebrow{color:#6C3CE9}
+.theme-mono .card-eyebrow,.theme-mono .card-tag{color:#6C3CE9}
 .theme-mono .card-title{color:#111}
 
 .theme-forest{background:linear-gradient(160deg,#1F3D2B 0%,#0F2118 100%);color:#fff}
-.theme-forest .card-eyebrow{color:#9FD9B4}
+.theme-forest .card-eyebrow,.theme-forest .card-tag{color:#9FD9B4}
 
 .dl-one{font-size:12px;background:#fff;border:1px solid #DDD;color:#666;padding:6px 16px;border-radius:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 .dl-one:hover{border-color:#6C3CE9;color:#6C3CE9}
@@ -77,16 +90,35 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
   </header>
 
   <div class="panel">
-    <div class="panel-title">① 캐러셀 내용 입력</div>
-    <textarea id="content" placeholder="첫 번째 슬라이드 제목
-첫 번째 슬라이드 본문 내용을 자유롭게 적어주세요.
+    <div class="field-row">
+      <label class="field-label">시리즈 라벨 (선택. 입력하면 자동 인식보다 우선 적용)</label>
+      <input id="series-tag" type="text" placeholder="비워두면 본문의 # 라벨 줄을 자동으로 인식해요">
+    </div>
 
-두 번째 슬라이드 제목
-두 번째 슬라이드 본문...
+    <div class="field-row">
+      <label class="field-label">① 캐러셀 내용 입력</label>
+      <textarea id="content" placeholder="📖 타로 심리노트 #01
+나는 사랑할 때 어떤 퀸일까?
+퀸 카드 4장으로 보는 여자의 사랑 방식
 
-세 번째 슬라이드 제목
-세 번째 슬라이드 본문..."></textarea>
-    <p class="hint">슬라이드는 <code>빈 줄</code>로 구분합니다. 각 슬라이드 블록의 첫 줄은 <strong>제목</strong>, 나머지 줄은 <strong>본문</strong>으로 인식돼요.</p>
+2페이지
+
+사랑은 참 신기해.
+
+같은 사람을 좋아해도,
+누군가는 먼저 다가가고...
+
+3페이지
+
+본문 내용..."></textarea>
+      <p class="hint">
+        원본 캐러셀 텍스트를 그대로 붙여넣으면 자동으로 인식돼요.<br>
+        · <code>#</code>이 포함된 첫 줄 → 좌측 상단 시리즈 라벨로 자동 분리<br>
+        · 그 다음 줄들 → 첫 슬라이드의 제목/부제<br>
+        · <code>2페이지</code>, <code>3페이지</code>... → 다음 슬라이드 시작 표시 (이 줄 자체는 카드에 표시되지 않음)<br>
+        · 직접 슬라이드를 나누고 싶으면 빈 줄 하나에 <code>===</code> 만 입력해도 됩니다.
+      </p>
+    </div>
 
     <div class="opts-row">
       <div class="opt-chip">테마
@@ -97,13 +129,6 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
           <option value="theme-forest">딥 포레스트</option>
         </select>
       </div>
-      <div class="opt-chip">상단 라벨
-        <select id="eyebrow-mode">
-          <option value="auto">자동 (CARD 01, 02...)</option>
-          <option value="custom">직접 입력</option>
-        </select>
-      </div>
-      <input id="eyebrow-custom" type="text" placeholder="예: METARO MIND" style="display:none;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #E2DDF5">
     </div>
 
     <button class="gen-btn" id="generate">카드뉴스 만들기</button>
@@ -121,50 +146,72 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
 </div>
 
 <script>
-const themeEyebrowDefault = {
-  'theme-mystic': 'METARO MIND',
-  'theme-blush': 'METARO MIND',
-  'theme-mono': 'METARO MIND',
-  'theme-forest': 'METARO MIND'
-};
+const PAGE_MARKER = /^\s*\d+\s*(?:페이지|p|page)\s*$/i;
 
-document.getElementById('eyebrow-mode').addEventListener('change', e => {
-  document.getElementById('eyebrow-custom').style.display = e.target.value === 'custom' ? 'block' : 'none';
-});
-
-function parseSlides(raw) {
-  return raw
-    .split(/\n\s*\n+/)
-    .map(b => b.trim())
-    .filter(Boolean)
-    .map(block => {
-      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
-      return { title: lines[0] || '', body: lines.slice(1).join('\n') };
-    });
+function toSlide(block, isCover) {
+  if (isCover) {
+    const nonEmpty = block.split('\n').map(l => l.trim()).filter(Boolean);
+    return { cover: true, title: nonEmpty[0] || '', sub: nonEmpty.slice(1).join('\n') };
+  }
+  const paragraphs = block.split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
+  return { cover: false, paragraphs };
 }
 
-function renderCards(slides) {
-  const theme = document.getElementById('theme').value;
-  const eyebrowMode = document.getElementById('eyebrow-mode').value;
-  const customEyebrow = document.getElementById('eyebrow-custom').value.trim();
+function autoDetectTag(headerLines) {
+  if (headerLines.length && /#/.test(headerLines[0])) {
+    return { tag: headerLines[0].replace(/^[^\w가-힣#]+/, '').trim(), rest: headerLines.slice(1) };
+  }
+  return { tag: '', rest: headerLines };
+}
+
+function parseSlides(raw) {
+  // 1) explicit manual delimiter takes priority
+  if (/\n[ \t]*={3,}[ \t]*\n/.test(raw)) {
+    const blocks = raw.split(/\n[ \t]*={3,}[ \t]*\n/).map(b => b.trim()).filter(Boolean);
+    return { slides: blocks.map((b, i) => toSlide(b, i === 0)), autoTag: '' };
+  }
+
+  // 2) auto-detect "N페이지" markers from the original carousel format
+  const lines = raw.split('\n');
+  const markerIdx = [];
+  lines.forEach((l, i) => { if (PAGE_MARKER.test(l)) markerIdx.push(i); });
+
+  if (markerIdx.length) {
+    const headerLines = lines.slice(0, markerIdx[0]).map(l => l.trim()).filter(Boolean);
+    const { tag, rest } = autoDetectTag(headerLines);
+    const slides = [{ cover: true, title: rest[0] || '', sub: rest.slice(1).join('\n') }];
+
+    markerIdx.forEach((start, i) => {
+      const end = markerIdx[i + 1] !== undefined ? markerIdx[i + 1] : lines.length;
+      const body = lines.slice(start + 1, end).join('\n').trim();
+      slides.push(toSlide(body, false));
+    });
+    return { slides, autoTag: tag };
+  }
+
+  // 3) fallback: blank-line separated blocks, first block is the cover
+  const blocks = raw.split(/\n\s*\n+/).map(b => b.trim()).filter(Boolean);
+  return { slides: blocks.map((b, i) => toSlide(b, i === 0)), autoTag: '' };
+}
+
+function renderCards(slides, tag, theme) {
   const cardsEl = document.getElementById('cards');
   cardsEl.innerHTML = '';
 
   slides.forEach((s, i) => {
-    const eyebrow = eyebrowMode === 'custom' && customEyebrow
-      ? customEyebrow
-      : `CARD ${String(i + 1).padStart(2, '0')}`;
+    const inner = s.cover
+      ? `<div class="card-eyebrow"></div>
+         <div class="card-title">${s.title}</div>
+         ${s.sub ? `<div class="card-sub">${s.sub}</div>` : ''}`
+      : `<div class="card-body">${s.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>`;
 
     const block = document.createElement('div');
     block.className = 'card-block';
     block.innerHTML = `
-      <div class="card ${theme}" id="card-${i}">
+      <div class="card ${theme} ${s.cover ? 'card-cover' : ''}" id="card-${i}">
+        ${tag ? `<span class="card-tag">${tag}</span>` : ''}
         <span class="card-page">${i + 1} / ${slides.length}</span>
-        <div class="card-inner">
-          <div class="card-eyebrow">${eyebrow}</div>
-          <div class="card-title">${s.title}</div>
-          ${s.body ? `<div class="card-body">${s.body}</div>` : ''}
-        </div>
+        <div class="card-body-wrap"><div class="card-inner">${inner}</div></div>
       </div>
       <span class="card-num">SLIDE ${i + 1}</span>
       <button class="dl-one" data-idx="${i}">이미지 다운로드</button>
@@ -191,12 +238,14 @@ async function downloadCard(idx) {
 
 document.getElementById('generate').addEventListener('click', () => {
   const raw = document.getElementById('content').value;
-  const slides = parseSlides(raw);
+  const manualTag = document.getElementById('series-tag').value.trim();
+  const theme = document.getElementById('theme').value;
+  const { slides, autoTag } = parseSlides(raw);
   if (!slides.length) {
     alert('카드뉴스로 만들 내용을 입력해주세요.');
     return;
   }
-  renderCards(slides);
+  renderCards(slides, manualTag || autoTag, theme);
   document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
 });
 
