@@ -1,7 +1,5 @@
 $ cat "/home/user/metaro-mind/카드뉴스생성기.html"
 
-$ cat "카드뉴스생성기.html"
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -38,6 +36,8 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 .gen-btn{display:block;width:100%;background:#1A1033;color:#fff;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:1.25rem;font-family:'Noto Sans KR',sans-serif;transition:opacity .2s}
 .gen-btn:hover{opacity:.85}
 
+.notice{display:none;background:#FFF4E5;border:1px solid #FFD8A8;color:#8A5A00;font-size:13px;padding:.8rem 1rem;border-radius:8px;margin-top:1rem;line-height:1.6}
+
 #result{display:none}
 .result-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
 .result-bar h2{font-size:14px;color:#1A1033;font-weight:700}
@@ -50,32 +50,47 @@ select{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:6px 10px;bor
 
 /* 인스타그램 카드뉴스 표준 비율(4:5)로 모든 카드 크기를 통일 */
 .card{width:300px;height:375px;border-radius:16px;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:46px 26px 26px;box-shadow:0 6px 24px rgba(0,0,0,.12)}
-.card-tag{position:absolute;top:18px;left:22px;font-size:9.5px;font-weight:500;letter-spacing:.04em;opacity:.75;z-index:3}
+.card-tag{position:absolute;top:18px;left:22px;font-size:9.5px;font-weight:600;letter-spacing:.04em;opacity:.8;z-index:3}
 .card-page{position:absolute;top:18px;right:22px;font-size:10.5px;font-weight:500;opacity:.8;z-index:3}
 
+/* 카드 우상단/좌하단의 장식용 포인트 도형 (테마별 accent 컬러 사용) */
+.card-deco{position:absolute;width:120px;height:120px;border-radius:50%;background:var(--accent);opacity:.16;z-index:1}
+.card-deco-1{top:-40px;right:-40px}
+.card-deco-2{width:70px;height:70px;bottom:-25px;left:-25px;opacity:.12}
+
 .card-content{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
-.card-cover .card-content{justify-content:flex-start}
+.card-cover .card-content{padding-top:16px}
 
-.card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:18px;line-height:1.5;margin-bottom:8px;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-sub{font-size:12px;line-height:1.65;opacity:.85;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-body{font-size:12.5px;line-height:1.75;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
-.card-body p{margin-bottom:11px}
+.card-accent-bar{width:28px;height:4px;border-radius:2px;background:var(--accent);margin-bottom:12px}
+
+.card-title{font-family:'Noto Serif KR',serif;font-weight:700;font-size:21px;line-height:1.45;margin-bottom:10px;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-sub{font-size:13px;line-height:1.7;opacity:.85;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body{font-size:15px;line-height:1.8;opacity:.92;white-space:pre-wrap;word-break:keep-all;text-align:left}
+.card-body p{margin-bottom:12px}
 .card-body p:last-child{margin-bottom:0}
+.accent{color:var(--accent);font-weight:700}
+.card-title .accent{font-weight:700}
 
-.theme-mystic{background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
+.theme-mystic{--accent:#C9B8FF;background:linear-gradient(160deg,#2C1A5C 0%,#1A1033 100%);color:#fff}
 .theme-mystic .card-tag{color:#C9B8FF}
 .theme-mystic::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 10%,rgba(255,255,255,.08),transparent 60%);z-index:1}
 
-.theme-blush{background:linear-gradient(160deg,#FFE9EF 0%,#FFF6F0 100%);color:#3A2230}
+.theme-blush{--accent:#E0577A;background:linear-gradient(160deg,#FFE9EF 0%,#FFF6F0 100%);color:#3A2230}
 .theme-blush .card-tag{color:#C0566F}
 .theme-blush .card-title{color:#7A2E45}
 
-.theme-mono{background:#fff;color:#1A1A1A;border:1px solid #EEE}
+.theme-mono{--accent:#6C3CE9;background:#fff;color:#1A1A1A;border:1px solid #EEE}
 .theme-mono .card-tag{color:#6C3CE9}
 .theme-mono .card-title{color:#111}
 
-.theme-forest{background:linear-gradient(160deg,#1F3D2B 0%,#0F2118 100%);color:#fff}
+.theme-forest{--accent:#6FD897;background:linear-gradient(160deg,#1F3D2B 0%,#0F2118 100%);color:#fff}
 .theme-forest .card-tag{color:#9FD9B4}
+
+.theme-sunset{--accent:#FFD15C;background:linear-gradient(160deg,#FF7B6B 0%,#8C2F6B 100%);color:#fff}
+.theme-sunset .card-tag{color:#FFD9C7}
+
+.theme-ocean{--accent:#7FE0E0;background:linear-gradient(160deg,#123A6B 0%,#0A1A33 100%);color:#fff}
+.theme-ocean .card-tag{color:#9FD3FF}
 
 .dl-one{font-size:12px;background:#fff;border:1px solid #DDD;color:#666;padding:6px 16px;border-radius:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 .dl-one:hover{border-color:#6C3CE9;color:#6C3CE9}
@@ -115,9 +130,11 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
       <p class="hint">
         원본 캐러셀 텍스트를 그대로 붙여넣으면 자동으로 인식돼요.<br>
         · <code>#</code>이 포함된 첫 줄 → 좌측 상단 시리즈 라벨로 자동 분리<br>
-        · 그 다음 줄들 → 첫 슬라이드의 제목/부제 (제목은 카드 맨 위에 표시)<br>
+        · 그 다음 줄들 → 첫 슬라이드의 제목/부제 (제목은 카드 위쪽에 표시)<br>
         · <code>2페이지</code>, <code>3페이지</code>... → 다음 슬라이드 시작 표시 (이 줄 자체는 카드에 표시되지 않음)<br>
-        · 모든 카드는 인스타그램 카드뉴스 표준 비율(4:5)로 통일됩니다.
+        · <code>**강조할 문구**</code> → 포인트 색으로 강조 표시<br>
+        · 모든 카드는 인스타그램 카드뉴스 표준 비율(4:5)로 통일되고, 폰트 크기는 고정입니다.<br>
+        · 한 슬라이드의 글이 영역을 넘치면 자동으로 다음 슬라이드로 이어서 배치됩니다.
       </p>
     </div>
 
@@ -128,11 +145,14 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
           <option value="theme-blush">블러시 핑크</option>
           <option value="theme-mono">모노 화이트</option>
           <option value="theme-forest">딥 포레스트</option>
+          <option value="theme-sunset">선셋 코랄</option>
+          <option value="theme-ocean">딥 오션</option>
         </select>
       </div>
     </div>
 
     <button class="gen-btn" id="generate">카드뉴스 만들기</button>
+    <p class="notice" id="overflow-notice"></p>
   </div>
 
   <div id="result" class="panel">
@@ -148,6 +168,15 @@ footer{text-align:center;padding:2rem;font-size:12px;color:#BBB}
 
 <script>
 const PAGE_MARKER = /^\s*\d+\s*(?:페이지|p|page)\s*$/i;
+
+function escapeHTML(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// **강조** 문구를 포인트 색 span으로 변환합니다.
+function applyAccent(str) {
+  return escapeHTML(str).replace(/\*\*(.+?)\*\*/g, '<span class="accent">$1</span>');
+}
 
 function toSlide(block, isCover) {
   if (isCover) {
@@ -192,23 +221,80 @@ function parseSlides(raw) {
   return { slides: blocks.map((b, i) => toSlide(b, i === 0)), autoTag: '' };
 }
 
-function renderCards(slides, tag, theme) {
+function buildContentHTML(s) {
+  if (s.cover) {
+    return `<div class="card-accent-bar"></div>
+      <div class="card-title">${applyAccent(s.title)}</div>
+      ${s.sub ? `<div class="card-sub">${applyAccent(s.sub)}</div>` : ''}`;
+  }
+  return `<div class="card-body">${s.paragraphs.map(p => `<p>${applyAccent(p)}</p>`).join('')}</div>`;
+}
+
+// 측정 전용 임시 카드를 만들어 폰트 크기는 그대로 두고, 넘치는 단락만 분리합니다.
+function measureOverflow(theme, s) {
+  const probe = document.createElement('div');
+  probe.className = `card ${theme}`;
+  probe.style.position = 'absolute';
+  probe.style.left = '-9999px';
+  probe.style.top = '0';
+  probe.innerHTML = `<div class="card-content">${buildContentHTML(s)}</div>`;
+  document.body.appendChild(probe);
+  const content = probe.querySelector('.card-content');
+  const overflowed = content.scrollHeight > content.clientHeight + 1;
+  document.body.removeChild(probe);
+  return overflowed;
+}
+
+// 넘치는 슬라이드는 글씨를 줄이지 않고, 단락 단위로 다음 슬라이드로 넘깁니다.
+function splitOverflowingSlides(slides, theme) {
+  const result = [];
+  let forcedNotice = false;
+
+  for (const original of slides) {
+    let current = { ...original };
+    while (true) {
+      if (current.cover || !current.paragraphs || current.paragraphs.length <= 1) {
+        if (measureOverflow(theme, current) && (!current.paragraphs || current.paragraphs.length <= 1)) {
+          forcedNotice = true;
+        }
+        result.push(current);
+        break;
+      }
+      if (!measureOverflow(theme, current)) {
+        result.push(current);
+        break;
+      }
+      // 마지막 단락을 떼어내 다음 슬라이드로 넘긴다.
+      const paragraphs = current.paragraphs.slice();
+      const moved = paragraphs.pop();
+      if (!paragraphs.length) {
+        // 단락이 하나뿐인데도 넘치면 더 쪼갤 수 없으니 그대로 둔다.
+        forcedNotice = true;
+        result.push(current);
+        break;
+      }
+      result.push({ cover: false, paragraphs });
+      current = { cover: false, paragraphs: [moved] };
+    }
+  }
+  return { slides: result, forcedNotice };
+}
+
+function renderCards(rawSlides, tag, theme) {
+  const { slides, forcedNotice } = splitOverflowingSlides(rawSlides, theme);
   const cardsEl = document.getElementById('cards');
   cardsEl.innerHTML = '';
 
   slides.forEach((s, i) => {
-    const content = s.cover
-      ? `<div class="card-title">${s.title}</div>
-         ${s.sub ? `<div class="card-sub">${s.sub}</div>` : ''}`
-      : `<div class="card-body">${s.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>`;
-
     const block = document.createElement('div');
     block.className = 'card-block';
     block.innerHTML = `
       <div class="card ${theme} ${s.cover ? 'card-cover' : ''}" id="card-${i}">
-        ${tag ? `<span class="card-tag">${tag}</span>` : ''}
+        <span class="card-deco card-deco-1"></span>
+        <span class="card-deco card-deco-2"></span>
+        ${tag ? `<span class="card-tag">${escapeHTML(tag)}</span>` : ''}
         <span class="card-page">${i + 1} / ${slides.length}</span>
-        <div class="card-content">${content}</div>
+        <div class="card-content">${buildContentHTML(s)}</div>
       </div>
       <span class="card-num">SLIDE ${i + 1}</span>
       <button class="dl-one" data-idx="${i}">이미지 다운로드</button>
@@ -219,28 +305,17 @@ function renderCards(slides, tag, theme) {
   document.getElementById('result-count').textContent = `생성된 카드뉴스 (${slides.length}장)`;
   document.getElementById('result').style.display = 'block';
 
+  const notice = document.getElementById('overflow-notice');
+  if (forcedNotice) {
+    notice.textContent = '일부 슬라이드는 내용이 길어 한 슬라이드에 담기 어렵습니다. 내용을 줄이거나 직접 나눠서 다시 입력해주세요.';
+    notice.style.display = 'block';
+  } else {
+    notice.style.display = 'none';
+  }
+
   cardsEl.querySelectorAll('.dl-one').forEach(btn => {
     btn.addEventListener('click', () => downloadCard(parseInt(btn.dataset.idx, 10)));
   });
-
-  cardsEl.querySelectorAll('.card').forEach(fitCardText);
-}
-
-// 카드 크기는 고정(인스타 표준 비율)하고, 글이 넘치면 글씨만 살짝 더 줄여서 항상 카드 안에 맞춥니다.
-function fitCardText(cardEl) {
-  const content = cardEl.querySelector('.card-content');
-  const targets = content.querySelectorAll('.card-title, .card-sub, .card-body');
-  if (!targets.length) return;
-
-  const baseSizes = Array.from(targets).map(el => parseFloat(getComputedStyle(el).fontSize));
-  let scale = 1;
-
-  while (content.scrollHeight > content.clientHeight && scale > 0.6) {
-    scale -= 0.05;
-    targets.forEach((el, idx) => {
-      el.style.fontSize = (baseSizes[idx] * scale) + 'px';
-    });
-  }
 }
 
 async function downloadCard(idx) {
