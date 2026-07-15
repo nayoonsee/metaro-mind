@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-opus-4-8',
         max_tokens: 1500,
         system,
         messages,
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    return res.status(200).json(data);
+    return res.status(response.status).json(data);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
