@@ -146,6 +146,32 @@
   .pillar .label { font-size: 10.5px; color: #a9b3e0; margin-top: 3px; }
   .pillar .sub { font-size: 10px; color: #cbb98a; margin-top: 1px; }
 
+  .reveal-page { display: flex; flex-direction: column; }
+  .reveal-section {
+    position: relative; width: 100%; min-height: 100dvh;
+    display: flex; flex-direction: column; justify-content: center;
+    overflow: hidden; padding: 90px 22px 60px;
+  }
+  .reveal-section .r-content {
+    position: relative; z-index: 2;
+    opacity: 0; transform: translateY(24px);
+    transition: opacity .7s ease, transform .7s ease;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .reveal-section.in-view .r-content { opacity: 1; transform: translateY(0); }
+  .r-title {
+    font-size: 22px; font-weight: 800; text-shadow: 0 2px 14px rgba(0,0,0,0.8);
+  }
+  .r-body {
+    font-size: 15.5px; line-height: 1.7; text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  }
+  .scroll-hint {
+    text-align: center; font-size: 12.5px; color: #cbd3f5;
+    margin-top: 8px;
+    animation: bounce 1.6s ease-in-out infinite;
+  }
+  @keyframes bounce { 0%,100% { transform: translateY(0); opacity: .7; } 50% { transform: translateY(6px); opacity: 1; } }
+
   .locked-card { position: relative; border-radius: 16px; overflow: hidden; }
   .locked-text { filter: blur(5px); user-select: none; line-height: 1.6; font-size: 14px; padding: 16px; background: rgba(12,16,30,0.72); }
   .lock-overlay {
@@ -250,6 +276,7 @@ function buildCta(label, onClick, opts = {}) {
 function render() {
   const step = STEPS[stepIndex];
   sceneRoot.innerHTML = '';
+  if (step === 'reveal') { renderRevealPage(); return; }
   const scene = buildScene(step);
   sceneRoot.appendChild(scene);
   const content = scene.querySelector('#content');
@@ -263,7 +290,6 @@ function render() {
     relationship: renderRelationship,
     job: renderJob,
     loading: renderLoading,
-    reveal: renderReveal,
   };
   renderers[step](content, scene);
 }
@@ -422,8 +448,24 @@ async function startFetch() {
   goTo('reveal');
 }
 
-function renderReveal(content, scene) {
+const REVEAL_CYCLE = ['hyundam-reveal.png', 'hyundam-avatar.png', 'hyundam-dialogue.png', 'hyundam-focus.png'];
+
+function buildRevealSection(imgSrc, innerHtml, extraClass) {
+  const section = el(`
+    <div class="reveal-section${extraClass ? ' ' + extraClass : ''}">
+      <img class="scene-bg" src="/characters/${imgSrc}" alt="" />
+      <div class="scene-overlay"></div>
+      <div class="r-content">${innerHtml}</div>
+    </div>
+  `);
+  return section;
+}
+
+function renderRevealPage() {
   if (fetchError) {
+    const scene = buildScene('reveal');
+    sceneRoot.appendChild(scene);
+    const content = scene.querySelector('#content');
     content.appendChild(el(`<div class="bubble">앗, 문제가 생겼어: ${fetchError}</div>`));
     scene.appendChild(buildCta('다시 시도', startFetch));
     return;
@@ -432,54 +474,58 @@ function renderReveal(content, scene) {
 
   const { saju, teaser } = resultData;
   const order = [['year','년주'],['month','월주'],['day','일주'],['time','시주']];
-  const pillarsGrid = el('<div class="pillars"></div>');
-  order.forEach(([key, label]) => {
+  const pillarsHtml = order.map(([key, label]) => {
     const p = saju.pillars[key];
-    pillarsGrid.appendChild(el(`
-      <div class="pillar">
-        <div class="gz">${p.ganzhi}</div>
-        <div class="label">${label}</div>
-        <div class="sub">${p.stage}</div>
-      </div>
+    return `<div class="pillar"><div class="gz">${p.ganzhi}</div><div class="label">${label}</div><div class="sub">${p.stage}</div></div>`;
+  }).join('');
+
+  const page = el('<div class="reveal-page"></div>');
+
+  page.appendChild(buildRevealSection('hyundam-reveal.png', `
+    <div class="impact">${state.name}의 <span class="accent">사주</span></div>
+    <div class="pillars">${pillarsHtml}</div>
+    <div class="bubble">${teaser.opening || '지금부터 하나씩 풀어볼게.'}</div>
+    <div class="scroll-hint">▾ 스크롤해서 계속 보기</div>
+  `));
+
+  (teaser.sections || []).forEach((sec, i) => {
+    const img = REVEAL_CYCLE[(i + 1) % REVEAL_CYCLE.length];
+    page.appendChild(buildRevealSection(img, `
+      <div class="r-title">${sec.title || ''}</div>
+      <div class="r-body">${sec.body || ''}</div>
     `));
   });
 
-  content.appendChild(el(`<div class="impact">${state.name}의 <span class="accent">사주</span></div>`));
-  content.appendChild(pillarsGrid);
+  const lockedSection = buildRevealSection('hyundam-reveal.png', `
+    <div class="r-title">아직 안 끝났어</div>
+    <div class="locked-card">
+      <div class="locked-text">${teaser.locked_teaser || '더 자세한 이야기가 준비되어 있어...'}</div>
+      <div class="lock-overlay"><div class="icon">🔒</div><div>이메일 남기면 전체 리포트를 볼 수 있어</div></div>
+    </div>
+    <div class="panel">
+      <input type="email" id="emailInput" placeholder="이메일 주소" />
+      <div class="note">지금은 데모 단계라 실제 이메일 발송은 아직 연결되어 있지 않아. 입력한 주소는 저장되지 않아.</div>
+    </div>
+    <button class="primary-btn" id="unlockBtn">전체 리포트 받기</button>
+  `);
+  page.appendChild(lockedSection);
 
-  (teaser.bubbles || []).forEach((line, i) => {
-    setTimeout(() => {
-      const b = el(`<div class="bubble">${line}</div>`);
-      content.appendChild(b);
-    }, i * 550);
-  });
+  sceneRoot.appendChild(page);
 
-  const totalDelay = ((teaser.bubbles || []).length) * 550 + 300;
-  setTimeout(() => {
-    const lockedCard = el(`
-      <div class="locked-card">
-        <div class="locked-text">${teaser.locked_teaser || '더 자세한 이야기가 준비되어 있어...'}</div>
-        <div class="lock-overlay"><div class="icon">🔒</div><div>이메일 남기면 전체 리포트를 볼 수 있어</div></div>
-      </div>
-    `);
-    content.appendChild(lockedCard);
+  lockedSection.querySelector('#unlockBtn').onclick = () => {
+    const email = lockedSection.querySelector('#emailInput').value.trim();
+    if (!email) return;
+    lockedSection.querySelector('.locked-text').style.filter = 'none';
+    lockedSection.querySelector('.lock-overlay').classList.add('hidden');
+    lockedSection.querySelector('.panel').innerHTML = '<div class="bubble">확인했어. (실제 발송 기능은 다음 단계에서 연결될 예정이야)</div>';
+  };
 
-    const panel = el(`
-      <div class="panel">
-        <input type="email" id="emailInput" placeholder="이메일 주소" />
-        <div class="note">지금은 데모 단계라 실제 이메일 발송은 아직 연결되어 있지 않아. 입력한 주소는 저장되지 않아.</div>
-      </div>
-    `);
-    content.appendChild(panel);
-
-    scene.appendChild(buildCta('전체 리포트 받기', () => {
-      const email = panel.querySelector('#emailInput').value.trim();
-      if (!email) return;
-      lockedCard.querySelector('.locked-text').style.filter = 'none';
-      lockedCard.querySelector('.lock-overlay').classList.add('hidden');
-      panel.innerHTML = '<div class="bubble">확인했어. (실제 발송 기능은 다음 단계에서 연결될 예정이야)</div>';
-    }));
-  }, totalDelay);
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) entry.target.classList.add('in-view');
+    });
+  }, { threshold: 0.35 });
+  page.querySelectorAll('.reveal-section').forEach((s) => io.observe(s));
 }
 
 render();
