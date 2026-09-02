@@ -57,6 +57,22 @@
   .error { color: #ff9b9b; font-size: 13px; margin-top: 10px; text-align: center; }
   .hidden { display: none !important; }
   .spinner { text-align: center; padding: 24px; color: #c9b8ec; font-size: 14px; }
+
+  .charCard { text-align: center; }
+  .charEmoji { font-size: 46px; }
+  .charClass { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  .charTitle { font-size: 15px; color: #d9cdf0; margin-top: 2px; }
+  .charTag {
+    display: inline-block; margin-top: 10px; padding: 5px 12px;
+    border-radius: 999px; background: rgba(255,255,255,0.12);
+    font-size: 12.5px; color: #9ee6b8;
+  }
+  .stats { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+  .stat-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .stat-row .name { width: 60px; color: #c9b8ec; flex-shrink: 0; }
+  .stat-row .bar { flex: 1; height: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; overflow: hidden; }
+  .stat-row .fill { height: 100%; background: linear-gradient(90deg, #a06cf5, #6c3ff5); border-radius: 6px; }
+  .stat-row .val { width: 22px; text-align: right; color: #f2eefc; }
 </style>
 </head>
 <body>
@@ -101,12 +117,19 @@
   </form>
 
   <div class="result hidden" id="resultBox">
+    <div class="card charCard">
+      <div class="charEmoji" id="charEmoji"></div>
+      <div class="charClass" id="charClass"></div>
+      <div class="charTitle" id="charTitle"></div>
+      <div class="charTag" id="charTag"></div>
+      <div class="stats" id="statsGrid"></div>
+    </div>
     <div class="card">
       <strong>사주 원국</strong>
       <div class="pillars" id="pillarsGrid"></div>
     </div>
     <div class="card">
-      <strong>AI 리포트</strong>
+      <strong>캐릭터 소개</strong>
       <div class="report" id="reportText"></div>
     </div>
   </div>
@@ -119,6 +142,11 @@ const errorBox = document.getElementById('errorBox');
 const resultBox = document.getElementById('resultBox');
 const pillarsGrid = document.getElementById('pillarsGrid');
 const reportText = document.getElementById('reportText');
+const charEmoji = document.getElementById('charEmoji');
+const charClass = document.getElementById('charClass');
+const charTitle = document.getElementById('charTitle');
+const charTag = document.getElementById('charTag');
+const statsGrid = document.getElementById('statsGrid');
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -151,6 +179,7 @@ form.addEventListener('submit', async (e) => {
     if (!res.ok) throw new Error(data.error || '리포트 생성에 실패했습니다.');
 
     renderPillars(data.saju.pillars);
+    renderCharacter(data.saju.character);
     const text = data.report?.content?.[0]?.text || '리포트를 불러오지 못했습니다.';
     reportText.textContent = text;
     resultBox.classList.remove('hidden');
@@ -162,6 +191,20 @@ form.addEventListener('submit', async (e) => {
     submitBtn.textContent = '사주 리포트 받기';
   }
 });
+
+function renderCharacter(character) {
+  charEmoji.textContent = character.emoji;
+  charClass.textContent = character.className;
+  charTitle.textContent = character.title;
+  charTag.textContent = character.subclassTag;
+  statsGrid.innerHTML = character.stats.map((s) => `
+    <div class="stat-row">
+      <div class="name">${s.label}</div>
+      <div class="bar"><div class="fill" style="width:${s.percent}%"></div></div>
+      <div class="val">${s.value}</div>
+    </div>
+  `).join('');
+}
 
 function renderPillars(pillars) {
   const order = [

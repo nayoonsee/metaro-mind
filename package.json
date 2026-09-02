@@ -2,6 +2,7 @@
   "name": "metaro-mind",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "lunar-javascript": "^1.7.3"
   }
