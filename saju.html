@@ -128,10 +128,7 @@
       <strong>사주 원국</strong>
       <div class="pillars" id="pillarsGrid"></div>
     </div>
-    <div class="card">
-      <strong>캐릭터 소개</strong>
-      <div class="report" id="reportText"></div>
-    </div>
+    <div id="reportSections"></div>
   </div>
 </div>
 
@@ -141,7 +138,7 @@ const submitBtn = document.getElementById('submitBtn');
 const errorBox = document.getElementById('errorBox');
 const resultBox = document.getElementById('resultBox');
 const pillarsGrid = document.getElementById('pillarsGrid');
-const reportText = document.getElementById('reportText');
+const reportSections = document.getElementById('reportSections');
 const charEmoji = document.getElementById('charEmoji');
 const charClass = document.getElementById('charClass');
 const charTitle = document.getElementById('charTitle');
@@ -181,7 +178,7 @@ form.addEventListener('submit', async (e) => {
     renderPillars(data.saju.pillars);
     renderCharacter(data.saju.character);
     const text = data.report?.content?.[0]?.text || '리포트를 불러오지 못했습니다.';
-    reportText.textContent = text;
+    renderReport(text);
     resultBox.classList.remove('hidden');
   } catch (err) {
     errorBox.textContent = err.message;
@@ -191,6 +188,26 @@ form.addEventListener('submit', async (e) => {
     submitBtn.textContent = '사주 리포트 받기';
   }
 });
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderReport(text) {
+  const parts = text.split(/(?=^\s*[1-8]\)\s)/m).map((p) => p.trim()).filter(Boolean);
+  const sections = parts.length > 1 ? parts : [text];
+  reportSections.innerHTML = sections.map((section) => {
+    const match = section.match(/^([1-8]\)\s*[^\n]*)\n?([\s\S]*)$/);
+    const heading = match ? match[1].trim() : '';
+    const body = match ? match[2].trim() : section;
+    return `<div class="card">
+      ${heading ? `<strong>${escapeHtml(heading)}</strong>` : ''}
+      <div class="report">${escapeHtml(body)}</div>
+    </div>`;
+  }).join('');
+}
 
 function renderCharacter(character) {
   charEmoji.textContent = character.emoji;

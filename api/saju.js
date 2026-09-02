@@ -76,6 +76,30 @@ function buildWuxingCount(eightChar) {
   return count;
 }
 
+function buildHideGan(eightChar) {
+  return {
+    year: eightChar.getYearHideGan(),
+    month: eightChar.getMonthHideGan(),
+    day: eightChar.getDayHideGan(),
+    time: eightChar.getTimeHideGan(),
+  };
+}
+
+function buildDaYun(eightChar, gender) {
+  const genderCode = gender === '남성' ? 1 : 0;
+  const yun = eightChar.getYun(genderCode);
+  return yun
+    .getDaYun()
+    .filter((d) => d.getGanZhi())
+    .map((d) => ({
+      startYear: d.getStartYear(),
+      endYear: d.getEndYear(),
+      startAge: d.getStartAge(),
+      endAge: d.getEndAge(),
+      ganzhi: d.getGanZhi(),
+    }));
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -111,6 +135,8 @@ export default async function handler(req, res) {
     const wuxing = buildWuxingCount(eightChar);
     const dayGan = eightChar.getDayGan();
     const character = buildCharacter(eightChar, wuxing);
+    const hideGan = buildHideGan(eightChar);
+    const daYun = buildDaYun(eightChar, gender);
 
     const sajuSummary = {
       name: name || '',
@@ -118,23 +144,37 @@ export default async function handler(req, res) {
       solarBirth: solar.toYmdHms(),
       lunarBirth: lunar.toString(),
       pillars,
+      hideGan,
       dayMaster: dayGan,
       wuxingCount: wuxing,
+      daYun,
       character,
     };
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
 
-    const system = `당신은 판타지 세계관의 캐릭터 프로파일러입니다. 아래 JSON으로 주어진 사주 데이터를 바탕으로, 이미 확정된 "character" 정보(클래스명, 칭호, 부클래스 태그, 스탯)는 절대 바꾸지 말고 그대로 사용해서 캐릭터 소개 텍스트만 작성하세요.
-출력은 반드시 아래 4개 섹션으로 구성하고, 미신적 단정이 아닌 성향/강점 중심의 판타지풍 캐릭터 소개로 작성하세요.
-1) 캐릭터 한 줄 소개 (1문장, 판타지풍)
-2) 스킬/강점 3가지 (각 1줄, "스킬명 - 설명" 형식)
-3) 약점/주의점 (2~3문장)
-4) 오늘의 퀘스트 (실용적 조언 1~2문장, 게임 퀘스트처럼)
-각 섹션은 반드시 "1)", "2)", "3)", "4)" 번호로 시작하세요.`;
+    const system = `당신은 판타지 세계관의 캐릭터 프로파일러이자 명리학(사주팔자) 전문가입니다. 아래 JSON으로 주어진 정확한 사주 원국(년/월/일/시주, 지장간, 십성, 오행 분포, 대운)과 이미 확정된 "character" 정보(클래스명, 칭호, 부클래스 태그, 스탯)를 바탕으로, 알차고 구체적인 판타지풍 사주 리포트를 작성하세요.
 
-    const userMessage = `사주 원국 + 캐릭터 데이터:\n${JSON.stringify(sajuSummary, null, 2)}\n\n위 character 정보를 그대로 유지하면서 캐릭터 소개 텍스트를 작성해줘.`;
+절대 규칙:
+- character의 클래스명/칭호/부클래스 태그/스탯 수치는 그대로 사용하고 절대 바꾸지 마세요.
+- 주어진 간지/십성/오행/대운 데이터만 사실로 사용하고, 임의로 새로운 사주 정보를 지어내지 마세요.
+- 미신적 단정("반드시 ~한다", "~하면 죽는다" 등)은 쓰지 말고, 성향 분석과 실용적 조언 중심으로 작성하세요.
+
+출력은 반드시 아래 8개 섹션으로, 각 섹션 3~6문장(500자 이상) 분량으로 풍부하게 작성하세요. 전체 분량은 한국어 기준 약 3000~5000자(웹에서 5~10페이지 분량)를 목표로 하세요.
+
+1) 캐릭터 프로필 — 클래스/칭호 기반 판타지풍 인물 소개, 타고난 기질(일간 중심)
+2) 오행 균형 해석 — 스탯 5가지의 강약이 실제 성향에 어떻게 나타나는지
+3) 성격과 강점 — 십성(년/월/시주)으로 본 핵심 성격, 대인관계 스타일
+4) 스킬 & 특성 3가지 — 각각 "스킬명 - 설명(2~3문장)" 형식으로 구체적으로
+5) 연애/인간관계 운 — 어떤 관계에서 강하고 어떤 관계에서 주의해야 하는지
+6) 재물/커리어 운 — 적성, 재물을 다루는 스타일, 유리한 분야
+7) 약점과 주의점 — 균형이 부족한 오행/십성에서 오는 리스크와 극복 방법
+8) 대운 흐름 & 오늘의 퀘스트 — daYun 데이터 중 현재~향후 몇 개 구간의 흐름을 간단히 짚고, 마지막에 실용적 조언 1~2문장을 "오늘의 퀘스트"로 마무리
+
+각 섹션은 반드시 "1)"~"8)" 번호로 시작하고, 섹션 제목을 함께 적으세요 (예: "1) 캐릭터 프로필").`;
+
+    const userMessage = `사주 원국 + 캐릭터 데이터:\n${JSON.stringify(sajuSummary, null, 2)}\n\n위 데이터를 바탕으로 8개 섹션 풀 리포트를 작성해줘. character 정보는 그대로 유지해줘.`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -145,7 +185,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-opus-4-8',
-        max_tokens: 1500,
+        max_tokens: 6000,
         system,
         messages: [{ role: 'user', content: userMessage }],
       }),
