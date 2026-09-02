@@ -7,134 +7,165 @@
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 0; min-height: 100vh;
+  html, body {
+    margin: 0; padding: 0;
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
-    background: radial-gradient(circle at 50% 0%, #1a2440 0%, #0c1224 55%, #05070f 100%);
-    color: #eef0f8;
-    display: flex; flex-direction: column; align-items: center;
+    background: #05070f;
+    color: #f2f4fb;
   }
-  .stage {
-    width: 100%; max-width: 480px; min-height: 100vh;
-    display: flex; flex-direction: column;
-    position: relative;
-  }
+  body { display: flex; justify-content: center; }
+  .app { width: 100%; max-width: 480px; position: relative; }
+
   .progress {
-    height: 3px; background: rgba(255,255,255,0.1);
-    position: sticky; top: 0; z-index: 5;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+    height: 3px; background: rgba(255,255,255,0.15);
+    max-width: 480px; margin: 0 auto;
   }
-  .progress-fill { height: 100%; background: linear-gradient(90deg,#5b6fd8,#b9c4f0); transition: width .3s; }
-  .avatar-wrap {
-    display: flex; justify-content: center; padding: 0; position: relative;
-  }
-  .avatar-wrap.circle { padding: 36px 20px 8px; }
-  .avatar {
-    width: 120px; height: 120px; border-radius: 50%;
+  .progress-fill { height: 100%; background: linear-gradient(90deg,#5b6fd8,#dfe4fa); transition: width .3s; }
+
+  .scene {
+    position: relative; width: 100%; min-height: 100dvh;
+    display: flex; flex-direction: column; justify-content: flex-end;
     overflow: hidden;
-    border: 2px solid rgba(140,160,240,0.5);
-    box-shadow: 0 0 40px rgba(90,110,220,0.3);
   }
-  .avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center 15%; display: block; }
-  .avatar-wrap.hero { width: 100%; height: 46vh; min-height: 320px; overflow: hidden; }
-  .avatar-wrap.hero .avatar {
-    width: 100%; height: 100%; border-radius: 0; border: none; box-shadow: none;
+  .scene-bg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: 0;
+    animation: kenburns 8s ease-out forwards;
+    transition: filter .4s ease;
   }
-  .avatar-wrap.hero .avatar img { object-position: center 20%; }
-  .avatar-wrap.hero::after {
-    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
-    background: linear-gradient(180deg, transparent, #0c1224 92%);
-    pointer-events: none;
+  .scene-bg.blur-bg {
+    filter: blur(16px) brightness(0.75);
+    transform: scale(1.12);
   }
-  .step { flex: 1; display: flex; flex-direction: column; padding: 12px 24px 32px; }
+  @keyframes kenburns { from { transform: scale(1.06); } to { transform: scale(1); } }
+
+  .back-btn {
+    position: fixed; top: calc(14px + env(safe-area-inset-top)); left: 50%;
+    transform: translateX(calc(-240px + 14px));
+    z-index: 25; width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(5,7,15,0.5); border: 1px solid rgba(255,255,255,0.2);
+    color: #f2f4fb; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer;
+  }
+  @media (max-width: 480px) { .back-btn { transform: none; left: 14px; } }
+  .scene-overlay {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: linear-gradient(180deg, rgba(5,7,15,0.15) 0%, rgba(5,7,15,0.25) 35%, rgba(5,7,15,0.75) 68%, rgba(5,7,15,0.97) 100%);
+  }
+  .scene-content {
+    position: relative; z-index: 2;
+    padding: 24px 22px calc(108px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .impact {
+    text-align: center; font-size: 26px; font-weight: 800; line-height: 1.35;
+    text-shadow: 0 2px 18px rgba(0,0,0,0.8);
+    margin: 8px 0 4px;
+    animation: fadeUp .5s ease both;
+  }
+  .impact .accent { color: #a9b6f5; }
+
   .bubble {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 18px 18px 18px 4px;
-    padding: 14px 18px; margin: 0 auto 18px; max-width: 90%;
-    font-size: 15px; line-height: 1.55;
-    animation: fadeIn .4s ease;
+    background: rgba(12,16,30,0.72);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px 20px 20px 4px;
+    padding: 14px 18px; max-width: 88%;
+    font-size: 15.5px; line-height: 1.55;
+    animation: fadeUp .45s ease both;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
   }
-  .prompt { font-size: 21px; font-weight: 700; text-align: center; margin: 6px 0 22px; line-height: 1.4; }
-  .field-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .prompt { font-size: 20px; font-weight: 700; margin: 4px 0 4px; text-shadow: 0 2px 14px rgba(0,0,0,0.7); }
+
+  .panel {
+    background: rgba(10,13,26,0.6); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 18px;
+    padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
   input[type=text], input[type=number], input[type=email] {
-    width: 100%; padding: 14px 16px; border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.18);
-    background: rgba(0,0,0,0.3); color: #fff; font-size: 16px;
+    width: 100%; padding: 13px 14px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: rgba(0,0,0,0.35); color: #fff; font-size: 16px;
   }
   textarea {
-    width: 100%; padding: 14px 16px; border-radius: 12px; min-height: 90px;
-    border: 1px solid rgba(255,255,255,0.18);
-    background: rgba(0,0,0,0.3); color: #fff; font-size: 15px; font-family: inherit; resize: vertical;
+    width: 100%; padding: 13px 14px; border-radius: 12px; min-height: 84px;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: rgba(0,0,0,0.35); color: #fff; font-size: 15px; font-family: inherit; resize: vertical;
   }
   .row { display: flex; gap: 10px; }
   .row > * { flex: 1; }
   .choice-btn {
-    width: 100%; text-align: left; padding: 14px 18px; margin-bottom: 10px;
-    border-radius: 12px; border: 1px solid rgba(255,255,255,0.16);
-    background: rgba(255,255,255,0.05); color: #f5e9e9; font-size: 15px;
+    width: 100%; text-align: left; padding: 13px 16px;
+    border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(0,0,0,0.35); color: #f2f4fb; font-size: 15px;
     cursor: pointer; transition: background .15s, border-color .15s;
   }
-  .choice-btn:hover, .choice-btn.selected {
-    background: rgba(91,111,216,0.18); border-color: #7c8ce8;
-  }
-  .toggle-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .choice-btn:hover, .choice-btn.selected { background: rgba(91,111,216,0.35); border-color: #8c9cf0; }
+  .toggle-row { display: flex; gap: 8px; }
   .toggle-btn {
     flex: 1; padding: 10px; border-radius: 10px; text-align: center; cursor: pointer;
-    border: 1px solid rgba(255,255,255,0.16); background: rgba(0,0,0,0.25); font-size: 14px;
+    border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.35); font-size: 14px;
   }
-  .toggle-btn.active { background: rgba(91,111,216,0.28); border-color: #7c8ce8; }
+  .toggle-btn.active { background: rgba(91,111,216,0.4); border-color: #8c9cf0; }
+
+  .cta-fixed {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; justify-content: center;
+    padding: 14px 22px calc(16px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent, rgba(5,7,15,0.85) 35%, #05070f 85%);
+  }
+  .cta-inner { width: 100%; max-width: 436px; display: flex; flex-direction: column; gap: 8px; }
   .primary-btn {
-    margin-top: auto; width: 100%; padding: 16px; border: none; border-radius: 14px;
-    background: linear-gradient(135deg,#7c8ce8,#3d4ba0); color: #fff; font-size: 16px; font-weight: 700;
-    cursor: pointer;
+    width: 100%; padding: 16px; border: none; border-radius: 14px;
+    background: linear-gradient(135deg,#8c9cf0,#3d4ba0); color: #fff; font-size: 16px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 6px 22px rgba(60,75,170,0.4);
   }
   .primary-btn:disabled { opacity: .5; cursor: not-allowed; }
   .ghost-btn {
-    margin-top: 10px; width: 100%; padding: 12px; border-radius: 12px;
-    background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #cfc3c3; font-size: 14px; cursor: pointer;
+    width: 100%; padding: 11px; border-radius: 12px;
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.25); color: #d6dafc; font-size: 13.5px; cursor: pointer;
   }
+  .error { color: #ff9b9b; font-size: 13px; text-align: center; }
   .hidden { display: none !important; }
-  .error { color: #ff9b9b; font-size: 13px; text-align: center; margin-top: 10px; }
-  .spinner-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+
+  .spinner-scene { display: flex; flex-direction: column; align-items: center; gap: 16px; padding-bottom: 40px; }
   .spinner {
-    width: 44px; height: 44px; border-radius: 50%;
-    border: 3px solid rgba(255,255,255,0.15); border-top-color: #7c8ce8;
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.2); border-top-color: #a9b6f5;
     animation: spin 1s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-  .pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 22px; }
-  .pillar { text-align: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 12px 4px; border: 1px solid rgba(255,255,255,0.1); }
-  .pillar .gz { font-size: 22px; font-weight: 700; }
-  .pillar .label { font-size: 11px; color: #a9b3e0; margin-top: 4px; }
-  .pillar .sub { font-size: 10.5px; color: #cbb98a; margin-top: 2px; }
+  .pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .pillar { text-align: center; background: rgba(0,0,0,0.4); border-radius: 12px; padding: 10px 4px; border: 1px solid rgba(255,255,255,0.14); }
+  .pillar .gz { font-size: 20px; font-weight: 700; }
+  .pillar .label { font-size: 10.5px; color: #a9b3e0; margin-top: 3px; }
+  .pillar .sub { font-size: 10px; color: #cbb98a; margin-top: 1px; }
 
-  .locked-card {
-    position: relative; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 16px; padding: 18px; margin: 8px 0 20px; overflow: hidden;
-  }
-  .locked-text { filter: blur(5px); user-select: none; line-height: 1.6; font-size: 14px; }
+  .locked-card { position: relative; border-radius: 16px; overflow: hidden; }
+  .locked-text { filter: blur(5px); user-select: none; line-height: 1.6; font-size: 14px; padding: 16px; background: rgba(12,16,30,0.72); }
   .lock-overlay {
     position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: linear-gradient(180deg, transparent, rgba(5,7,15,0.88) 40%);
-    gap: 6px; font-size: 13px; color: #cbd3f5;
+    background: rgba(5,7,15,0.55); gap: 6px; font-size: 13px; color: #cbd3f5; text-align: center; padding: 0 20px;
   }
-  .lock-overlay .icon { font-size: 26px; }
-
-  .email-box { margin-top: 4px; }
-  .note { font-size: 12px; color: #8b93bd; text-align: center; margin-top: 10px; line-height: 1.5; }
+  .lock-overlay .icon { font-size: 24px; }
+  .note { font-size: 11.5px; color: #97a0cf; text-align: center; line-height: 1.5; }
 </style>
 </head>
 <body>
-<div class="stage">
+<div class="app">
   <div class="progress"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-  <div class="avatar-wrap circle" id="avatarWrap"><div class="avatar"><img id="avatarImg" src="/characters/hyundam-dialogue.png" alt="현담" /></div></div>
-  <div id="stepContainer" class="step"></div>
+  <div id="sceneRoot"></div>
 </div>
 
 <script>
-const STEPS = ['intro','name','profile','birthdate','birthtime','relationship','job','question','loading','reveal'];
+const STEPS = ['intro','question','name','profile','birthdate','birthtime','relationship','job','loading','reveal'];
+const BLUR_STEPS = new Set(['question','name','profile','birthdate','birthtime','relationship','job']);
+const NO_BACK_STEPS = new Set(['intro','loading']);
 let stepIndex = 0;
 const state = {
   name: '', gender: '여성', calendar: 'solar',
@@ -142,24 +173,21 @@ const state = {
   relationshipStatus: '', jobStatus: '', question: '',
 };
 
-const container = document.getElementById('stepContainer');
-const progressFill = document.getElementById('progressFill');
-const avatarWrap = document.getElementById('avatarWrap');
-const avatarImg = document.getElementById('avatarImg');
-
 const SCENE_IMAGE = {
   intro: 'hyundam-reveal.png',
   name: 'hyundam-dialogue.png',
   profile: 'hyundam-dialogue.png',
   birthdate: 'hyundam-dialogue.png',
   birthtime: 'hyundam-dialogue.png',
-  relationship: 'hyundam-dialogue.png',
-  job: 'hyundam-dialogue.png',
-  question: 'hyundam-dialogue.png',
+  relationship: 'hyundam-focus.png',
+  job: 'hyundam-focus.png',
+  question: 'hyundam-focus.png',
   loading: 'hyundam-focus.png',
   reveal: 'hyundam-reveal.png',
 };
-const HERO_STEPS = new Set(['intro', 'reveal']);
+
+const sceneRoot = document.getElementById('sceneRoot');
+const progressFill = document.getElementById('progressFill');
 
 function setProgress() {
   const pct = Math.round((stepIndex / (STEPS.length - 2)) * 100);
@@ -178,60 +206,103 @@ function next() {
   render();
 }
 
+function el(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html.trim();
+  return div.firstElementChild;
+}
+
+function buildScene(step) {
+  const blurClass = BLUR_STEPS.has(step) ? ' blur-bg' : '';
+  const scene = el(`
+    <div class="scene">
+      <img class="scene-bg${blurClass}" src="/characters/${SCENE_IMAGE[step]}" alt="" />
+      <div class="scene-overlay"></div>
+      <div class="scene-content" id="content"></div>
+    </div>
+  `);
+  if (!NO_BACK_STEPS.has(step) && stepIndex > 0) {
+    const back = el('<button class="back-btn" aria-label="뒤로">‹</button>');
+    back.onclick = () => {
+      stepIndex = Math.max(0, stepIndex - 1);
+      setProgress();
+      render();
+    };
+    scene.appendChild(back);
+  }
+  return scene;
+}
+
+function buildCta(label, onClick, opts = {}) {
+  const wrap = el(`
+    <div class="cta-fixed">
+      <div class="cta-inner">
+        ${opts.ghostLabel ? `<button class="ghost-btn" id="ghostBtn">${opts.ghostLabel}</button>` : ''}
+        <button class="primary-btn" id="ctaBtn">${label}</button>
+      </div>
+    </div>
+  `);
+  wrap.querySelector('#ctaBtn').onclick = onClick;
+  if (opts.ghostLabel) wrap.querySelector('#ghostBtn').onclick = opts.onGhost;
+  return wrap;
+}
+
 function render() {
   const step = STEPS[stepIndex];
-  container.innerHTML = '';
-  avatarImg.src = '/characters/' + SCENE_IMAGE[step];
-  avatarWrap.classList.toggle('hero', HERO_STEPS.has(step));
-  avatarWrap.classList.toggle('circle', !HERO_STEPS.has(step));
+  sceneRoot.innerHTML = '';
+  const scene = buildScene(step);
+  sceneRoot.appendChild(scene);
+  const content = scene.querySelector('#content');
   const renderers = {
     intro: renderIntro,
+    question: renderQuestion,
     name: renderName,
     profile: renderProfile,
     birthdate: renderBirthdate,
     birthtime: renderBirthtime,
     relationship: renderRelationship,
     job: renderJob,
-    question: renderQuestion,
     loading: renderLoading,
     reveal: renderReveal,
   };
-  renderers[step]();
+  renderers[step](content, scene);
 }
 
-function el(html) {
-  const div = document.createElement('div');
-  div.innerHTML = html;
-  return div.firstElementChild;
+function renderIntro(content, scene) {
+  content.appendChild(el('<div class="impact">너의 <span class="accent">운명</span>이<br/>궁금하지 않아?</div>'));
+  content.appendChild(el('<div class="bubble">안녕. 나는 현담이야. 이 시간에 여기 왔다는 건, 궁금한 게 있다는 뜻이겠지.</div>'));
+  scene.appendChild(buildCta('시작하기', next));
 }
 
-function renderIntro() {
-  container.appendChild(el(`
-    <div class="bubble">안녕. 나는 현담이야. 이 시간에 여기 왔다는 건, 궁금한 게 있다는 뜻이겠지.</div>
-    <div class="bubble">이름이랑 생년월일시만 알려주면, 네 사주를 있는 그대로 읽어줄게.</div>
-  `));
-  const btn = el('<button class="primary-btn">시작하기</button>');
-  btn.onclick = next;
-  container.appendChild(btn);
+function renderQuestion(content, scene) {
+  content.appendChild(el('<div class="bubble">시작하기 전에 — 요즘 제일 궁금한 거 하나만 먼저 말해봐. 그거에 맞춰서 봐줄게.</div>'));
+  const panel = el('<div class="panel"></div>');
+  const ta = el('<textarea placeholder="예: 올해 이직해도 될까?"></textarea>');
+  panel.appendChild(ta);
+  content.appendChild(panel);
+  scene.appendChild(buildCta('다음', () => { state.question = ta.value.trim(); next(); }, {
+    ghostLabel: '딱히 없어, 그냥 봐줘',
+    onGhost: () => { state.question = ''; next(); },
+  }));
 }
 
-function renderName() {
-  container.appendChild(el('<div class="prompt">이름이 뭐야?</div>'));
+function renderName(content, scene) {
+  content.appendChild(el('<div class="bubble">이름이 뭐야?</div>'));
+  const panel = el('<div class="panel"></div>');
   const input = el('<input type="text" placeholder="이름 또는 별명" />');
   input.value = state.name;
-  container.appendChild(input);
-  const btn = el('<button class="primary-btn">확인</button>');
-  btn.onclick = () => {
+  panel.appendChild(input);
+  content.appendChild(panel);
+  scene.appendChild(buildCta('확인', () => {
     state.name = input.value.trim() || '손님';
     next();
-  };
-  container.appendChild(btn);
-  input.focus();
+  }));
+  setTimeout(() => input.focus(), 50);
 }
 
-function renderProfile() {
-  container.appendChild(el(`<div class="prompt">${state.name}, 성별이랑 달력 기준은?</div>`));
-  const wrap = el('<div></div>');
+function renderProfile(content, scene) {
+  content.appendChild(el(`<div class="bubble">${state.name}, 성별이랑 달력 기준은?</div>`));
+  const panel = el('<div class="panel"></div>');
   const genderRow = el('<div class="toggle-row"></div>');
   ['여성', '남성'].forEach((g) => {
     const b = el(`<div class="toggle-btn ${state.gender === g ? 'active' : ''}">${g}</div>`);
@@ -244,27 +315,26 @@ function renderProfile() {
     b.onclick = () => { state.calendar = v; render(); };
     calRow.appendChild(b);
   });
-  wrap.appendChild(genderRow);
-  wrap.appendChild(calRow);
-  container.appendChild(wrap);
-  const btn = el('<button class="primary-btn">다음</button>');
-  btn.onclick = next;
-  container.appendChild(btn);
+  panel.appendChild(genderRow);
+  panel.appendChild(calRow);
+  content.appendChild(panel);
+  scene.appendChild(buildCta('다음', next));
 }
 
-function renderBirthdate() {
-  container.appendChild(el('<div class="prompt">생년월일 알려줘</div>'));
+function renderBirthdate(content, scene) {
+  content.appendChild(el('<div class="bubble">생년월일 알려줘</div>'));
+  const panel = el('<div class="panel"></div>');
   const row = el('<div class="row"></div>');
   const y = el('<input type="number" placeholder="년(YYYY)" min="1900" max="2100" />');
   const mo = el('<input type="number" placeholder="월" min="1" max="12" />');
   const d = el('<input type="number" placeholder="일" min="1" max="31" />');
   y.value = state.year; mo.value = state.month; d.value = state.day;
   row.appendChild(y); row.appendChild(mo); row.appendChild(d);
-  container.appendChild(row);
+  panel.appendChild(row);
+  content.appendChild(panel);
   const errorBox = el('<div class="error hidden"></div>');
-  container.appendChild(errorBox);
-  const btn = el('<button class="primary-btn">다음</button>');
-  btn.onclick = () => {
+  content.appendChild(errorBox);
+  scene.appendChild(buildCta('다음', () => {
     if (!y.value || !mo.value || !d.value) {
       errorBox.textContent = '년/월/일을 모두 입력해줘.';
       errorBox.classList.remove('hidden');
@@ -272,61 +342,50 @@ function renderBirthdate() {
     }
     state.year = y.value; state.month = mo.value; state.day = d.value;
     next();
-  };
-  container.appendChild(btn);
+  }));
 }
 
-function renderBirthtime() {
-  container.appendChild(el('<div class="prompt">태어난 시간은?</div>'));
+function renderBirthtime(content, scene) {
+  content.appendChild(el('<div class="bubble">태어난 시간은?</div>'));
+  const panel = el('<div class="panel"></div>');
   const row = el('<div class="row"></div>');
   const h = el('<input type="number" placeholder="시(0-23)" min="0" max="23" />');
   const m = el('<input type="number" placeholder="분" min="0" max="59" />');
   h.value = state.hour; m.value = state.minute;
   row.appendChild(h); row.appendChild(m);
-  container.appendChild(row);
-  const unknownBtn = el('<button class="ghost-btn">시간 몰라</button>');
-  unknownBtn.onclick = () => { state.hour = ''; state.minute = ''; next(); };
-  const btn = el('<button class="primary-btn">다음</button>');
-  btn.onclick = () => {
+  panel.appendChild(row);
+  content.appendChild(panel);
+  scene.appendChild(buildCta('다음', () => {
     state.hour = h.value; state.minute = m.value;
     next();
-  };
-  container.appendChild(btn);
-  container.appendChild(unknownBtn);
+  }, {
+    ghostLabel: '시간 몰라',
+    onGhost: () => { state.hour = ''; state.minute = ''; next(); },
+  }));
 }
 
-function renderChoiceStep(prompt, options, stateKey) {
-  container.appendChild(el(`<div class="prompt">${prompt}</div>`));
+function renderChoiceStep(content, scene, prompt, options, stateKey, onSelect) {
+  content.appendChild(el(`<div class="bubble">${prompt}</div>`));
+  const panel = el('<div class="panel"></div>');
   options.forEach((opt) => {
     const b = el(`<div class="choice-btn ${state[stateKey] === opt ? 'selected' : ''}">${opt}</div>`);
-    b.onclick = () => { state[stateKey] = opt; next(); };
-    container.appendChild(b);
+    b.onclick = () => { state[stateKey] = opt; onSelect(); };
+    panel.appendChild(b);
   });
+  content.appendChild(panel);
 }
 
-function renderRelationship() {
-  renderChoiceStep('연애 상황은 어때?', ['솔로예요', '고민되는 사람 있어요', '연애 중이에요', '헤어진 지 얼마 안 됐어요', '기혼이에요'], 'relationshipStatus');
+function renderRelationship(content, scene) {
+  renderChoiceStep(content, scene, '연애 상황은 어때?', ['솔로예요', '고민되는 사람 있어요', '연애 중이에요', '헤어진 지 얼마 안 됐어요', '기혼이에요'], 'relationshipStatus', next);
 }
 
-function renderJob() {
-  renderChoiceStep('요즘 일은 어때?', ['학생이에요', '일 구하고 있어요', '직장 다녀요', '사업해요', '프리랜서예요', '무직이에요'], 'jobStatus');
+function renderJob(content, scene) {
+  renderChoiceStep(content, scene, '요즘 일은 어때?', ['학생이에요', '일 구하고 있어요', '직장 다녀요', '사업해요', '프리랜서예요', '무직이에요'], 'jobStatus', startFetch);
 }
 
-function renderQuestion() {
-  container.appendChild(el('<div class="prompt">따로 궁금한 게 있어?</div>'));
-  const ta = el('<textarea placeholder="예: 올해 이직해도 될까?"></textarea>');
-  container.appendChild(ta);
-  const btn = el('<button class="primary-btn">사주 보기</button>');
-  btn.onclick = () => { state.question = ta.value.trim(); startFetch(); };
-  container.appendChild(btn);
-  const skip = el('<button class="ghost-btn">없어, 그냥 보여줘</button>');
-  skip.onclick = () => { state.question = ''; startFetch(); };
-  container.appendChild(skip);
-}
-
-function renderLoading() {
-  container.appendChild(el(`
-    <div class="spinner-wrap">
+function renderLoading(content) {
+  content.appendChild(el(`
+    <div class="spinner-scene">
       <div class="spinner"></div>
       <div class="bubble">잠깐, 네 사주 보고 있으니까...</div>
     </div>
@@ -363,12 +422,10 @@ async function startFetch() {
   goTo('reveal');
 }
 
-function renderReveal() {
+function renderReveal(content, scene) {
   if (fetchError) {
-    container.appendChild(el(`<div class="bubble">앗, 문제가 생겼어: ${fetchError}</div>`));
-    const retry = el('<button class="primary-btn">다시 시도</button>');
-    retry.onclick = startFetch;
-    container.appendChild(retry);
+    content.appendChild(el(`<div class="bubble">앗, 문제가 생겼어: ${fetchError}</div>`));
+    scene.appendChild(buildCta('다시 시도', startFetch));
     return;
   }
   if (!resultData) return;
@@ -387,40 +444,42 @@ function renderReveal() {
     `));
   });
 
-  container.appendChild(el(`<div class="prompt">${state.name}의 사주</div>`));
-  container.appendChild(pillarsGrid);
+  content.appendChild(el(`<div class="impact">${state.name}의 <span class="accent">사주</span></div>`));
+  content.appendChild(pillarsGrid);
 
-  const bubbleWrap = el('<div></div>');
-  container.appendChild(bubbleWrap);
   (teaser.bubbles || []).forEach((line, i) => {
     setTimeout(() => {
-      bubbleWrap.appendChild(el(`<div class="bubble">${line}</div>`));
-    }, i * 500);
+      const b = el(`<div class="bubble">${line}</div>`);
+      content.appendChild(b);
+    }, i * 550);
   });
 
-  const lockedCard = el(`
-    <div class="locked-card">
-      <div class="locked-text">${teaser.locked_teaser || '더 자세한 이야기가 준비되어 있어...'}</div>
-      <div class="lock-overlay"><div class="icon">🔒</div><div>이메일 남기면 전체 리포트를 볼 수 있어</div></div>
-    </div>
-  `);
-  container.appendChild(lockedCard);
+  const totalDelay = ((teaser.bubbles || []).length) * 550 + 300;
+  setTimeout(() => {
+    const lockedCard = el(`
+      <div class="locked-card">
+        <div class="locked-text">${teaser.locked_teaser || '더 자세한 이야기가 준비되어 있어...'}</div>
+        <div class="lock-overlay"><div class="icon">🔒</div><div>이메일 남기면 전체 리포트를 볼 수 있어</div></div>
+      </div>
+    `);
+    content.appendChild(lockedCard);
 
-  const emailWrap = el(`
-    <div class="email-box">
-      <input type="email" id="emailInput" placeholder="이메일 주소" />
-      <button class="primary-btn" id="unlockBtn" style="margin-top:10px;">전체 리포트 받기</button>
-      <div class="note">지금은 데모 단계라 실제 이메일 발송은 아직 연결되어 있지 않아. 입력한 주소는 저장되지 않아.</div>
-    </div>
-  `);
-  container.appendChild(emailWrap);
-  emailWrap.querySelector('#unlockBtn').onclick = () => {
-    const email = emailWrap.querySelector('#emailInput').value.trim();
-    if (!email) return;
-    lockedCard.querySelector('.locked-text').style.filter = 'none';
-    lockedCard.querySelector('.lock-overlay').classList.add('hidden');
-    emailWrap.innerHTML = '<div class="bubble">확인했어. (실제 발송 기능은 다음 단계에서 연결될 예정이야)</div>';
-  };
+    const panel = el(`
+      <div class="panel">
+        <input type="email" id="emailInput" placeholder="이메일 주소" />
+        <div class="note">지금은 데모 단계라 실제 이메일 발송은 아직 연결되어 있지 않아. 입력한 주소는 저장되지 않아.</div>
+      </div>
+    `);
+    content.appendChild(panel);
+
+    scene.appendChild(buildCta('전체 리포트 받기', () => {
+      const email = panel.querySelector('#emailInput').value.trim();
+      if (!email) return;
+      lockedCard.querySelector('.locked-text').style.filter = 'none';
+      lockedCard.querySelector('.lock-overlay').classList.add('hidden');
+      panel.innerHTML = '<div class="bubble">확인했어. (실제 발송 기능은 다음 단계에서 연결될 예정이야)</div>';
+    }));
+  }, totalDelay);
 }
 
 render();
