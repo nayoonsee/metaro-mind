@@ -120,10 +120,20 @@
   }
   .cta-inner { width: 100%; max-width: 436px; display: flex; flex-direction: column; gap: 8px; }
   .primary-btn {
-    width: 100%; padding: 16px; border: none; border-radius: 14px;
-    background: linear-gradient(135deg,#8c9cf0,#3d4ba0); color: #fff; font-size: 16px; font-weight: 700;
-    cursor: pointer; box-shadow: 0 6px 22px rgba(60,75,170,0.4);
+    position: relative; width: 100%; padding: 15px; cursor: pointer;
+    border: 1px solid #a9873f; border-radius: 4px;
+    background: linear-gradient(180deg,#1c1408,#0d0a05);
+    color: #e8caa0; font-size: 15.5px; font-weight: 700;
+    letter-spacing: 1px;
+    box-shadow: 0 0 0 1px rgba(169,135,63,0.25) inset, 0 6px 20px rgba(0,0,0,0.5);
+    text-shadow: 0 1px 6px rgba(232,202,160,0.3);
   }
+  .primary-btn::before, .primary-btn::after {
+    content: ''; position: absolute; top: 4px; bottom: 4px; width: 1px;
+    background: rgba(169,135,63,0.5);
+  }
+  .primary-btn::before { left: 8px; }
+  .primary-btn::after { right: 8px; }
   .primary-btn:disabled { opacity: .5; cursor: not-allowed; }
   .ghost-btn {
     width: 100%; padding: 11px; border-radius: 12px;
@@ -165,6 +175,12 @@
   .r-body {
     font-size: 15.5px; line-height: 1.7; text-shadow: 0 1px 10px rgba(0,0,0,0.7);
   }
+  .tease-blur { filter: blur(5px); user-select: none; }
+  .tease-tag {
+    display: inline-block; margin-left: 6px; font-size: 11.5px; color: #e8caa0;
+    border: 1px solid rgba(169,135,63,0.5); border-radius: 999px; padding: 2px 8px;
+    white-space: nowrap; vertical-align: middle; cursor: pointer;
+  }
   .scroll-hint {
     text-align: center; font-size: 12.5px; color: #cbd3f5;
     margin-top: 8px;
@@ -200,16 +216,16 @@ const state = {
 };
 
 const SCENE_IMAGE = {
-  intro: 'hyundam-reveal.png',
-  name: 'hyundam-dialogue.png',
-  profile: 'hyundam-dialogue.png',
-  birthdate: 'hyundam-dialogue.png',
-  birthtime: 'hyundam-dialogue.png',
-  relationship: 'hyundam-focus.png',
-  job: 'hyundam-focus.png',
-  question: 'hyundam-focus.png',
-  loading: 'hyundam-focus.png',
-  reveal: 'hyundam-reveal.png',
+  intro: 'hyundam-reveal.webp',
+  name: 'hyundam-dialogue.webp',
+  profile: 'hyundam-dialogue.webp',
+  birthdate: 'hyundam-dialogue.webp',
+  birthtime: 'hyundam-dialogue.webp',
+  relationship: 'hyundam-focus.webp',
+  job: 'hyundam-focus.webp',
+  question: 'hyundam-focus.webp',
+  loading: 'hyundam-focus.webp',
+  reveal: 'hyundam-reveal.webp',
 };
 
 const sceneRoot = document.getElementById('sceneRoot');
@@ -295,13 +311,13 @@ function render() {
 }
 
 function renderIntro(content, scene) {
-  content.appendChild(el('<div class="impact">너의 <span class="accent">운명</span>이<br/>궁금하지 않아?</div>'));
-  content.appendChild(el('<div class="bubble">안녕. 나는 현담이야. 이 시간에 여기 왔다는 건, 궁금한 게 있다는 뜻이겠지.</div>'));
+  content.appendChild(el('<div class="impact">네 <span class="accent">운명</span>, 내가<br/>가감 없이 읽어줄게</div>'));
+  content.appendChild(el('<div class="bubble">현담이야. 여기까지 왔다는 건 뭔가 걸리는 게 있다는 거겠지. 숨기지 말고 다 말해봐.</div>'));
   scene.appendChild(buildCta('시작하기', next));
 }
 
 function renderQuestion(content, scene) {
-  content.appendChild(el('<div class="bubble">시작하기 전에 — 요즘 제일 궁금한 거 하나만 먼저 말해봐. 그거에 맞춰서 봐줄게.</div>'));
+  content.appendChild(el('<div class="bubble">그래서, 뭐가 그렇게 물어보고 싶어서 여기까지 왔어? 하나만 말해봐, 거기서부터 풀어줄 테니까.</div>'));
   const panel = el('<div class="panel"></div>');
   const ta = el('<textarea placeholder="예: 올해 이직해도 될까?"></textarea>');
   panel.appendChild(ta);
@@ -313,7 +329,7 @@ function renderQuestion(content, scene) {
 }
 
 function renderName(content, scene) {
-  content.appendChild(el('<div class="bubble">이름이 뭐야?</div>'));
+  content.appendChild(el('<div class="bubble">이름부터. 불러줘야 제대로 보이지.</div>'));
   const panel = el('<div class="panel"></div>');
   const input = el('<input type="text" placeholder="이름 또는 별명" />');
   input.value = state.name;
@@ -327,7 +343,7 @@ function renderName(content, scene) {
 }
 
 function renderProfile(content, scene) {
-  content.appendChild(el(`<div class="bubble">${state.name}, 성별이랑 달력 기준은?</div>`));
+  content.appendChild(el(`<div class="bubble">${state.name}이라... 성별이랑, 태어난 걸 양력으로 셀지 음력으로 셀지 알려줘.</div>`));
   const panel = el('<div class="panel"></div>');
   const genderRow = el('<div class="toggle-row"></div>');
   ['여성', '남성'].forEach((g) => {
@@ -348,7 +364,7 @@ function renderProfile(content, scene) {
 }
 
 function renderBirthdate(content, scene) {
-  content.appendChild(el('<div class="bubble">생년월일 알려줘</div>'));
+  content.appendChild(el('<div class="bubble">태어난 날. 정확하게, 하나도 빼놓지 말고.</div>'));
   const panel = el('<div class="panel"></div>');
   const row = el('<div class="row"></div>');
   const y = el('<input type="number" placeholder="년(YYYY)" min="1900" max="2100" />');
@@ -372,7 +388,7 @@ function renderBirthdate(content, scene) {
 }
 
 function renderBirthtime(content, scene) {
-  content.appendChild(el('<div class="bubble">태어난 시간은?</div>'));
+  content.appendChild(el('<div class="bubble">시(時)까지 알아야 진짜가 보여. 몇 시에 태어났어?</div>'));
   const panel = el('<div class="panel"></div>');
   const row = el('<div class="row"></div>');
   const h = el('<input type="number" placeholder="시(0-23)" min="0" max="23" />');
@@ -402,18 +418,18 @@ function renderChoiceStep(content, scene, prompt, options, stateKey, onSelect) {
 }
 
 function renderRelationship(content, scene) {
-  renderChoiceStep(content, scene, '연애 상황은 어때?', ['솔로예요', '고민되는 사람 있어요', '연애 중이에요', '헤어진 지 얼마 안 됐어요', '기혼이에요'], 'relationshipStatus', next);
+  renderChoiceStep(content, scene, '연애는. 지금 누구랑 얽혀있어?', ['솔로예요', '마음 가는 사람 있어요', '연애 중이에요', '헤어진 지 얼마 안 됐어요', '기혼이에요'], 'relationshipStatus', next);
 }
 
 function renderJob(content, scene) {
-  renderChoiceStep(content, scene, '요즘 일은 어때?', ['학생이에요', '일 구하고 있어요', '직장 다녀요', '사업해요', '프리랜서예요', '무직이에요'], 'jobStatus', startFetch);
+  renderChoiceStep(content, scene, '먹고사는 건 어떻게 하고 있어? 하나로 안 끝나면 제일 크게 걸리는 걸로.', ['학생이에요', '일 구하고 있어요', '직장 다녀요', '직장 다니면서 다른 일도 병행해요', '사업/프리랜서예요', '무직이에요'], 'jobStatus', startFetch);
 }
 
 function renderLoading(content) {
   content.appendChild(el(`
     <div class="spinner-scene">
       <div class="spinner"></div>
-      <div class="bubble">잠깐, 네 사주 보고 있으니까...</div>
+      <div class="bubble">가만있어봐. 지금 네 팔자 짚어보고 있으니까.</div>
     </div>
   `));
 }
@@ -448,7 +464,15 @@ async function startFetch() {
   goTo('reveal');
 }
 
-const REVEAL_CYCLE = ['hyundam-reveal.png', 'hyundam-avatar.png', 'hyundam-dialogue.png', 'hyundam-focus.png'];
+const REVEAL_CYCLE = ['hyundam-reveal.webp', 'hyundam-avatar.webp', 'hyundam-dialogue.webp', 'hyundam-focus.webp'];
+
+function teaseBody(body) {
+  const match = body.match(/^(.{8,60}?[.!?…])\s*(.*)$/s);
+  if (!match) return `<div class="r-body">${body}</div>`;
+  const [, visible, rest] = match;
+  if (!rest) return `<div class="r-body">${visible}</div>`;
+  return `<div class="r-body">${visible} <span class="tease-blur">${rest}</span><span class="tease-tag">🔒 이어보기</span></div>`;
+}
 
 function buildRevealSection(imgSrc, innerHtml, extraClass) {
   const section = el(`
@@ -481,7 +505,7 @@ function renderRevealPage() {
 
   const page = el('<div class="reveal-page"></div>');
 
-  page.appendChild(buildRevealSection('hyundam-reveal.png', `
+  page.appendChild(buildRevealSection('hyundam-reveal.webp', `
     <div class="impact">${state.name}의 <span class="accent">사주</span></div>
     <div class="pillars">${pillarsHtml}</div>
     <div class="bubble">${teaser.opening || '지금부터 하나씩 풀어볼게.'}</div>
@@ -490,13 +514,14 @@ function renderRevealPage() {
 
   (teaser.sections || []).forEach((sec, i) => {
     const img = REVEAL_CYCLE[(i + 1) % REVEAL_CYCLE.length];
+    const bodyHtml = i === 0 ? `<div class="r-body">${sec.body || ''}</div>` : teaseBody(sec.body || '');
     page.appendChild(buildRevealSection(img, `
       <div class="r-title">${sec.title || ''}</div>
-      <div class="r-body">${sec.body || ''}</div>
+      ${bodyHtml}
     `));
   });
 
-  const lockedSection = buildRevealSection('hyundam-reveal.png', `
+  const lockedSection = buildRevealSection('hyundam-reveal.webp', `
     <div class="r-title">아직 안 끝났어</div>
     <div class="locked-card">
       <div class="locked-text">${teaser.locked_teaser || '더 자세한 이야기가 준비되어 있어...'}</div>
@@ -512,12 +537,18 @@ function renderRevealPage() {
 
   sceneRoot.appendChild(page);
 
+  page.querySelectorAll('.tease-tag').forEach((tag) => {
+    tag.onclick = () => lockedSection.scrollIntoView({ behavior: 'smooth' });
+  });
+
   lockedSection.querySelector('#unlockBtn').onclick = () => {
     const email = lockedSection.querySelector('#emailInput').value.trim();
     if (!email) return;
     lockedSection.querySelector('.locked-text').style.filter = 'none';
     lockedSection.querySelector('.lock-overlay').classList.add('hidden');
     lockedSection.querySelector('.panel').innerHTML = '<div class="bubble">확인했어. (실제 발송 기능은 다음 단계에서 연결될 예정이야)</div>';
+    page.querySelectorAll('.tease-blur').forEach((el) => { el.style.filter = 'none'; });
+    page.querySelectorAll('.tease-tag').forEach((el) => { el.classList.add('hidden'); });
   };
 
   const io = new IntersectionObserver((entries) => {
