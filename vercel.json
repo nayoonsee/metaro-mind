@@ -2,10 +2,14 @@
   "version": 2,
   "builds": [
     { "src": "api/reading.js", "use": "@vercel/node" },
+    { "src": "api/saju.js", "use": "@vercel/node" },
+    { "src": "saju.html", "use": "@vercel/static" },
     { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/reading", "dest": "/api/reading.js" },
+    { "src": "/api/saju", "dest": "/api/saju.js" },
+    { "src": "/saju", "dest": "/saju.html" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }
