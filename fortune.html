@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>메타로마인드 - 현담의 사주</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0; min-height: 100vh;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+    background: radial-gradient(circle at 50% 0%, #2a0d14 0%, #14060a 55%, #0a0304 100%);
+    color: #f5e9e9;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .stage {
+    width: 100%; max-width: 480px; min-height: 100vh;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .progress {
+    height: 3px; background: rgba(255,255,255,0.1);
+    position: sticky; top: 0; z-index: 5;
+  }
+  .progress-fill { height: 100%; background: linear-gradient(90deg,#c0392b,#e67e22); transition: width .3s; }
+  .avatar-wrap {
+    display: flex; justify-content: center; padding: 36px 20px 8px;
+  }
+  .avatar {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #4a1620, #1a0508 70%);
+    border: 2px solid rgba(230,126,34,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 52px;
+    box-shadow: 0 0 40px rgba(230,126,34,0.25);
+  }
+  .step { flex: 1; display: flex; flex-direction: column; padding: 12px 24px 32px; }
+  .bubble {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 18px 18px 18px 4px;
+    padding: 14px 18px; margin: 0 auto 18px; max-width: 90%;
+    font-size: 15px; line-height: 1.55;
+    animation: fadeIn .4s ease;
+  }
+  .prompt { font-size: 21px; font-weight: 700; text-align: center; margin: 6px 0 22px; line-height: 1.4; }
+  .field-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+  input[type=text], input[type=number], input[type=email] {
+    width: 100%; padding: 14px 16px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.3); color: #fff; font-size: 16px;
+  }
+  textarea {
+    width: 100%; padding: 14px 16px; border-radius: 12px; min-height: 90px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.3); color: #fff; font-size: 15px; font-family: inherit; resize: vertical;
+  }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  .choice-btn {
+    width: 100%; text-align: left; padding: 14px 18px; margin-bottom: 10px;
+    border-radius: 12px; border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.05); color: #f5e9e9; font-size: 15px;
+    cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  .choice-btn:hover, .choice-btn.selected {
+    background: rgba(230,126,34,0.18); border-color: #e67e22;
+  }
+  .toggle-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .toggle-btn {
+    flex: 1; padding: 10px; border-radius: 10px; text-align: center; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.16); background: rgba(0,0,0,0.25); font-size: 14px;
+  }
+  .toggle-btn.active { background: rgba(230,126,34,0.25); border-color: #e67e22; }
+  .primary-btn {
+    margin-top: auto; width: 100%; padding: 16px; border: none; border-radius: 14px;
+    background: linear-gradient(135deg,#e67e22,#c0392b); color: #fff; font-size: 16px; font-weight: 700;
+    cursor: pointer;
+  }
+  .primary-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .ghost-btn {
+    margin-top: 10px; width: 100%; padding: 12px; border-radius: 12px;
+    background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #cfc3c3; font-size: 14px; cursor: pointer;
+  }
+  .hidden { display: none !important; }
+  .error { color: #ff9b9b; font-size: 13px; text-align: center; margin-top: 10px; }
+  .spinner-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  .spinner {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.15); border-top-color: #e67e22;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 22px; }
+  .pillar { text-align: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 12px 4px; border: 1px solid rgba(255,255,255,0.1); }
+  .pillar .gz { font-size: 22px; font-weight: 700; }
+  .pillar .label { font-size: 11px; color: #d7a9a9; margin-top: 4px; }
+  .pillar .sub { font-size: 10.5px; color: #e6a15a; margin-top: 2px; }
+
+  .locked-card {
+    position: relative; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 16px; padding: 18px; margin: 8px 0 20px; overflow: hidden;
+  }
+  .locked-text { filter: blur(5px); user-select: none; line-height: 1.6; font-size: 14px; }
+  .lock-overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, transparent, rgba(10,3,4,0.85) 40%);
+    gap: 6px; font-size: 13px; color: #f5c99a;
+  }
+  .lock-overlay .icon { font-size: 26px; }
+
+  .email-box { margin-top: 4px; }
+  .note { font-size: 12px; color: #b89a9a; text-align: center; margin-top: 10px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="progress"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="avatar-wrap"><div class="avatar" id="avatarEmoji">🔮</div></div>
+  <div id="stepContainer" class="step"></div>
+</div>
+
+<script>
+const STEPS = ['intro','name','profile','birthdate','birthtime','relationship','job','question','loading','reveal'];
+let stepIndex = 0;
+const state = {
+  name: '', gender: '여성', calendar: 'solar',
+  year: '', month: '', day: '', hour: '', minute: '',
+  relationshipStatus: '', jobStatus: '', question: '',
+};
+
+const container = document.getElementById('stepContainer');
+const progressFill = document.getElementById('progressFill');
+const avatarEmoji = document.getElementById('avatarEmoji');
+
+function setProgress() {
+  const pct = Math.round((stepIndex / (STEPS.length - 2)) * 100);
+  progressFill.style.width = Math.min(pct, 100) + '%';
+}
+
+function goTo(name) {
+  stepIndex = STEPS.indexOf(name);
+  setProgress();
+  render();
+}
+
+function next() {
+  stepIndex = Math.min(stepIndex + 1, STEPS.length - 1);
+  setProgress();
+  render();
+}
+
+function render() {
+  const step = STEPS[stepIndex];
+  container.innerHTML = '';
+  avatarEmoji.textContent = '🔮';
+  const renderers = {
+    intro: renderIntro,
+    name: renderName,
+    profile: renderProfile,
+    birthdate: renderBirthdate,
+    birthtime: renderBirthtime,
+    relationship: renderRelationship,
+    job: renderJob,
+    question: renderQuestion,
+    loading: renderLoading,
+    reveal: renderReveal,
+  };
+  renderers[step]();
+}
+
+function el(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.firstElementChild;
+}
+
+function renderIntro() {
+  container.appendChild(el(`
+    <div class="bubble">안녕. 나는 현담이야. 이 시간에 여기 왔다는 건, 궁금한 게 있다는 뜻이겠지.</div>
+    <div class="bubble">이름이랑 생년월일시만 알려주면, 네 사주를 있는 그대로 읽어줄게.</div>
+  `));
+  const btn = el('<button class="primary-btn">시작하기</button>');
+  btn.onclick = next;
+  container.appendChild(btn);
+}
+
+function renderName() {
+  container.appendChild(el('<div class="prompt">이름이 뭐야?</div>'));
+  const input = el('<input type="text" placeholder="이름 또는 별명" />');
+  input.value = state.name;
+  container.appendChild(input);
+  const btn = el('<button class="primary-btn">확인</button>');
+  btn.onclick = () => {
+    state.name = input.value.trim() || '손님';
+    next();
+  };
+  container.appendChild(btn);
+  input.focus();
+}
+
+function renderProfile() {
+  container.appendChild(el(`<div class="prompt">${state.name}, 성별이랑 달력 기준은?</div>`));
+  const wrap = el('<div></div>');
+  const genderRow = el('<div class="toggle-row"></div>');
+  ['여성', '남성'].forEach((g) => {
+    const b = el(`<div class="toggle-btn ${state.gender === g ? 'active' : ''}">${g}</div>`);
+    b.onclick = () => { state.gender = g; render(); };
+    genderRow.appendChild(b);
+  });
+  const calRow = el('<div class="toggle-row"></div>');
+  [['solar','양력'], ['lunar','음력']].forEach(([v, label]) => {
+    const b = el(`<div class="toggle-btn ${state.calendar === v ? 'active' : ''}">${label}</div>`);
+    b.onclick = () => { state.calendar = v; render(); };
+    calRow.appendChild(b);
+  });
+  wrap.appendChild(genderRow);
+  wrap.appendChild(calRow);
+  container.appendChild(wrap);
+  const btn = el('<button class="primary-btn">다음</button>');
+  btn.onclick = next;
+  container.appendChild(btn);
+}
+
+function renderBirthdate() {
+  container.appendChild(el('<div class="prompt">생년월일 알려줘</div>'));
+  const row = el('<div class="row"></div>');
+  const y = el('<input type="number" placeholder="년(YYYY)" min="1900" max="2100" />');
+  const mo = el('<input type="number" placeholder="월" min="1" max="12" />');
+  const d = el('<input type="number" placeholder="일" min="1" max="31" />');
+  y.value = state.year; mo.value = state.month; d.value = state.day;
+  row.appendChild(y); row.appendChild(mo); row.appendChild(d);
+  container.appendChild(row);
+  const errorBox = el('<div class="error hidden"></div>');
+  container.appendChild(errorBox);
+  const btn = el('<button class="primary-btn">다음</button>');
+  btn.onclick = () => {
+    if (!y.value || !mo.value || !d.value) {
+      errorBox.textContent = '년/월/일을 모두 입력해줘.';
+      errorBox.classList.remove('hidden');
+      return;
+    }
+    state.year = y.value; state.month = mo.value; state.day = d.value;
+    next();
+  };
+  container.appendChild(btn);
+}
+
+function renderBirthtime() {
+  container.appendChild(el('<div class="prompt">태어난 시간은?</div>'));
+  const row = el('<div class="row"></div>');
+  const h = el('<input type="number" placeholder="시(0-23)" min="0" max="23" />');
+  const m = el('<input type="number" placeholder="분" min="0" max="59" />');
+  h.value = state.hour; m.value = state.minute;
+  row.appendChild(h); row.appendChild(m);
+  container.appendChild(row);
+  const unknownBtn = el('<button class="ghost-btn">시간 몰라</button>');
+  unknownBtn.onclick = () => { state.hour = ''; state.minute = ''; next(); };
+  const btn = el('<button class="primary-btn">다음</button>');
+  btn.onclick = () => {
+    state.hour = h.value; state.minute = m.value;
+    next();
+  };
+  container.appendChild(btn);
+  container.appendChild(unknownBtn);
+}
+
+function renderChoiceStep(prompt, options, stateKey) {
+  container.appendChild(el(`<div class="prompt">${prompt}</div>`));
+  options.forEach((opt) => {
+    const b = el(`<div class="choice-btn ${state[stateKey] === opt ? 'selected' : ''}">${opt}</div>`);
+    b.onclick = () => { state[stateKey] = opt; next(); };
+    container.appendChild(b);
+  });
+}
+
+function renderRelationship() {
+  renderChoiceStep('연애 상황은 어때?', ['솔로예요', '고민되는 사람 있어요', '연애 중이에요', '헤어진 지 얼마 안 됐어요', '기혼이에요'], 'relationshipStatus');
+}
+
+function renderJob() {
+  renderChoiceStep('요즘 일은 어때?', ['학생이에요', '일 구하고 있어요', '직장 다녀요', '사업해요', '프리랜서예요', '무직이에요'], 'jobStatus');
+}
+
+function renderQuestion() {
+  container.appendChild(el('<div class="prompt">따로 궁금한 게 있어?</div>'));
+  const ta = el('<textarea placeholder="예: 올해 이직해도 될까?"></textarea>');
+  container.appendChild(ta);
+  const btn = el('<button class="primary-btn">사주 보기</button>');
+  btn.onclick = () => { state.question = ta.value.trim(); startFetch(); };
+  container.appendChild(btn);
+  const skip = el('<button class="ghost-btn">없어, 그냥 보여줘</button>');
+  skip.onclick = () => { state.question = ''; startFetch(); };
+  container.appendChild(skip);
+}
+
+function renderLoading() {
+  container.appendChild(el(`
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <div class="bubble">잠깐, 네 사주 보고 있으니까...</div>
+    </div>
+  `));
+}
+
+let resultData = null;
+let fetchError = null;
+
+async function startFetch() {
+  goTo('loading');
+  try {
+    const payload = {
+      name: state.name, gender: state.gender, calendar: state.calendar,
+      year: Number(state.year), month: Number(state.month), day: Number(state.day),
+      relationshipStatus: state.relationshipStatus, jobStatus: state.jobStatus, question: state.question,
+    };
+    if (state.hour !== '') payload.hour = Number(state.hour);
+    if (state.minute !== '') payload.minute = Number(state.minute);
+
+    const res = await fetch('/api/teaser', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '분석에 실패했어.');
+    resultData = data;
+    fetchError = null;
+  } catch (err) {
+    fetchError = err.message;
+    resultData = null;
+  }
+  goTo('reveal');
+}
+
+function renderReveal() {
+  if (fetchError) {
+    container.appendChild(el(`<div class="bubble">앗, 문제가 생겼어: ${fetchError}</div>`));
+    const retry = el('<button class="primary-btn">다시 시도</button>');
+    retry.onclick = startFetch;
+    container.appendChild(retry);
+    return;
+  }
+  if (!resultData) return;
+
+  const { saju, teaser } = resultData;
+  const order = [['year','년주'],['month','월주'],['day','일주'],['time','시주']];
+  const pillarsGrid = el('<div class="pillars"></div>');
+  order.forEach(([key, label]) => {
+    const p = saju.pillars[key];
+    pillarsGrid.appendChild(el(`
+      <div class="pillar">
+        <div class="gz">${p.ganzhi}</div>
+        <div class="label">${label}</div>
+        <div class="sub">${p.stage}</div>
+      </div>
+    `));
+  });
+
+  container.appendChild(el(`<div class="prompt">${state.name}의 사주</div>`));
+  container.appendChild(pillarsGrid);
+
+  const bubbleWrap = el('<div></div>');
+  container.appendChild(bubbleWrap);
+  (teaser.bubbles || []).forEach((line, i) => {
+    setTimeout(() => {
+      bubbleWrap.appendChild(el(`<div class="bubble">${line}</div>`));
+    }, i * 500);
+  });
+
+  const lockedCard = el(`
+    <div class="locked-card">
+      <div class="locked-text">${teaser.locked_teaser || '더 자세한 이야기가 준비되어 있어...'}</div>
+      <div class="lock-overlay"><div class="icon">🔒</div><div>이메일 남기면 전체 리포트를 볼 수 있어</div></div>
+    </div>
+  `);
+  container.appendChild(lockedCard);
+
+  const emailWrap = el(`
+    <div class="email-box">
+      <input type="email" id="emailInput" placeholder="이메일 주소" />
+      <button class="primary-btn" id="unlockBtn" style="margin-top:10px;">전체 리포트 받기</button>
+      <div class="note">지금은 데모 단계라 실제 이메일 발송은 아직 연결되어 있지 않아. 입력한 주소는 저장되지 않아.</div>
+    </div>
+  `);
+  container.appendChild(emailWrap);
+  emailWrap.querySelector('#unlockBtn').onclick = () => {
+    const email = emailWrap.querySelector('#emailInput').value.trim();
+    if (!email) return;
+    lockedCard.querySelector('.locked-text').style.filter = 'none';
+    lockedCard.querySelector('.lock-overlay').classList.add('hidden');
+    emailWrap.innerHTML = '<div class="bubble">확인했어. (실제 발송 기능은 다음 단계에서 연결될 예정이야)</div>';
+  };
+}
+
+render();
+</script>
+</body>
+</html>

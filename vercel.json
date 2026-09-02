@@ -3,13 +3,17 @@
   "builds": [
     { "src": "api/reading.js", "use": "@vercel/node" },
     { "src": "api/saju.js", "use": "@vercel/node" },
+    { "src": "api/teaser.js", "use": "@vercel/node" },
     { "src": "saju.html", "use": "@vercel/static" },
+    { "src": "fortune.html", "use": "@vercel/static" },
     { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/reading", "dest": "/api/reading.js" },
     { "src": "/api/saju", "dest": "/api/saju.js" },
+    { "src": "/api/teaser", "dest": "/api/teaser.js" },
     { "src": "/saju", "dest": "/saju.html" },
+    { "src": "/fortune", "dest": "/fortune.html" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }

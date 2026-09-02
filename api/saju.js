@@ -1,4 +1,4 @@
-import { Solar } from 'lunar-javascript';
+import { calcSaju, callClaude } from './_saju-core.js';
 
 const DAY_MASTER_CLASS = {
   甲: { className: '팔라딘', title: '정의의 기사', element: '木', emoji: '🛡️', desc: '큰 나무처럼 곧고 굳센 기질' },
@@ -37,10 +37,10 @@ function buildStats(wuxingCount) {
   }));
 }
 
-function buildCharacter(eightChar, wuxingCount) {
-  const dayGan = eightChar.getDayGan();
+function buildCharacter(saju) {
+  const dayGan = saju.dayMaster;
   const base = DAY_MASTER_CLASS[dayGan];
-  const monthTag = TEN_GOD_TAG[eightChar.getMonthShiShenGan()];
+  const monthTag = TEN_GOD_TAG[saju.pillars.month.tenGod];
   return {
     dayGan,
     className: base.className,
@@ -49,55 +49,8 @@ function buildCharacter(eightChar, wuxingCount) {
     element: base.element,
     baseDesc: base.desc,
     subclassTag: monthTag,
-    stats: buildStats(wuxingCount),
+    stats: buildStats(saju.wuxingCount),
   };
-}
-
-function buildPillars(eightChar) {
-  return {
-    year: { ganzhi: eightChar.getYear(), tenGod: eightChar.getYearShiShenGan() },
-    month: { ganzhi: eightChar.getMonth(), tenGod: eightChar.getMonthShiShenGan() },
-    day: { ganzhi: eightChar.getDay(), tenGod: '日主' },
-    time: { ganzhi: eightChar.getTime(), tenGod: eightChar.getTimeShiShenGan() },
-  };
-}
-
-function buildWuxingCount(eightChar) {
-  const wuxing = [
-    eightChar.getYearWuXing(),
-    eightChar.getMonthWuXing(),
-    eightChar.getDayWuXing(),
-    eightChar.getTimeWuXing(),
-  ].join('');
-  const count = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 };
-  for (const ch of wuxing) {
-    if (ch in count) count[ch] += 1;
-  }
-  return count;
-}
-
-function buildHideGan(eightChar) {
-  return {
-    year: eightChar.getYearHideGan(),
-    month: eightChar.getMonthHideGan(),
-    day: eightChar.getDayHideGan(),
-    time: eightChar.getTimeHideGan(),
-  };
-}
-
-function buildDaYun(eightChar, gender) {
-  const genderCode = gender === '남성' ? 1 : 0;
-  const yun = eightChar.getYun(genderCode);
-  return yun
-    .getDaYun()
-    .filter((d) => d.getGanZhi())
-    .map((d) => ({
-      startYear: d.getStartYear(),
-      endYear: d.getEndYear(),
-      startAge: d.getStartAge(),
-      endAge: d.getEndAge(),
-      ganzhi: d.getGanZhi(),
-    }));
 }
 
 export default async function handler(req, res) {
@@ -115,44 +68,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'year, month, day는 필수입니다.' });
     }
 
-    const h = Number.isInteger(hour) ? hour : 12;
-    const m = Number.isInteger(minute) ? minute : 0;
-
-    let lunar;
-    let solar;
-    if (calendar === 'lunar') {
-      const { Lunar } = await import('lunar-javascript');
-      lunar = Lunar.fromYmdHms(Number(year), Number(month), Number(day), h, m, 0);
-      solar = lunar.getSolar();
-    } else {
-      solar = Solar.fromYmdHms(Number(year), Number(month), Number(day), h, m, 0);
-      lunar = solar.getLunar();
-    }
-
-    const eightChar = lunar.getEightChar();
-
-    const pillars = buildPillars(eightChar);
-    const wuxing = buildWuxingCount(eightChar);
-    const dayGan = eightChar.getDayGan();
-    const character = buildCharacter(eightChar, wuxing);
-    const hideGan = buildHideGan(eightChar);
-    const daYun = buildDaYun(eightChar, gender);
-
-    const sajuSummary = {
-      name: name || '',
-      gender: gender || '',
-      solarBirth: solar.toYmdHms(),
-      lunarBirth: lunar.toString(),
-      pillars,
-      hideGan,
-      dayMaster: dayGan,
-      wuxingCount: wuxing,
-      daYun,
-      character,
-    };
-
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
+    const saju = await calcSaju({ year, month, day, hour, minute, gender, calendar, name });
+    const character = buildCharacter(saju);
+    const sajuSummary = { ...saju, character };
 
     const system = `당신은 판타지 세계관의 캐릭터 프로파일러이자 명리학(사주팔자) 전문가입니다. 아래 JSON으로 주어진 정확한 사주 원국(년/월/일/시주, 지장간, 십성, 오행 분포, 대운)과 이미 확정된 "character" 정보(클래스명, 칭호, 부클래스 태그, 스탯)를 바탕으로, 알차고 구체적인 판타지풍 사주 리포트를 작성하세요.
 
@@ -176,26 +94,14 @@ export default async function handler(req, res) {
 
     const userMessage = `사주 원국 + 캐릭터 데이터:\n${JSON.stringify(sajuSummary, null, 2)}\n\n위 데이터를 바탕으로 8개 섹션 풀 리포트를 작성해줘. character 정보는 그대로 유지해줘.`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-8',
-        max_tokens: 6000,
-        system,
-        messages: [{ role: 'user', content: userMessage }],
-      }),
+    const data = await callClaude({
+      system,
+      messages: [{ role: 'user', content: userMessage }],
+      maxTokens: 6000,
     });
-
-    const data = await response.json();
-    if (!response.ok) return res.status(response.status).json(data);
 
     return res.status(200).json({ saju: sajuSummary, report: data });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(error.status || 500).json({ error: error.message });
   }
 }
