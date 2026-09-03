@@ -1496,14 +1496,23 @@ function yearMonthsFragment(dateInfo) {
 }
 
 function periodChapterTitle(dateInfo) {
-  const frag = yearMonthsFragment(dateInfo);
-  if (!frag) return '앞으로의 흐름';
-  return dateInfo.currentMonth === 1 ? `${frag}의 전체 흐름` : `${frag}의 흐름`;
+  if (!dateInfo) return '앞으로의 흐름';
+  const { currentYear, currentMonth, remainingMonthsInYear } = dateInfo;
+  if (currentMonth === 1) return `${currentYear}년 전체 흐름`;
+  if (currentMonth === 12) return '올해 마지막 한 달의 흐름';
+  return `${currentYear}년 남은 ${remainingMonthsInYear}개월의 흐름`;
+}
+
+// "9월부터 12월까지" / "올해 마지막 한 달 동안" — always derived from dateInfo.currentMonth,
+// never a hardcoded month.
+function monthRangePhrase(dateInfo) {
+  if (!dateInfo) return null;
+  return dateInfo.currentMonth === 12 ? '올해 마지막 한 달 동안' : `${dateInfo.currentMonth}월부터 12월까지`;
 }
 
 function periodActionTitle(dateInfo) {
-  const frag = yearMonthsFragment(dateInfo);
-  return frag ? `${frag} 행동 순서` : '지금부터의 행동 순서';
+  const range = monthRangePhrase(dateInfo);
+  return range ? `${range}, 이렇게 움직여` : '지금부터의 행동 순서';
 }
 
 function periodIntroHtml(bucket, dateInfo) {
@@ -1512,8 +1521,8 @@ function periodIntroHtml(bucket, dateInfo) {
     return '<p>여기서부터는 조금 더 구체적이야.</p><p>흐름이 바뀌는 시기와, 네가 피해야 할 선택까지 보여.</p>';
   }
   if (bucket === 'money') {
-    const rangePhrase = dateInfo.currentMonth === 12 ? '올해 마지막 한 달 동안' : `${dateInfo.currentMonth}월부터 12월까지`;
-    return `<p>${esc(frag)}, 금전 흐름은 이렇게 움직여.</p><p>${esc(rangePhrase)} 돈이 들어오는 시기와 조심해야 할 선택을 짚어줄게.</p>`;
+    const rangePhrase = monthRangePhrase(dateInfo);
+    return `<p>${esc(frag)}, 금전 흐름은 이렇게 움직여.</p><p>${esc(rangePhrase)} 돈의 흐름이 강해지는 때와 조심해야 할 선택을 짚어줄게.</p>`;
   }
   if (bucket === 'love') return `<p>${esc(frag)}, 인연의 흐름을 볼게.</p>`;
   if (bucket === 'reunion') return '<p>올해 남은 기간, 관계가 다시 움직일 가능성이 있는 시기를 볼게.</p>';
