@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>메타로마인드 - AI 사주 리포트</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+    background: linear-gradient(160deg, #1a1030 0%, #2d1b4e 50%, #1a1030 100%);
+    color: #f2eefc;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 22px; text-align: center; margin-bottom: 4px; }
+  .sub { text-align: center; color: #c9b8ec; font-size: 13px; margin-bottom: 28px; }
+  form {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 24px;
+    backdrop-filter: blur(6px);
+  }
+  label { display: block; font-size: 13px; color: #d9cdf0; margin: 14px 0 6px; }
+  label:first-child { margin-top: 0; }
+  input, select {
+    width: 100%; padding: 11px 12px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.25); color: #fff; font-size: 15px;
+  }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+  .row2 { display: flex; gap: 10px; }
+  .row2 label { flex: 1; }
+  button {
+    width: 100%; margin-top: 22px; padding: 14px;
+    border: none; border-radius: 12px; font-size: 16px; font-weight: 600;
+    background: linear-gradient(135deg, #a06cf5, #6c3ff5);
+    color: #fff; cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .result { margin-top: 28px; }
+  .card {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px; padding: 18px; margin-bottom: 14px;
+  }
+  .pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  .pillar { text-align: center; background: rgba(0,0,0,0.25); border-radius: 10px; padding: 10px 4px; }
+  .pillar .gz { font-size: 20px; font-weight: 700; }
+  .pillar .label { font-size: 11px; color: #c9b8ec; margin-top: 4px; }
+  .pillar .god { font-size: 11px; color: #9ee6b8; margin-top: 2px; }
+  .report { white-space: pre-wrap; line-height: 1.7; font-size: 14.5px; }
+  .error { color: #ff9b9b; font-size: 13px; margin-top: 10px; text-align: center; }
+  .hidden { display: none !important; }
+  .spinner { text-align: center; padding: 24px; color: #c9b8ec; font-size: 14px; }
+
+  .charCard { text-align: center; }
+  .charEmoji { font-size: 46px; }
+  .charClass { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  .charTitle { font-size: 15px; color: #d9cdf0; margin-top: 2px; }
+  .charTag {
+    display: inline-block; margin-top: 10px; padding: 5px 12px;
+    border-radius: 999px; background: rgba(255,255,255,0.12);
+    font-size: 12.5px; color: #9ee6b8;
+  }
+  .stats { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+  .stat-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .stat-row .name { width: 60px; color: #c9b8ec; flex-shrink: 0; }
+  .stat-row .bar { flex: 1; height: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; overflow: hidden; }
+  .stat-row .fill { height: 100%; background: linear-gradient(90deg, #a06cf5, #6c3ff5); border-radius: 6px; }
+  .stat-row .val { width: 22px; text-align: right; color: #f2eefc; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔮 AI 사주 리포트</h1>
+  <div class="sub">생년월일시를 입력하면 정확한 사주 원국과 AI 해석을 받아보세요</div>
+
+  <form id="sajuForm">
+    <label>이름 (선택)</label>
+    <input type="text" id="name" placeholder="이름을 입력하세요" />
+
+    <div class="row2">
+      <label>성별
+        <select id="gender">
+          <option value="여성">여성</option>
+          <option value="남성">남성</option>
+        </select>
+      </label>
+      <label>양력/음력
+        <select id="calendar">
+          <option value="solar">양력</option>
+          <option value="lunar">음력</option>
+        </select>
+      </label>
+    </div>
+
+    <label>생년월일</label>
+    <div class="row">
+      <div><input type="number" id="year" placeholder="년(YYYY)" min="1900" max="2100" required /></div>
+      <div><input type="number" id="month" placeholder="월" min="1" max="12" required /></div>
+      <div><input type="number" id="day" placeholder="일" min="1" max="31" required /></div>
+    </div>
+
+    <label>태어난 시간 (모르면 비워두세요)</label>
+    <div class="row">
+      <div><input type="number" id="hour" placeholder="시(0-23)" min="0" max="23" /></div>
+      <div><input type="number" id="minute" placeholder="분" min="0" max="59" /></div>
+    </div>
+
+    <button type="submit" id="submitBtn">사주 리포트 받기</button>
+    <div class="error hidden" id="errorBox"></div>
+  </form>
+
+  <div class="result hidden" id="resultBox">
+    <div class="card charCard">
+      <div class="charEmoji" id="charEmoji"></div>
+      <div class="charClass" id="charClass"></div>
+      <div class="charTitle" id="charTitle"></div>
+      <div class="charTag" id="charTag"></div>
+      <div class="stats" id="statsGrid"></div>
+    </div>
+    <div class="card">
+      <strong>사주 원국</strong>
+      <div class="pillars" id="pillarsGrid"></div>
+    </div>
+    <div id="reportSections"></div>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('sajuForm');
+const submitBtn = document.getElementById('submitBtn');
+const errorBox = document.getElementById('errorBox');
+const resultBox = document.getElementById('resultBox');
+const pillarsGrid = document.getElementById('pillarsGrid');
+const reportSections = document.getElementById('reportSections');
+const charEmoji = document.getElementById('charEmoji');
+const charClass = document.getElementById('charClass');
+const charTitle = document.getElementById('charTitle');
+const charTag = document.getElementById('charTag');
+const statsGrid = document.getElementById('statsGrid');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorBox.classList.add('hidden');
+  resultBox.classList.add('hidden');
+
+  const payload = {
+    name: document.getElementById('name').value.trim(),
+    gender: document.getElementById('gender').value,
+    calendar: document.getElementById('calendar').value,
+    year: Number(document.getElementById('year').value),
+    month: Number(document.getElementById('month').value),
+    day: Number(document.getElementById('day').value),
+  };
+  const hourVal = document.getElementById('hour').value;
+  const minuteVal = document.getElementById('minute').value;
+  if (hourVal !== '') payload.hour = Number(hourVal);
+  if (minuteVal !== '') payload.minute = Number(minuteVal);
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = '분석 중...';
+
+  try {
+    const res = await fetch('/api/saju', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '리포트 생성에 실패했습니다.');
+
+    renderPillars(data.saju.pillars);
+    renderCharacter(data.saju.character);
+    const text = data.report?.content?.[0]?.text || '리포트를 불러오지 못했습니다.';
+    renderReport(text);
+    resultBox.classList.remove('hidden');
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.classList.remove('hidden');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '사주 리포트 받기';
+  }
+});
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderReport(text) {
+  const parts = text.split(/(?=^\s*[1-8]\)\s)/m).map((p) => p.trim()).filter(Boolean);
+  const sections = parts.length > 1 ? parts : [text];
+  reportSections.innerHTML = sections.map((section) => {
+    const match = section.match(/^([1-8]\)\s*[^\n]*)\n?([\s\S]*)$/);
+    const heading = match ? match[1].trim() : '';
+    const body = match ? match[2].trim() : section;
+    return `<div class="card">
+      ${heading ? `<strong>${escapeHtml(heading)}</strong>` : ''}
+      <div class="report">${escapeHtml(body)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCharacter(character) {
+  charEmoji.textContent = character.emoji;
+  charClass.textContent = character.className;
+  charTitle.textContent = character.title;
+  charTag.textContent = character.subclassTag;
+  statsGrid.innerHTML = character.stats.map((s) => `
+    <div class="stat-row">
+      <div class="name">${s.label}</div>
+      <div class="bar"><div class="fill" style="width:${s.percent}%"></div></div>
+      <div class="val">${s.value}</div>
+    </div>
+  `).join('');
+}
+
+function renderPillars(pillars) {
+  const order = [
+    ['year', '년주'],
+    ['month', '월주'],
+    ['day', '일주'],
+    ['time', '시주'],
+  ];
+  pillarsGrid.innerHTML = order.map(([key, label]) => {
+    const p = pillars[key];
+    return `<div class="pillar">
+      <div class="gz">${p.ganzhi}</div>
+      <div class="label">${label}</div>
+      <div class="god">${p.tenGod}</div>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
