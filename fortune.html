@@ -245,6 +245,16 @@
   }
   @keyframes opFogDrift { from { transform: translateX(-3%); } to { transform: translateX(3%); } }
 
+  /* Slot 1 only: one-sided cool moonlight across the dark close-up face */
+  .op-layer.op-moonside { filter: brightness(1.10) contrast(1.05) saturate(1.04); }
+  .op-sidelight {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: radial-gradient(ellipse at 20% 32%, rgba(125,158,235,0.28) 0%, rgba(80,110,195,0.12) 30%, transparent 58%);
+    mix-blend-mode: screen;
+    opacity: 0; transition: opacity 1.1s ease;
+  }
+  .op-sidelight.op-show { opacity: 1; }
+
   .op-backlight {
     position: absolute; z-index: 3; pointer-events: none;
     left: 50%; top: 24%; width: 70%; height: 46%;
@@ -311,15 +321,17 @@
   @keyframes opShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
 
   .op-eye-glow-a, .op-eye-glow-b {
-    position: absolute; z-index: 7; width: 46px; height: 46px; border-radius: 50%;
-    pointer-events: none; opacity: 0; transition: opacity .7s ease;
-    filter: blur(10px);
+    position: absolute; z-index: 7; width: 26px; height: 26px; border-radius: 50%;
+    pointer-events: none; opacity: 0; transition: opacity .5s ease;
+    filter: blur(5px);
   }
-  .op-eye-glow-a { top: 38%; left: 27%; background: radial-gradient(circle, rgba(230,180,100,0.85), transparent 70%); }
-  .op-eye-glow-b { top: 36%; left: 61%; background: radial-gradient(circle, rgba(150,190,230,0.85), transparent 70%); }
+  /* position is set inline in JS per scene (different image = different iris coords) */
+  .op-eye-glow-a { background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(235,190,110,0.9) 25%, rgba(210,150,70,0.4) 55%, transparent 75%); }
+  .op-eye-glow-b { background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(225,232,248,0.85) 30%, rgba(190,205,235,0.35) 60%, transparent 78%); }
   .op-eye-glow-a.op-show, .op-eye-glow-b.op-show { opacity: 1; }
-  .op-eye-glow-a.op-pulse, .op-eye-glow-b.op-pulse { animation: opEyePulse .4s ease; }
-  @keyframes opEyePulse { 0% { filter: blur(10px) brightness(1); } 50% { filter: blur(10px) brightness(1.7); } 100% { filter: blur(10px) brightness(1); } }
+  .op-eye-glow-a.op-steady, .op-eye-glow-b.op-steady { opacity: .55; transition: opacity .5s ease; }
+  .op-eye-glow-a.op-pulse, .op-eye-glow-b.op-pulse { animation: opEyePulse .5s ease; }
+  @keyframes opEyePulse { 0% { filter: blur(5px) brightness(1); } 45% { filter: blur(5px) brightness(1.6); } 100% { filter: blur(5px) brightness(1); } }
 
   .op-bubble {
     font-family: 'Gowun Batang', serif;
@@ -540,6 +552,7 @@ function renderOpeningSequence() {
     <div class="op-stage">
       <img class="op-layer" id="opImg" src="${OP_IMG.eye}" alt="" />
       <div class="op-fog" id="opFog"></div>
+      <div class="op-sidelight" id="opSidelight"></div>
       <div class="op-eye-glow-a" id="opEyeA"></div>
       <div class="op-eye-glow-b" id="opEyeB"></div>
       <div class="op-backlight" id="opBacklight"></div>
@@ -558,6 +571,7 @@ function renderOpeningSequence() {
   const eyeA = stage.querySelector('#opEyeA');
   const eyeB = stage.querySelector('#opEyeB');
   const opBacklight = stage.querySelector('#opBacklight');
+  const opSidelight = stage.querySelector('#opSidelight');
   const opFog = stage.querySelector('#opFog');
   const opDoorlight = stage.querySelector('#opDoorlight');
   const muteBtn = stage.querySelector('#opMuteBtn');
@@ -709,9 +723,13 @@ function renderOpeningSequence() {
     return;
   }
 
-  // ================= Slot 1: 4.2s, title + subcopy (문구/타이밍 그대로, 이미지만 eye) =================
+  // ================= Slot 1: 4.2s + 1.5s = 5.7s, title + subcopy (문구/타이밍 그대로, 이미지만 eye) =================
   after(300, () => opBlackout.classList.add('op-hide'));
-  after(350, () => opImg.classList.add('op-show')); // 1.4s opacity fade / 2.6s slow scale (opImg already src=eye)
+  after(350, () => {
+    opImg.classList.add('op-show'); // 1.4s opacity fade / 2.6s slow scale (opImg already src=eye)
+    opImg.classList.add('op-moonside');
+    opSidelight.classList.add('op-show');
+  });
 
   after(1100, () => {
     const title = el(`<div class="op-title">네 <span class="accent">운명</span>, 내가<br/>가감 없이 읽어줄게</div>`);
@@ -725,8 +743,11 @@ function renderOpeningSequence() {
   });
 
   // ================= Slot 2: 인물 뒤에서 빛이 뿜어져 나오는 백라이트 효과, 이미지는 moon =================
-  after(4200, () => {
+  // (4200 + 1,500ms extra hold on Slot 1 = 5700)
+  after(5700, () => {
     opContent.innerHTML = '';
+    opImg.classList.remove('op-moonside');
+    opSidelight.classList.remove('op-show');
     crossfadeTo(OP_IMG.moon, { fadeMs: 900 });
     after(1200, () => { // (900ms swap + 300ms settle) light builds gradually behind him
       opBacklight.classList.add('op-show');
@@ -737,10 +758,21 @@ function renderOpeningSequence() {
   });
 
   // ================= Phase 3: invitation (12_손을_내미는_초대, waits for tap) =================
-  after(8400, () => {
-    eyeA.classList.remove('op-show', 'op-pulse');
-    eyeB.classList.remove('op-show', 'op-pulse');
+  // (8400 + 1,500ms carried over from Slot 1 = 9900)
+  after(9900, () => {
+    opBacklight.classList.remove('op-show', 'op-pulse');
     crossfadeTo(OP_IMG.invite, { outMs: 400, inMs: 1200 });
+    // 오드아이 발광: invite 이미지의 실제 홍채 좌표(390px 기준 실측)에 맞춤
+    eyeA.style.top = '19%'; eyeA.style.left = '36%'; // 호박색 눈
+    eyeB.style.top = '16%'; eyeB.style.left = '62%'; // 은빛 눈
+    after(400, () => { // 0.3s 후 시작 (crossfade swap 지점 기준)
+      eyeA.classList.add('op-show');
+      eyeB.classList.add('op-show');
+      after(400, () => { // ~0.7~0.9s에 가장 선명 -> 이후 낮은 밝기로 안정 (완전히 꺼지지 않음)
+        eyeA.classList.add('op-steady');
+        eyeB.classList.add('op-steady');
+      });
+    });
     after(400, () => {
       const bubble = el(`<div class="op-bubble">왔군. 네 운명이 문 앞에서 기다리고 있어.</div>`);
       opContent.appendChild(bubble);
@@ -749,6 +781,8 @@ function renderOpeningSequence() {
         const btn = el(`<button class="op-gate-btn"><span class="op-sheen"></span><span class="op-corner op-corner-l">${MOON_SVG}</span>현담의 신당으로 들어가기<span class="op-corner op-corner-r">${MOON_SVG}</span></button>`);
         opContent.appendChild(btn);
         requestAnimationFrame(() => btn.classList.add('op-show'));
+        eyeA.classList.add('op-pulse'); // 버튼 등장 시 아주 미세하게 한 번만 맥동
+        eyeB.classList.add('op-pulse');
         btn.onclick = () => {
           btn.disabled = true;
           btn.style.pointerEvents = 'none';
