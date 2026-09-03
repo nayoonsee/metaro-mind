@@ -66,16 +66,6 @@
     display: flex; flex-direction: column; gap: 12px;
   }
 
-  .impact {
-    font-family: 'Gugi', cursive;
-    text-align: center; font-size: 30px; line-height: 1.4;
-    letter-spacing: 0.5px;
-    text-shadow: 0 2px 18px rgba(0,0,0,0.8);
-    margin: 8px 0 4px;
-    animation: fadeUp .5s ease both;
-  }
-  .impact .accent { color: #a9b6f5; }
-
   .bubble {
     font-family: 'Gaegu', cursive;
     font-weight: 700;
@@ -172,14 +162,13 @@
     width: 100%; padding: 11px; border-radius: 12px;
     background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.25); color: #d6dafc; font-size: 13.5px; cursor: pointer;
   }
-  /* Input-step CTAs only (scoped to .cta-fixed.cta-raised, which only input steps get —
-     the reveal/error-retry screen's buildCta call opts out via {raised:false}, so it
-     keeps the original .primary-btn styling untouched) */
-  .cta-fixed.cta-raised .ghost-btn {
+  /* Every buildCta button (all 5 input steps + the error/retry screen) gets this
+     restrained design: no side decoration lines, no gold glow/text-shadow. */
+  .cta-fixed .ghost-btn {
     height: 52px; padding: 0 16px; font-size: 16px;
     display: flex; align-items: center; justify-content: center;
   }
-  .cta-fixed.cta-raised .primary-btn {
+  .cta-fixed .primary-btn {
     height: 52px; padding: 0 16px;
     font-family: 'Gowun Batang', serif;
     font-size: 17px; font-weight: 600; letter-spacing: 0;
@@ -192,10 +181,10 @@
     text-shadow: none;
     transition: border-color .15s, color .15s;
   }
-  .cta-fixed.cta-raised .primary-btn::before, .cta-fixed.cta-raised .primary-btn::after { content: none; }
-  .cta-fixed.cta-raised .primary-btn:disabled { opacity: 0.45; }
-  .cta-fixed.cta-raised .primary-btn:not(:disabled):hover,
-  .cta-fixed.cta-raised .primary-btn:not(:disabled):active {
+  .cta-fixed .primary-btn::before, .cta-fixed .primary-btn::after { content: none; }
+  .cta-fixed .primary-btn:disabled { opacity: 0.45; }
+  .cta-fixed .primary-btn:not(:disabled):hover,
+  .cta-fixed .primary-btn:not(:disabled):active {
     border-color: rgba(205, 176, 105, 0.85);
     color: #fbf3df;
   }
@@ -216,47 +205,249 @@
   .pillar .label { font-size: 10.5px; color: #a9b3e0; margin-top: 3px; }
   .pillar .sub { font-size: 10px; color: #cbb98a; margin-top: 1px; }
 
-  .reveal-page { display: flex; flex-direction: column; }
-  .reveal-section {
-    position: relative; width: 100%; min-height: 100dvh;
+  /* ===== Result scroll page (rv- prefix) ===== */
+  .rv-page { display: flex; flex-direction: column; }
+  .rv-section {
+    position: relative; width: 100%;
     display: flex; flex-direction: column; justify-content: center;
-    overflow: hidden; padding: 90px 22px 60px;
+    overflow: hidden; padding: 72px 22px 72px;
   }
-  .reveal-section .r-content {
+  .rv-section.rv-plain { background: linear-gradient(180deg, #0a0d1a, #05070f); }
+  /* No forced min-height here on purpose — a background-image section should size
+     to its own content like any other section. A fixed svh floor left a real empty
+     gap under short content (the F "실제 결과 미리보기" card in particular). */
+  .rv-section.rv-image-mid { padding-top: 84px; padding-bottom: 84px; }
+  .rv-inner {
     position: relative; z-index: 2;
     opacity: 0; transform: translateY(24px);
     transition: opacity .7s ease, transform .7s ease;
-    display: flex; flex-direction: column; gap: 12px;
+    display: flex; flex-direction: column; gap: 14px;
   }
-  .reveal-section.in-view .r-content { opacity: 1; transform: translateY(0); }
-  .r-title {
-    font-family: 'Gugi', cursive;
-    font-size: 24px; text-shadow: 0 2px 14px rgba(0,0,0,0.8);
+  .rv-section.in-view .rv-inner { opacity: 1; transform: translateY(0); }
+
+  /* ---- Cinematic hero scenes (arrival / lock-transition / differentiation / final CTA) ---- */
+  .rv-hero-section {
+    min-height: 100svh; justify-content: flex-start;
+    padding: 88px 22px 40px;
   }
-  .r-body {
-    font-size: 15.5px; line-height: 1.7; text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  .rv-hero-section.rv-hero-align-end { justify-content: flex-end; padding: 40px 22px 56px; }
+  /* Reserved for hero scenes where the full 100svh beat would leave the next
+     panel's content too many empty scroll-screens away (final CTA). */
+  .rv-hero-section.rv-hero-compact { min-height: 78svh; }
+  .rv-hero-scrollhint {
+    position: absolute; left: 0; right: 0; z-index: 2;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    text-align: center;
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 12.5px; color: #cbd3f5;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    animation: bounce 1.6s ease-in-out infinite;
   }
-  .tease-blur { filter: blur(5px); user-select: none; }
-  .tease-tag {
-    display: inline-block; margin-left: 6px; font-size: 11.5px; color: #e8caa0;
-    border: 1px solid rgba(169,135,63,0.5); border-radius: 999px; padding: 2px 8px;
+  .rv-hero-img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    opacity: 0; transform: scale(1) translateX(0);
+    transition: opacity 1s ease;
+  }
+  .rv-hero-img.rv-hero-show { opacity: 1; }
+  .rv-hero-img.rv-hero-zoom { animation: rvHeroZoom 8s ease-out forwards; }
+  @keyframes rvHeroZoom { from { transform: scale(1) translateX(0); } to { transform: scale(1.035) translateX(-1.2%); } }
+  .rv-hero-sweep {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none; mix-blend-mode: screen; opacity: 0;
+    background: linear-gradient(115deg, transparent 30%, rgba(200,210,255,0.10) 48%, transparent 66%);
+    background-size: 250% 100%; background-position: 130% 0;
+  }
+  .rv-hero-sweep.rv-hero-show { opacity: 1; animation: rvHeroSweep 6.5s ease-in-out .3s 1; }
+  @keyframes rvHeroSweep { 0% { background-position: 130% 0; } 65% { background-position: -30% 0; } 100% { background-position: -30% 0; } }
+  .rv-hero-content { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 10px; }
+  .rv-reveal { opacity: 0; transform: translateY(10px); transition: opacity .6s ease, transform .6s ease; }
+  .rv-reveal.rv-show { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    .rv-hero-img.rv-hero-zoom { animation: none; }
+    .rv-hero-sweep { display: none; }
+    .rv-reveal { transition-duration: .15s; }
+  }
+
+  .rv-eyebrow {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 12.5px; letter-spacing: 1.5px; color: #cbd3f5; opacity: .85; text-align: center;
+  }
+  .rv-title {
+    font-family: 'Song Myung', serif;
+    font-size: 28px; line-height: 1.35; text-align: center;
+    text-shadow: 0 2px 16px rgba(0,0,0,0.8);
+  }
+  .rv-title .accent { color: #d7c48a; }
+  .rv-sub {
+    font-family: 'Gowun Batang', serif;
+    font-size: 16px; line-height: 1.6; color: #e7e0d2; text-align: center;
+    text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  }
+  .rv-body {
+    font-family: 'Gowun Batang', serif;
+    font-size: 16.5px; line-height: 1.75; text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  }
+  .rv-body p { margin: 0 0 12px; }
+  .rv-body p:last-child { margin-bottom: 0; }
+
+  .rv-card {
+    background: rgba(10,13,26,0.62); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 18px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .rv-card-title {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 13px; font-weight: 600; color: #cbb98a; letter-spacing: .3px;
+  }
+
+  .rv-stat-row { display: flex; gap: 8px; }
+  .rv-stat { flex: 1; text-align: center; background: rgba(0,0,0,0.35); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(255,255,255,0.12); }
+  .rv-stat .rv-stat-label { font-family: 'Pretendard', -apple-system, sans-serif; font-size: 11px; color: #97a0cf; }
+  .rv-stat .rv-stat-value { font-family: 'Song Myung', serif; font-size: 17px; color: #f3ead5; margin-top: 3px; }
+
+  .rv-keywords { display: flex; flex-wrap: wrap; gap: 8px; }
+  .rv-keyword {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 13.5px; color: #f3ead5; background: rgba(205,176,105,0.1);
+    border: 1px solid rgba(205,176,105,0.5); border-radius: 999px; padding: 6px 13px;
+  }
+  /* Stronger info hierarchy for the free "핵심 성향 키워드" card — same real
+     keyword data, just a more prominent title/chip treatment. */
+  .rv-card.rv-card-keywords { border-color: rgba(205,176,105,0.4); }
+  .rv-card-title-strong {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 15px; font-weight: 700; color: #f3ead5; letter-spacing: .2px;
+  }
+  .rv-keyword-lg {
+    font-size: 14.5px; font-weight: 600; padding: 7px 15px;
+    background: rgba(205,176,105,0.18); border-color: rgba(205,176,105,0.7);
+  }
+
+  .rv-veil { filter: blur(6px); user-select: none; }
+  .rv-unlock-chip {
+    display: inline-flex; align-items: center; gap: 4px; margin-left: 6px;
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 11.5px; color: #e8caa0;
+    border: 1px solid rgba(169,135,63,0.5); border-radius: 999px; padding: 3px 10px;
     white-space: nowrap; vertical-align: middle; cursor: pointer;
   }
-  .scroll-hint {
+
+  .rv-mask { letter-spacing: .5px; }
+
+  .rv-chapters { display: flex; flex-direction: column; gap: 12px; }
+  .rv-chapter {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: rgba(10,13,26,0.5); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; padding: 12px 14px;
+  }
+  .rv-chapter .rv-chapter-num { font-family: 'Song Myung', serif; font-size: 15px; color: #d7c48a; min-width: 20px; }
+  .rv-chapter .rv-chapter-title {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-weight: 600; font-size: 14.5px; color: #f2f4fb;
+  }
+  .rv-chapter .rv-chapter-desc {
+    font-family: 'Gowun Batang', serif; font-size: 13.5px; color: #c7cde8; line-height: 1.55; margin-top: 3px;
+  }
+  .rv-scope-note {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 11.5px; color: #8d96c4; text-align: center; line-height: 1.6;
+  }
+
+  .rv-scroll-hint {
+    font-family: 'Pretendard', -apple-system, sans-serif;
     text-align: center; font-size: 12.5px; color: #cbd3f5;
-    margin-top: 8px;
+    margin-top: 4px;
     animation: bounce 1.6s ease-in-out infinite;
   }
   @keyframes bounce { 0%,100% { transform: translateY(0); opacity: .7; } 50% { transform: translateY(6px); opacity: 1; } }
 
-  .locked-card { position: relative; border-radius: 16px; overflow: hidden; }
-  .locked-text { filter: blur(5px); user-select: none; line-height: 1.6; font-size: 14px; padding: 16px; background: rgba(12,16,30,0.72); }
-  .lock-overlay {
-    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: rgba(5,7,15,0.55); gap: 6px; font-size: 13px; color: #cbd3f5; text-align: center; padding: 0 20px;
+  .rv-cta-btn {
+    font-family: 'Song Myung', serif;
+    width: 100%; padding: 17px; border-radius: 14px; cursor: pointer;
+    background: linear-gradient(160deg, rgba(48,38,16,0.92), rgba(10,8,4,0.94));
+    border: 1px solid rgba(205,176,105,0.65); color: #f3ead5; font-size: 17px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
-  .lock-overlay .icon { font-size: 24px; }
-  .note { font-size: 11.5px; color: #97a0cf; text-align: center; line-height: 1.5; }
+  .rv-cta-note {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 12px; color: #97a0cf; text-align: center;
+  }
+
+  .rv-modal-backdrop {
+    position: fixed; inset: 0; z-index: 50; background: rgba(5,7,15,0.72);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .rv-modal {
+    background: rgba(14,17,32,0.97); border: 1px solid rgba(205,176,105,0.4);
+    border-radius: 16px; padding: 26px 22px; max-width: 320px; width: 100%;
+    text-align: center; display: flex; flex-direction: column; gap: 14px;
+  }
+  .rv-modal-title { font-family: 'Song Myung', serif; font-size: 19px; color: #f3ead5; }
+  .rv-modal-body { font-family: 'Gowun Batang', serif; font-size: 14.5px; color: #e7e0d2; line-height: 1.6; }
+  .rv-modal-btn {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 14px; font-weight: 600;
+    padding: 12px; border-radius: 10px; cursor: pointer;
+    background: rgba(205,176,105,0.15); border: 1px solid rgba(205,176,105,0.5); color: #f3ead5;
+  }
+
+  .rv-quote {
+    font-family: 'Gowun Batang', serif; font-size: 19px; line-height: 1.6; color: #f3ead5;
+    text-align: center; text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  }
+
+  .rv-evidence { margin-top: 2px; }
+  .rv-evidence summary {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 12.5px; color: #97a0cf;
+    cursor: pointer; list-style: none;
+  }
+  .rv-evidence summary::-webkit-details-marker { display: none; }
+  .rv-evidence summary::before { content: '▸ '; }
+  .rv-evidence[open] summary::before { content: '▾ '; }
+  .rv-evidence-body {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 12.5px; color: #8d96c4;
+    line-height: 1.6; margin-top: 6px; padding-left: 2px;
+  }
+
+  .rv-locked-item {
+    background: rgba(10,13,26,0.5); border: 1px solid rgba(205,176,105,0.25);
+    border-radius: 14px; padding: 13px 15px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .rv-locked-title {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-weight: 600; font-size: 14px; color: #e8caa0;
+  }
+
+  .rv-diff-list { display: flex; flex-direction: column; gap: 8px; }
+  .rv-diff-row {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 13.5px;
+  }
+  .rv-diff-no { color: #8d96c4; text-decoration: line-through; text-decoration-color: rgba(141,150,196,0.5); }
+  .rv-diff-yes { color: #f3ead5; font-weight: 600; }
+
+  .rv-quantity { display: flex; flex-direction: column; gap: 6px; text-align: center; margin-top: 6px; }
+  .rv-quantity-line1 { font-family: 'Song Myung', serif; font-size: 19px; color: #f3ead5; }
+  .rv-quantity-line2 { font-family: 'Gowun Batang', serif; font-size: 15px; color: #e7e0d2; }
+  .rv-quantity-line3 { font-family: 'Pretendard', -apple-system, sans-serif; font-size: 12.5px; color: #97a0cf; }
+
+  /* ===== Mobile real-device pass: common Korean line-break safety net =====
+     Prevents 1-2 syllable orphans (e.g. "있/어", "확인하/고 있어") by only ever
+     breaking at existing spaces; text-wrap:balance is a no-op fallback where
+     unsupported, so this is purely additive. Applied to every fixed/dynamic
+     text block on the opening/loading/result screens. */
+  .op-title, .op-sub, .op-bubble, .op-eyebrow, .op-title2, .op-sub2,
+  .hd-line, .load-line, .load-caption, .load-dots,
+  .rv-eyebrow, .rv-title, .rv-sub, .rv-body, .rv-quote, .rv-card-title,
+  .rv-locked-title, .rv-chapter-title, .rv-chapter-desc, .rv-diff-row,
+  .rv-quantity-line1, .rv-quantity-line2, .rv-quantity-line3, .rv-cta-note,
+  .rv-scroll-hint, .rv-hero-scrollhint, .rv-scope-note, .rv-modal-title, .rv-modal-body,
+  .rv-keyword, .rv-stat-label, .rv-stat-value {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+  .op-title, .op-title2, .rv-title, .op-bubble, .load-caption, .rv-quote {
+    text-wrap: balance;
+  }
+  /* Forces a guaranteed line break at an author-chosen semantic point (used where
+     the natural wrap alone isn't reliable enough — bubble/caption/title pairs with
+     an exact two-line spec from real-device testing). */
+  .force-line { display: block; }
+  .force-line + .force-line { margin-top: 2px; }
 
   /* ===== Opening sequence (scoped, does not affect other steps) ===== */
   .op-stage {
@@ -371,8 +562,8 @@
     border: 1px solid rgba(170, 40, 55, 0.55);
     border-radius: 16px;
     padding: 14px 20px;
-    font-size: 16.5px; line-height: 1.6; color: #f4ece0;
-    max-width: 90%;
+    font-size: clamp(15px, 4.3vw, 16.5px); line-height: 1.6; color: #f4ece0;
+    max-width: 92%;
     opacity: 0; transform: translateY(10px);
     transition: opacity .5s ease, transform .5s ease;
   }
@@ -439,29 +630,40 @@
     .op-shake { animation: none !important; }
   }
 
-  /* Gate-open title beat (fits inside existing open-gate hold; no timing changes) */
+  /* Gate-open title beat (fits inside existing open-gate hold; no timing changes).
+     Lives in its own vertically-centered wrapper (not the bottom-docked op-content)
+     so it reads clearly mid-screen without covering the door/moon at the very
+     bottom or top of the frame. */
+  .op-doortitle-wrap {
+    position: absolute; left: 0; right: 0; z-index: 10;
+    top: 34%; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 0 26px; text-align: center; pointer-events: none;
+  }
   .op-eyebrow {
     font-family: 'Gowun Batang', serif;
-    font-size: 13px; letter-spacing: 2px; color: #cbd3f5;
+    font-size: 14px; letter-spacing: 2px; color: #cbd3f5;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.7);
     opacity: 0; transform: translateY(6px);
     transition: opacity .5s ease, transform .5s ease;
   }
-  .op-eyebrow.op-show { opacity: .85; transform: translateY(0); }
+  .op-eyebrow.op-show { opacity: .9; transform: translateY(0); }
   .op-title2 {
     font-family: 'Song Myung', serif;
-    font-size: 28px; letter-spacing: 1px; color: #fbf6ec;
-    text-shadow: 0 2px 16px rgba(0,0,0,0.75);
+    font-size: clamp(30px, 8.6vw, 36px); letter-spacing: 1px; color: #fbf6ec;
+    text-shadow: 0 2px 18px rgba(0,0,0,0.85), 0 0 14px rgba(0,0,0,0.6);
     opacity: 0; transform: translateY(6px);
     transition: opacity .5s ease, transform .5s ease;
   }
   .op-title2.op-show { opacity: 1; transform: translateY(0); }
   .op-sub2 {
     font-family: 'Gowun Batang', serif;
-    font-size: 14px; color: #e7e0d2;
+    font-size: 16px; color: #e7e0d2;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.75);
     opacity: 0; transform: translateY(6px);
     transition: opacity .5s ease, transform .5s ease;
   }
-  .op-sub2.op-show { opacity: .92; transform: translateY(0); }
+  .op-sub2.op-show { opacity: .95; transform: translateY(0); }
 
   /* ===== New input-step dialogue line (현담 대사) ===== */
   .hd-line {
@@ -482,9 +684,9 @@
 
   /* ===== Reading/loading sequence ===== */
   .load-content {
-    position: absolute; left: 0; right: 0; bottom: 0; z-index: 10;
-    padding: 24px 22px calc(40px + env(safe-area-inset-bottom));
-    display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center;
+    position: absolute; left: 0; right: 0; bottom: 12%; z-index: 10;
+    padding: 24px 22px 0; display: flex; flex-direction: column; gap: 14px;
+    align-items: center; text-align: center;
   }
   .load-line {
     font-family: 'Gowun Batang', serif;
@@ -495,9 +697,24 @@
     font-size: 20px; color: #fbf6ec; letter-spacing: .5px;
     text-shadow: 0 2px 14px rgba(0,0,0,0.75);
     opacity: 0; transition: opacity .35s ease;
-    min-height: 28px;
+    min-height: 28px; line-height: 1.4;
   }
   .load-caption.load-found { color: #e8caa0; }
+
+  .load-progress-track {
+    width: 100%; max-width: 220px; height: 3px; border-radius: 999px;
+    background: rgba(255,255,255,0.12); overflow: hidden; position: relative;
+  }
+  .load-progress-fill {
+    position: absolute; top: 0; bottom: 0; width: 42%; border-radius: 999px;
+    background: linear-gradient(90deg, rgba(180,196,255,0) 0%, rgba(180,196,255,0.9) 38%, rgba(215,196,138,0.95) 68%, rgba(215,196,138,0) 100%);
+    animation: loadProgressSlide 2.8s ease-in-out infinite;
+  }
+  @keyframes loadProgressSlide { 0% { left: -46%; } 100% { left: 104%; } }
+  .load-dots {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 12px; color: #9aa3c7; letter-spacing: .3px;
+  }
 </style>
 </head>
 <body>
@@ -750,26 +967,34 @@ function renderOpeningSequence() {
   }
 
   // True simultaneous crossfade via a temporary overlay layer (no dark dip).
+  // The overlay only crossfades opacity; once it lands, opImg takes over and runs
+  // a single continuous zoom from scale(1) to zoomTo over zoomMs. Doing the zoom
+  // this way (rather than splitting it between the overlay and a final snap) avoids
+  // the visible "pop" where the image used to jump straight to its end scale the
+  // instant the overlay was removed — now it's one smooth, uninterrupted zoom-in.
   function trueCrossfadeTo(newSrc, ms, opts = {}) {
     const overlay = document.createElement('img');
     overlay.className = 'op-layer op-top';
     overlay.alt = '';
     overlay.style.opacity = '0';
     overlay.style.transform = 'scale(1)';
-    const zoomMs = opts.zoomMs || ms;
-    overlay.style.transition = `opacity ${ms}ms ${OP_EASE}, transform ${zoomMs}ms ${OP_EASE}`;
+    overlay.style.transition = `opacity ${ms}ms ${OP_EASE}`;
     overlay.src = newSrc;
     stage.insertBefore(overlay, opFog);
-    requestAnimationFrame(() => {
-      overlay.style.opacity = '1';
-      if (opts.zoomTo) overlay.style.transform = `scale(${opts.zoomTo})`;
-    });
+    requestAnimationFrame(() => { overlay.style.opacity = '1'; });
     after(ms, () => {
       opImg.style.transition = 'none';
       opImg.src = newSrc;
       opImg.style.opacity = '1';
-      if (opts.zoomTo) opImg.style.transform = `scale(${opts.zoomTo})`;
+      opImg.style.transform = 'scale(1)';
       overlay.remove();
+      if (opts.zoomTo) {
+        const zoomMs = opts.zoomMs || 2000;
+        requestAnimationFrame(() => {
+          opImg.style.transition = `transform ${zoomMs}ms ${OP_EASE}`;
+          requestAnimationFrame(() => { opImg.style.transform = `scale(${opts.zoomTo})`; });
+        });
+      }
     });
   }
 
@@ -788,7 +1013,7 @@ function renderOpeningSequence() {
       opContent.innerHTML = '';
       opImg.src = OP_IMG.invite;
       opContent.innerHTML = `
-        <div class="op-bubble op-show">왔군. 네 운명이 문 앞에서 기다리고 있어.</div>
+        <div class="op-bubble op-show"><span class="force-line">왔군.</span><span class="force-line">네 운명이 문 앞에서 기다리고 있어.</span></div>
       `;
       const btn = el(`<button class="op-gate-btn op-show">현담의 신당으로 들어가기</button>`);
       btn.onclick = () => {
@@ -850,7 +1075,7 @@ function renderOpeningSequence() {
     opBacklight.classList.remove('op-show', 'op-pulse');
     crossfadeTo(OP_IMG.invite, { outMs: 400, inMs: 1200 });
     after(400, () => {
-      const bubble = el(`<div class="op-bubble">왔군. 네 운명이 문 앞에서 기다리고 있어.</div>`);
+      const bubble = el(`<div class="op-bubble"><span class="force-line">왔군.</span><span class="force-line">네 운명이 문 앞에서 기다리고 있어.</span></div>`);
       opContent.appendChild(bubble);
       requestAnimationFrame(() => bubble.classList.add('op-show'));
       after(500, () => {
@@ -873,6 +1098,7 @@ function renderOpeningSequence() {
   function enterShrine() {
     // Flat, non-overlapping schedule (all offsets relative to this call)
     opContent.innerHTML = '';
+    let doorTitleWrap = null; // set at t=6250, cleared at t=9350 (see below)
     opBlackout.style.transitionDuration = '0.45s';
     opBlackout.classList.remove('op-hide'); // t=0: screen darkens over 0.45s
 
@@ -900,10 +1126,12 @@ function renderOpeningSequence() {
       playSfx('creak');
     });
 
-    // 0.4s after creak starts, begin the slow crossfade to the open gate
+    // 0.4s after creak starts, begin the slow crossfade to the open gate, then a
+    // single continuous ~2s zoom-in once it lands (walking-into-the-shrine feel —
+    // no static hold, no jump/pop, no repeat/loop).
     after(3650, () => {
       opDoorlight.classList.remove('op-show');
-      trueCrossfadeTo(OP_IMG.gateOpen, 2600, { zoomTo: 1.07, zoomMs: 3800 });
+      trueCrossfadeTo(OP_IMG.gateOpen, 2600, { zoomTo: 1.06, zoomMs: 2000 });
     });
 
     // open gate fully visible at 3650+2600=6250.
@@ -911,24 +1139,27 @@ function renderOpeningSequence() {
     // complete 3-line state holds for 2.2s before the leading crossfade starts. Net added
     // time vs. the original 7450ms crossfade start is 1.9s (under the 2s budget).
     after(6250, () => {
+      doorTitleWrap = el('<div class="op-doortitle-wrap"></div>');
+      stage.appendChild(doorTitleWrap);
       const eyebrow = el(`<div class="op-eyebrow">운명을 기록하는 안내자</div>`);
-      opContent.appendChild(eyebrow);
+      doorTitleWrap.appendChild(eyebrow);
       requestAnimationFrame(() => eyebrow.classList.add('op-show'));
     });
     after(6450, () => {
       const title2 = el(`<div class="op-title2">현담의 명식첩</div>`);
-      opContent.appendChild(title2);
+      doorTitleWrap.appendChild(title2);
       requestAnimationFrame(() => title2.classList.add('op-show'));
     });
     after(6650, () => {
       const sub2 = el(`<div class="op-sub2">네 사주에 숨은 흐름을 읽다</div>`);
-      opContent.appendChild(sub2);
+      doorTitleWrap.appendChild(sub2);
       requestAnimationFrame(() => sub2.classList.add('op-show'));
     });
     // all three lines fully visible by 6650+500=7150; hold complete state for 2.2s -> 9350
 
     // leading scene keeps drifting inward the whole time it's held (feels like walking in together)
     after(9350, () => {
+      if (doorTitleWrap) { doorTitleWrap.remove(); doorTitleWrap = null; }
       opContent.innerHTML = '';
       trueCrossfadeTo(OP_IMG.leading, 1400, { zoomTo: 1.05, zoomMs: 3400 });
     });
@@ -965,7 +1196,7 @@ const JOB_OPTS = ['직장인', '사업·프리랜서', '취업·이직 준비', 
 
 function renderTopic(content, scene) {
   content.classList.add('content-tight');
-  const hdLine = el(`<div class="hd-line hd-line-compact">좋아, ${state.name || '손님'}. 오늘 네가 알고 싶은 건 어느 쪽이지?</div>`);
+  const hdLine = el(`<div class="hd-line hd-line-compact">좋아, ${esc(state.name || '손님')}. 오늘 네가 알고 싶은 건 어느 쪽이지?</div>`);
   content.appendChild(hdLine);
 
   const panel = el('<div class="panel panel-compact"></div>');
@@ -1068,6 +1299,13 @@ function renderBirth(content, scene) {
   const mo = el('<input type="number" placeholder="월" min="1" max="12" />');
   const d = el('<input type="number" placeholder="일" min="1" max="31" />');
   y.value = state.year; mo.value = state.month; d.value = state.day;
+  // Commit to state immediately (not just on next-button click) so a gender/calendar
+  // toggle re-render never wipes an already-typed date.
+  const syncDate = () => { state.year = y.value; state.month = mo.value; state.day = d.value; };
+  [y, mo, d].forEach((input) => {
+    input.addEventListener('input', syncDate);
+    input.addEventListener('change', syncDate);
+  });
   row.appendChild(y); row.appendChild(mo); row.appendChild(d);
   panel.appendChild(row);
 
@@ -1128,7 +1366,10 @@ function buildPayload() {
     name: state.name, gender: state.gender, calendar: state.calendar,
     year: Number(state.year), month: Number(state.month), day: Number(state.day),
     relationshipStatus: state.relationshipStatus, jobStatus: state.jobStatus,
-    question: [state.topic, state.question].filter(Boolean).join(' - '),
+    // Kept as two separate fields (not concatenated) so the backend/model never
+    // mistakes a topic label like "관계와 선택" for a two-part question.
+    topic: state.topic || '',
+    question: state.question || '',
   };
   if (state.hour !== '') payload.hour = Number(state.hour);
   if (state.minute !== '') payload.minute = Number(state.minute);
@@ -1174,6 +1415,8 @@ function renderLoadingSequence() {
       <div class="op-overlay"></div>
       <div class="load-content">
         <div class="load-line">잠깐만. 지금 네 명식을 보고 있어.</div>
+        <div class="load-progress-track"><div class="load-progress-fill"></div></div>
+        <div class="load-dots" id="loadDots">분석 중.</div>
         <div class="load-caption" id="loadCaption">${LOADING_STAGES[0].caption}</div>
       </div>
     </div>
@@ -1182,6 +1425,7 @@ function renderLoadingSequence() {
 
   const loadImg = stage.querySelector('#loadImg');
   const loadCaption = stage.querySelector('#loadCaption');
+  const loadDots = stage.querySelector('#loadDots');
   loadImg.style.transition = 'opacity 450ms ease';
   requestAnimationFrame(() => { loadCaption.style.opacity = '1'; });
 
@@ -1218,6 +1462,16 @@ function renderLoadingSequence() {
     cycleTimers.push(setTimeout(() => { if (!stopped) showStage(i); }, triggerAt));
   }
 
+  // "분석 중." -> "분석 중.." -> "분석 중..." on the same >=1.6s cadence as the scene
+  // captions (no fast flicker), and keeps cycling for as long as the API takes.
+  let dotCount = 1;
+  const dotsTimer = setInterval(() => {
+    if (stopped) return;
+    dotCount = (dotCount % 3) + 1;
+    loadDots.textContent = '분석 중' + '.'.repeat(dotCount);
+  }, STAGE_MS);
+  cycleTimers.push(dotsTimer);
+
   const TIMEOUT_MS = 45000; // hard cap: fall back to the error/retry screen past this
   const controller = new AbortController();
   const timeoutTimer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -1226,20 +1480,23 @@ function renderLoadingSequence() {
   const fetchPromise = doFetch(controller.signal).then(() => { fetchSettled = true; });
   const minDelay = new Promise((resolve) => setTimeout(resolve, MIN_MS));
 
-  // Past the normal 4-scene walkthrough, if the API still hasn't answered, swap to a
-  // dedicated "still waiting" line instead of holding the last scene's caption forever.
-  minDelay.then(() => {
+  // Past 10s, if the API still hasn't answered, swap to a dedicated "still waiting"
+  // line instead of holding the last scene's caption indefinitely. The progress bar
+  // and dots keep animating regardless.
+  const longWaitTimer = setTimeout(() => {
     if (stopped || fetchSettled) return;
     loadCaption.style.opacity = '0';
     setTimeout(() => {
       if (stopped || fetchSettled) return;
-      loadCaption.textContent = '거의 다 봤어. 마지막 흐름을 확인하는 중이야.';
+      loadCaption.innerHTML = '<span class="force-line">조금만 기다려줘.</span><span class="force-line">마지막 흐름을 확인하고 있어.</span>';
       requestAnimationFrame(() => { loadCaption.style.opacity = '1'; });
     }, 300);
-  });
+  }, 10000);
+  cycleTimers.push(longWaitTimer);
 
   Promise.all([fetchPromise, minDelay]).then(() => {
     stopped = true;
+    clearInterval(dotsTimer);
     clearTimeout(timeoutTimer);
     cycleTimers.forEach(clearTimeout);
     document.body.style.overflow = '';
@@ -1258,25 +1515,341 @@ function renderLoadingSequence() {
   });
 }
 
-const REVEAL_CYCLE = ['hyundam-reveal.webp', 'hyundam-avatar.webp', 'hyundam-dialogue.webp', 'hyundam-focus.webp'];
+// Reserved for future use (real testimonials / pricing / event copy). Intentionally
+// not rendered anywhere yet — populate later with real data, never placeholders.
+const RV_TESTIMONIALS = []; // { name: string, quote: string }[]
+const RV_PRICING = null; // { amount: number, currency: string, eventLabel?: string, eventEndsAt?: string } | null
 
-function teaseBody(body) {
-  const match = body.match(/^(.{8,60}?[.!?…])\s*(.*)$/s);
-  if (!match) return `<div class="r-body">${body}</div>`;
-  const [, visible, rest] = match;
-  if (!rest) return `<div class="r-body">${visible}</div>`;
-  return `<div class="r-body">${visible} <span class="tease-blur">${rest}</span><span class="tease-tag">🔒 이어보기</span></div>`;
+function esc(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function buildRevealSection(imgSrc, innerHtml, extraClass) {
-  const section = el(`
-    <div class="reveal-section${extraClass ? ' ' + extraClass : ''}">
-      <img class="scene-bg" src="/characters/${imgSrc}" alt="" />
-      <div class="scene-overlay"></div>
-      <div class="r-content">${innerHtml}</div>
+function splitSentences(text) {
+  if (!text) return [];
+  const matches = String(text).match(/[^.!?…]+[.!?…]+|[^.!?…]+$/g);
+  return (matches || [String(text)]).map((s) => s.trim()).filter(Boolean);
+}
+
+// Groups sentences into short paragraphs (2-4 sentences each) instead of one wall of text.
+function paragraphsHtml(text, perParagraph) {
+  const per = perParagraph || 3;
+  const sentences = splitSentences(text);
+  if (!sentences.length) return '';
+  const paras = [];
+  for (let i = 0; i < sentences.length; i += per) {
+    paras.push(sentences.slice(i, i + per).join(' '));
+  }
+  return paras.map((p) => `<p>${esc(p)}</p>`).join('');
+}
+
+// Reveals the first `visibleCount` sentences in full; the rest render for real but
+// stay visually veiled (blurred), never a whole-card/whole-page blur.
+function partialVeilHtml(text, visibleCount) {
+  const n = visibleCount || 2;
+  const sentences = splitSentences(text);
+  if (!sentences.length) return '';
+  const visible = sentences.slice(0, n).join(' ');
+  const rest = sentences.slice(n).join(' ');
+  let html = `<p>${esc(visible)}</p>`;
+  if (rest) {
+    html += `<p><span class="rv-veil">${esc(rest)}</span><span class="rv-unlock-chip" data-rv-unlock>🔒 이어보기</span></p>`;
+  }
+  return html;
+}
+
+const GAN_INFO = {
+  '甲': { name: '갑목', element: '木', yinyang: '양' }, '乙': { name: '을목', element: '木', yinyang: '음' },
+  '丙': { name: '병화', element: '火', yinyang: '양' }, '丁': { name: '정화', element: '火', yinyang: '음' },
+  '戊': { name: '무토', element: '土', yinyang: '양' }, '己': { name: '기토', element: '土', yinyang: '음' },
+  '庚': { name: '경금', element: '金', yinyang: '양' }, '辛': { name: '신금', element: '金', yinyang: '음' },
+  '壬': { name: '임수', element: '水', yinyang: '양' }, '癸': { name: '계수', element: '水', yinyang: '음' },
+};
+// Plain-language versions of the day-master (no hanja/technical terms) — used in the
+// free area's prose. The hanja/element name still appears, but only inside the
+// collapsed "사주 근거 보기" evidence toggle.
+const GAN_TRAITS = {
+  '甲': '방향을 정하면 웬만해선 굽히지 않는 편이야',
+  '乙': '상황에 맞춰 유연하게 휘어지면서도 결국 원하는 쪽으로 나아가는 편이야',
+  '丙': '감정과 에너지를 숨기지 않고 바로 드러내는 편이야',
+  '丁': '겉으론 잔잔해 보여도 속에서 꾸준히 타오르는 편이야',
+  '戊': '웬만한 흔들림엔 끄떡없이 중심을 지키는 편이야',
+  '己': '주변을 살피고 다독이며 조율하는 데 강한 편이야',
+  '庚': '결정을 내리면 망설임 없이 밀어붙이는 편이야',
+  '辛': '디테일과 완성도에 예민하게 신경 쓰는 편이야',
+  '壬': '상황에 맞춰 빠르게 흐름을 읽고 움직이는 편이야',
+  '癸': '겉으론 조용해도 안에서 깊이 파고드는 편이야',
+};
+const WUXING_NAME = { '木': '목', '火': '화', '土': '토', '金': '금', '水': '수' };
+const WUXING_TRAITS = {
+  '木': ['성장', '추진력', '유연함'], '火': ['열정', '표현력', '직관'], '土': ['안정감', '포용력', '신중함'],
+  '金': ['결단력', '원칙', '냉철함'], '水': ['통찰력', '적응력', '융통성'],
+};
+
+function topicBucket(topic) {
+  if (topic === '인연과 연애') return 'love';
+  if (topic === '지나간 사람과의 재회') return 'reunion';
+  if (topic === '돈과 일') return 'money';
+  if (topic === '관계와 선택') return 'choice';
+  return 'flow';
+}
+
+// "{year}년 남은 {N}개월" — with the Dec ("올해 마지막 한 달") / Jan ("올해") exceptions.
+// Fed by the server-computed (Asia/Seoul) dateInfo the API response carries; never
+// derived from the browser's clock, and never shown at all if dateInfo is missing.
+function yearMonthsFragment(dateInfo) {
+  if (!dateInfo) return null;
+  const { currentYear, currentMonth, remainingMonthsInYear } = dateInfo;
+  if (currentMonth === 1) return `${currentYear}년 올해`;
+  if (currentMonth === 12) return `${currentYear}년 올해 마지막 한 달`;
+  return `${currentYear}년 남은 ${remainingMonthsInYear}개월`;
+}
+
+function periodChapterTitle(dateInfo) {
+  if (!dateInfo) return '앞으로의 흐름';
+  const { currentYear, currentMonth, remainingMonthsInYear } = dateInfo;
+  if (currentMonth === 1) return `${currentYear}년 전체 흐름`;
+  if (currentMonth === 12) return '올해 마지막 한 달의 흐름';
+  return `${currentYear}년 남은 ${remainingMonthsInYear}개월의 흐름`;
+}
+
+// "9월부터 12월까지" / "올해 마지막 한 달 동안" — always derived from dateInfo.currentMonth,
+// never a hardcoded month.
+function monthRangePhrase(dateInfo) {
+  if (!dateInfo) return null;
+  return dateInfo.currentMonth === 12 ? '올해 마지막 한 달 동안' : `${dateInfo.currentMonth}월부터 12월까지`;
+}
+
+function periodActionTitle(dateInfo) {
+  const range = monthRangePhrase(dateInfo);
+  return range ? `${range}, 이렇게 움직여` : '지금부터의 행동 순서';
+}
+
+// Returns the D-scene's raw (unescaped) title/subtitle text — the title/sub go in
+// the hero, the caller escapes them at insertion.
+function periodIntroParts(bucket, dateInfo) {
+  const frag = yearMonthsFragment(dateInfo);
+  if (!frag) {
+    return { title: '여기서부터는 조금 더 구체적이야.', sub: '흐름이 바뀌는 시기와, 네가 피해야 할 선택까지 보여.' };
+  }
+  if (bucket === 'money') {
+    const rangePhrase = monthRangePhrase(dateInfo);
+    return { title: `${frag}, 금전 흐름은 이렇게 움직여.`, sub: `${rangePhrase} 돈의 흐름이 강해지는 때와 조심해야 할 선택을 짚어줄게.` };
+  }
+  if (bucket === 'love') return { title: `${frag}, 인연의 흐름을 볼게.`, sub: '' };
+  if (bucket === 'reunion') return { title: '올해 남은 기간, 관계가 다시 움직일 가능성이 있는 시기를 볼게.', sub: '' };
+  if (bucket === 'choice') return { title: '올해 남은 기간, 관계와 선택의 흐름이 바뀌는 지점을 볼게.', sub: '' };
+  return { title: `${frag}의 중요한 변화를 볼게.`, sub: '' };
+}
+
+// Renders a section's model-provided technical justification behind a collapsed
+// toggle — never shown in the main body text.
+function evidenceHtml(sec) {
+  if (!sec || !sec.evidence) return '';
+  return `<details class="rv-evidence"><summary>이 해석의 사주 근거 보기</summary><div class="rv-evidence-body">${esc(sec.evidence)}</div></details>`;
+}
+
+// Splits a section's body into a visible lead sentence and a hidden (blurred) rest —
+// used for the D/F paid-value teasers. Falls back to reusing the visible sentence as
+// the hidden one only when the real text is too short to split (never fabricated).
+function narrativeSlice(section, part) {
+  if (!section || !section.body) return null;
+  const sentences = splitSentences(section.body);
+  if (!sentences.length) return null;
+  let visible;
+  let hidden;
+  if (part === 'second') {
+    // Draws from later in the section so a "first" + "second" pair from the same
+    // section never repeats the same visible sentence.
+    if (sentences.length >= 3) { visible = sentences.slice(1, 2); hidden = sentences.slice(2, 3); }
+    else if (sentences.length === 2) { visible = sentences.slice(1, 2); hidden = sentences.slice(0, 1); }
+    else { visible = sentences.slice(0, 1); hidden = sentences.slice(0, 1); }
+  } else if (part === 'all') {
+    visible = sentences.slice(0, 1);
+    hidden = sentences.slice(1, 3);
+  } else {
+    visible = sentences.slice(0, 1);
+    hidden = sentences.slice(1, 2);
+  }
+  if (!hidden.length) hidden = visible;
+  return { visible: visible.join(' '), hidden: hidden.join(' ') };
+}
+
+// The 4 paid-unlock items per topic (item D). "timing" pulls the real daYun period;
+// everything else pulls a real sentence out of the matching API section.
+const LOCKED_CONFIG = {
+  money: [
+    { title: '수입 흐름이 강해지는 시기', kind: 'timing' },
+    { title: '지금 먼저 밀어야 할 수익 방식', kind: 'narrative', sec: 'money', part: 'first' },
+    { title: '돈이 새기 쉬운 선택', kind: 'narrative', sec: 'money', part: 'second' },
+    { title: 'DATE_AWARE_ACTION', kind: 'narrative', sec: 'question', part: 'all' },
+  ],
+  love: [
+    { title: '인연이 들어오는 시기', kind: 'timing' },
+    { title: '자꾸 같은 사람에게 끌리는 이유', kind: 'narrative', sec: 'love', part: 'first' },
+    { title: '피해야 할 상대와 관계', kind: 'narrative', sec: 'love', part: 'second' },
+    { title: '지금 먼저 다가가도 되는지', kind: 'narrative', sec: 'question', part: 'all' },
+  ],
+  reunion: [
+    { title: '다시 접점이 생길 가능성이 높은 시기', kind: 'timing' },
+    { title: '먼저 움직여도 되는지', kind: 'narrative', sec: 'question', part: 'first' },
+    { title: '다시 만나도 반복될 문제', kind: 'narrative', sec: 'love', part: 'first' },
+    { title: '지금 연락해도 될지 판단하는 기준', kind: 'narrative', sec: 'love', part: 'second' },
+  ],
+  choice: [
+    { title: '이 관계를 정리하기 전에 확인해야 할 신호', kind: 'narrative', sec: 'love', part: 'all' },
+    { title: '먼저 대화를 꺼내도 되는 시기', kind: 'timing' },
+    { title: '유지하면 반복될 가능성이 큰 문제', kind: 'narrative', sec: 'money', part: 'first' },
+    { title: '관계를 바꾸기 위해 지금 해야 할 행동', kind: 'narrative', sec: 'question', part: 'all' },
+  ],
+  flow: [
+    { title: '올해 가장 크게 흔들리는 지점', kind: 'narrative', sec: 'wuxing', part: 'first' },
+    { title: '기회가 열리는 시기', kind: 'timing' },
+    { title: '방향을 잘못 잡기 쉬운 시기', kind: 'narrative', sec: 'money', part: 'second' },
+    { title: '지금부터의 행동 순서', kind: 'narrative', sec: 'question', part: 'all' },
+  ],
+};
+
+const CHAPTER_TITLES = {
+  money: ['지금 돈과 일이 막힌 진짜 이유', '나에게 맞는 수입 구조', '직장·사업·프리랜서 중 유리한 방향', '돈이 들어오는 시기', '돈이 새기 쉬운 시기', '계약·이직·확장에서 조심할 선택', 'DATE_AWARE_CHAPTER', '지금 실행할 행동 3가지'],
+  love: ['지금 연애가 막힌 진짜 이유', '나에게 맞는 연애 방식', '끌리는 사람과 오래가는 사람의 차이', '인연이 들어오는 시기', '관계가 흔들리기 쉬운 시기', '밀당·고백·이별에서 조심할 선택', 'DATE_AWARE_CHAPTER', '지금 실행할 행동 3가지'],
+  reunion: ['지금 이 관계가 멈춘 진짜 이유', '다시 이어질 가능성이 있는 관계인지', '내가 먼저 움직여야 할지, 기다려야 할지', '다시 접점이 생기는 시기', '같은 문제가 반복되기 쉬운 시기', '연락·재회 시도에서 조심할 선택', 'DATE_AWARE_CHAPTER', '지금 실행할 행동 3가지'],
+  choice: ['지금 이 관계에서 막힌 진짜 이유', '나에게 맞는 거리 두는 방식', '유지할 관계와 정리할 관계의 기준', '선택해야 할 시기', '흔들리기 쉬운 시기', '대화·거절·정리에서 조심할 선택', 'DATE_AWARE_CHAPTER', '지금 실행할 행동 3가지'],
+  flow: ['지금 흐름이 막혀 보이는 진짜 이유', '나에게 맞는 삶의 리듬', '힘을 써야 할 영역과 아낄 영역', '기회가 열리는 시기', '흔들리기 쉬운 시기', '관계·돈·선택에서 조심할 결정', 'DATE_AWARE_CHAPTER', '지금 실행할 행동 3가지'],
+};
+
+function chapterDescs(bucket, dateInfo) {
+  const domain = { money: '돈과 일', love: '연애', reunion: '그 사람과의 관계', choice: '이 관계', flow: '삶의 흐름' }[bucket] || '지금 흐름';
+  const periodFrag = yearMonthsFragment(dateInfo) || '앞으로 12개월';
+  return [
+    `${domain}이 막힌 진짜 원인을 사주로 짚어.`,
+    '너에게 맞는 방식이 무엇인지 실제 데이터로 설명해.',
+    '여러 선택지 중 어느 쪽이 유리한지 근거를 들어 비교해.',
+    '진짜 흐름이 강해지는 시기를 정확한 시점으로 짚어.',
+    '흔들리기 쉬운 시기를 미리 알려줘.',
+    '조심해야 할 선택과 그 이유를 구체적으로 짚어.',
+    `${periodFrag}의 흐름을 시기별로 정리해.`,
+    '지금 바로 실행할 수 있는 행동 3가지를 제안해.',
+  ];
+}
+
+// Real, deterministic derivations from the already-computed saju data — never invented.
+function analyzeWuxing(count) {
+  const entries = Object.entries(count || {});
+  if (!entries.length) return { strongestChar: null, weakestChar: null, sorted: [] };
+  const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+  const minN = sorted[sorted.length - 1][1];
+  const weakestChar = [...sorted].reverse().find(([, n]) => n === minN)[0];
+  return { strongestChar: sorted[0][0], weakestChar, sorted };
+}
+
+function deriveKeywords(sorted) {
+  const words = [];
+  for (const [elem] of sorted) {
+    for (const w of (WUXING_TRAITS[elem] || [])) {
+      if (!words.includes(w)) words.push(w);
+      if (words.length >= 3) return words;
+    }
+  }
+  return words;
+}
+
+// Real, deterministic derivations from the already-computed saju data — never invented.
+function analyzeWuxing(count) {
+  const entries = Object.entries(count || {});
+  if (!entries.length) return { strongestChar: null, weakestChar: null, sorted: [] };
+  const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+  const minN = sorted[sorted.length - 1][1];
+  const weakestChar = [...sorted].reverse().find(([, n]) => n === minN)[0];
+  return { strongestChar: sorted[0][0], weakestChar, sorted };
+}
+
+function deriveKeywords(sorted) {
+  const words = [];
+  for (const [elem] of sorted) {
+    for (const w of (WUXING_TRAITS[elem] || [])) {
+      if (!words.includes(w)) words.push(w);
+      if (words.length >= 3) return words;
+    }
+  }
+  return words;
+}
+
+function buildRvSection(imgPath, innerHtml, extraClass) {
+  const bg = imgPath ? `<img class="scene-bg" src="${imgPath}" alt="" /><div class="scene-overlay"></div>` : '';
+  const plainClass = imgPath ? '' : ' rv-plain';
+  return el(`
+    <div class="rv-section${plainClass}${extraClass ? ' ' + extraClass : ''}">
+      ${bg}
+      <div class="rv-inner">${innerHtml}</div>
     </div>
   `);
-  return section;
+}
+
+// A cinematic, image-first hero scene: the image (with a slow zoom + moonlight sweep)
+// is on screen alone first, then the title, then the subtitle — never a card or long
+// paragraph on top of it. Reserved for the 4 flagged scenes (arrival, lock-transition,
+// differentiation, final CTA); everything else stays a plain buildRvSection.
+function buildHeroSection(imgPath, titleHtml, subHtml, opts) {
+  const options = opts || {};
+  const objectPosition = options.objectPosition || 'center 22%';
+  const alignEnd = options.alignEnd ? ' rv-hero-align-end' : '';
+  const compact = options.compact ? ' rv-hero-compact' : '';
+  // Only the arrival scene needs this: it's the very first screen, so its scroll
+  // affordance must live inside this same 100svh section (never the section after)
+  // or a user who never scrolls past screen 1 would never see it.
+  const scrollHintHtml = options.scrollHint
+    ? `<div class="rv-hero-scrollhint rv-reveal" data-hero-scrollhint>▾ 스크롤해서 계속 보기</div>`
+    : '';
+  return el(`
+    <div class="rv-section rv-hero-section${alignEnd}${compact}">
+      <img class="rv-hero-img" src="${imgPath}" alt="" style="object-position: ${objectPosition};" />
+      <div class="rv-hero-sweep"></div>
+      <div class="scene-overlay"></div>
+      <div class="rv-hero-content">
+        <div class="rv-title rv-reveal" data-hero-title>${titleHtml}</div>
+        ${subHtml ? `<div class="rv-sub rv-reveal" data-hero-sub>${subHtml}</div>` : ''}
+      </div>
+      ${scrollHintHtml}
+    </div>
+  `);
+}
+
+// Runs a hero scene's reveal sequence once: image+sweep start immediately, title at
+// titleDelay, subtitle at subDelay. Respects prefers-reduced-motion (skips the zoom/
+// sweep animation and shows the end state right away — no navigation, no auto-scroll).
+function activateHero(section, titleDelay, subDelay) {
+  const img = section.querySelector('.rv-hero-img');
+  const sweep = section.querySelector('.rv-hero-sweep');
+  const title = section.querySelector('[data-hero-title]');
+  const sub = section.querySelector('[data-hero-sub]');
+  const scrollHint = section.querySelector('[data-hero-scrollhint]');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (img) requestAnimationFrame(() => { img.classList.add('rv-hero-show'); if (!reduced) img.classList.add('rv-hero-zoom'); });
+  if (reduced) {
+    if (title) title.classList.add('rv-show');
+    if (sub) sub.classList.add('rv-show');
+    if (scrollHint) scrollHint.classList.add('rv-show');
+    return;
+  }
+  if (sweep) requestAnimationFrame(() => sweep.classList.add('rv-hero-show'));
+  if (title) setTimeout(() => title.classList.add('rv-show'), titleDelay);
+  if (sub) setTimeout(() => sub.classList.add('rv-show'), subDelay);
+  if (scrollHint) setTimeout(() => scrollHint.classList.add('rv-show'), subDelay + 300);
+}
+
+function showComingSoonModal() {
+  const backdrop = el(`
+    <div class="rv-modal-backdrop">
+      <div class="rv-modal">
+        <div class="rv-modal-title">결제 기능을 준비 중입니다.</div>
+        <div class="rv-modal-body">현담의 전체 명식 리포트는 곧 결제로 열람할 수 있게 될 거야. 조금만 기다려줘.</div>
+        <button class="rv-modal-btn" type="button">닫기</button>
+      </div>
+    </div>
+  `);
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) backdrop.remove(); });
+  backdrop.querySelector('.rv-modal-btn').onclick = () => backdrop.remove();
+  document.body.appendChild(backdrop);
 }
 
 function renderRevealPage() {
@@ -1284,73 +1857,267 @@ function renderRevealPage() {
     const scene = buildScene('reveal');
     sceneRoot.appendChild(scene);
     const content = scene.querySelector('#content');
-    content.appendChild(el(`<div class="bubble">앗, 문제가 생겼어: ${fetchError}</div>`));
+    content.appendChild(el(`<div class="bubble">앗, 문제가 생겼어: ${esc(fetchError)}</div>`));
     scene.appendChild(buildCta('다시 시도', () => goTo('loading'), { raised: false }));
     return;
   }
   if (!resultData) return;
 
-  const { saju, teaser } = resultData;
-  const order = [['year','년주'],['month','월주'],['day','일주'],['time','시주']];
+  const { saju, teaser, dateInfo } = resultData;
+  const sections = teaser.sections || [];
+  const secTemperament = sections[0] || null; // 타고난 기질
+  const secWuxing = sections[1] || null;      // 오행이 말해주는 것
+  const secLove = sections[2] || null;        // 연애·관계
+  const secMoney = sections[3] || null;       // 재물·커리어
+  const secQuestion = sections[4] || null;    // 네가 물어본 것
+
+  const name = state.name || saju.name || '손님';
+  const order = [['year', '년주'], ['month', '월주'], ['day', '일주'], ['time', '시주']];
   const pillarsHtml = order.map(([key, label]) => {
     const p = saju.pillars[key];
-    return `<div class="pillar"><div class="gz">${p.ganzhi}</div><div class="label">${label}</div><div class="sub">${p.stage}</div></div>`;
+    return `<div class="pillar"><div class="gz">${esc(p.ganzhi)}</div><div class="label">${label}</div><div class="sub">${esc(p.stage)}</div></div>`;
   }).join('');
 
-  const page = el('<div class="reveal-page"></div>');
+  const bucket = topicBucket(state.topic);
 
-  page.appendChild(buildRevealSection('hyundam-reveal.webp', `
-    <div class="impact">${state.name}의 <span class="accent">사주</span></div>
+  const page = el('<div class="rv-page"></div>');
+
+  // ---- 도착 (hero): 현담+명식첩 이미지 먼저, 제목/보조문구만 상단에 순차 등장 ----
+  // No pillars/long body here — moved to the plain section right after, so the
+  // image's face/hands/booklet are never covered by a card or paragraph.
+  const arrivalHero = buildHeroSection(
+    opPath('현담_최종이미지_1부', '05_월호명식첩_펼치기.png'),
+    `${esc(name)}의 명식이 열렸어`,
+    '먼저, 네 사주에서<br/>가장 선명하게 보이는 것부터 말해줄게.',
+    { objectPosition: 'center 24%', scrollHint: true }
+  );
+  page.appendChild(arrivalHero);
+
+  // ---- 사주 명식 카드 (도착 히어로에서 분리) ----
+  // Scroll hint now lives inside the arrival hero itself (must be visible in the
+  // very first screen, not one scroll later) — not repeated here.
+  page.appendChild(buildRvSection(null, `
+    <div class="rv-eyebrow">${esc(name)}의 사주 명식</div>
     <div class="pillars">${pillarsHtml}</div>
-    <div class="bubble">${teaser.opening || '지금부터 하나씩 풀어볼게.'}</div>
-    <div class="scroll-hint">▾ 스크롤해서 계속 보기</div>
+    <div class="rv-body">${paragraphsHtml(teaser.opening || '지금부터 하나씩 풀어볼게.', 3)}</div>
   `));
 
-  (teaser.sections || []).forEach((sec, i) => {
-    const img = REVEAL_CYCLE[(i + 1) % REVEAL_CYCLE.length];
-    const bodyHtml = i === 0 ? `<div class="r-body">${sec.body || ''}</div>` : teaseBody(sec.body || '');
-    page.appendChild(buildRevealSection(img, `
-      <div class="r-title">${sec.title || ''}</div>
-      ${bodyHtml}
-    `));
-  });
+  // ---- A. 내 고민 재확인 (고민 원문 우선, 건너뛴 경우에만 주제명 표시) ----
+  const hasQuestion = !!state.question;
+  const quoteTitleHtml = hasQuestion
+    ? '<span class="force-line">네가 정말 묻고 싶었던 건</span><span class="force-line">이거였지.</span>'
+    : '<span class="force-line">네가 고른 건</span><span class="force-line">이거였지.</span>';
+  const quoteText = state.question || state.topic || '내 흐름이 궁금해서';
+  page.appendChild(buildRvSection(null, `
+    <div class="rv-title">${quoteTitleHtml}</div>
+    <div class="rv-quote">“${esc(quoteText)}”</div>
+  `));
 
-  const lockedSection = buildRevealSection('hyundam-reveal.webp', `
-    <div class="r-title">아직 안 끝났어</div>
-    <div class="locked-card">
-      <div class="locked-text">${teaser.locked_teaser || '더 자세한 이야기가 준비되어 있어...'}</div>
-      <div class="lock-overlay"><div class="icon">🔒</div><div>이메일 남기면 전체 리포트를 볼 수 있어</div></div>
+  // ---- B. 알아듣기 쉬운 개인화 무료 통찰 (완전 공개, 블러 없음, 전문용어는 근거 토글 안에만) ----
+  const ganTrait = GAN_TRAITS[saju.dayMaster] || '자기만의 리듬이 뚜렷한 편이야';
+  const centerSentence = `너는 ${ganTrait}.`;
+  const ganInfo = GAN_INFO[saju.dayMaster] || null;
+  const centerEvidence = ganInfo ? `일간 ${ganInfo.name}(${ganInfo.element}, ${ganInfo.yinyang}) 기준의 해석이야.` : '';
+
+  const { strongestChar, weakestChar, sorted } = analyzeWuxing(saju.wuxingCount);
+  const keywords = deriveKeywords(sorted);
+  const strongTrait = strongestChar ? (WUXING_TRAITS[strongestChar] || [])[0] : null;
+  const weakTrait = weakestChar ? (WUXING_TRAITS[weakestChar] || [])[0] : null;
+
+  const topicSection = bucket === 'money' ? secMoney : ((bucket === 'love' || bucket === 'reunion') ? secLove : (secLove || secMoney));
+  const patternSentences = splitSentences(secTemperament && secTemperament.body).slice(0, 2);
+  const stuckSentence = topicSection ? splitSentences(topicSection.body).slice(0, 1) : [];
+  const concernLabel = state.question ? `“${state.question}”` : (state.topic || '지금 이 흐름');
+  const statusLabel = state.relationshipStatus || state.jobStatus || '';
+  const bridgeSentence = statusLabel
+    ? `${concernLabel} 앞에서도, 지금 ${statusLabel} 상황이라 이 패턴은 더 또렷하게 드러나.`
+    : `${concernLabel} 앞에서도 이 패턴은 똑같이 드러나.`;
+  const personalParas = [...patternSentences, ...stuckSentence, bridgeSentence].filter(Boolean);
+
+  page.appendChild(buildRvSection(opPath('현담_최종이미지_2부', '08_붓으로_사주읽기.png'), `
+    <div class="rv-title">무료로 먼저 열어본 것</div>
+    <div class="rv-card">
+      <div class="rv-card-title">반복되는 행동 패턴</div>
+      <div class="rv-body"><p>${esc(centerSentence)}</p></div>
+      ${centerEvidence ? `<details class="rv-evidence"><summary>이 해석의 사주 근거 보기</summary><div class="rv-evidence-body">${esc(centerEvidence)}</div></details>` : ''}
     </div>
-    <div class="panel">
-      <input type="email" id="emailInput" placeholder="이메일 주소" />
-      <div class="note">지금은 데모 단계라 실제 이메일 발송은 아직 연결되어 있지 않아. 입력한 주소는 저장되지 않아.</div>
+    ${strongTrait ? `
+    <div class="rv-stat-row">
+      <div class="rv-stat"><div class="rv-stat-label">가장 강하게 쓰는 힘</div><div class="rv-stat-value">${esc(strongTrait)}</div></div>
+      <div class="rv-stat"><div class="rv-stat-label">지금 더 채우면 좋은 힘</div><div class="rv-stat-value">${esc(weakTrait || '')}</div></div>
+    </div>` : ''}
+    ${keywords.length ? `
+    <div class="rv-card rv-card-keywords">
+      <div class="rv-card-title-strong">핵심 성향 키워드 ${keywords.length}가지</div>
+      <div class="rv-keywords">${keywords.map((k) => `<span class="rv-keyword rv-keyword-lg">${esc(k)}</span>`).join('')}</div>
+    </div>` : ''}
+    <div class="rv-body">${personalParas.map((p) => `<p>${esc(p)}</p>`).join('')}</div>
+    ${evidenceHtml(secTemperament)}
+  `, 'rv-image-mid'));
+
+  // ---- C. 지금 이 문제 앞에서 멈춘 이유 (실제 API 섹션 1개, 정상 공개) ----
+  if (secQuestion && secQuestion.body) {
+    const concernHeadline = state.question ? `“${esc(state.question)}”` : `네가 고른 주제, “${esc(state.topic || '')}”`;
+    page.appendChild(buildRvSection(null, `
+      <div class="rv-title">네가 지금 이 문제 앞에서 멈춘 이유</div>
+      <div class="rv-sub">${concernHeadline}</div>
+      <div class="rv-body">${paragraphsHtml(secQuestion.body, 2)}</div>
+      ${evidenceHtml(secQuestion)}
+    `));
+  }
+
+  // ---- D. 결제 후 열리는 4가지 맞춤 답 (주제별) ----
+  // TODO(payment): this is a *visual* blur only (.rv-veil) — the underlying text is
+  // already present in the API response the browser received, so this is NOT secure
+  // payment gating. Before wiring up real payments, the server must withhold this
+  // content entirely (a separate authenticated/paid endpoint) so an unpaid client
+  // never receives the locked text at all.
+  const daYun = saju.daYun || [];
+  const nowYear = dateInfo ? dateInfo.currentYear : new Date().getFullYear();
+  const activePeriod = daYun.find((d) => nowYear >= d.startYear && nowYear <= d.endYear) || daYun[0] || null;
+  const timingText = activePeriod ? `${activePeriod.startYear}년, 만 ${activePeriod.startAge}세 무렵부터 흐름이 크게 움직여.` : null;
+  const secMap = { temperament: secTemperament, wuxing: secWuxing, love: secLove, money: secMoney, question: secQuestion };
+  const lockedItems = (LOCKED_CONFIG[bucket] || LOCKED_CONFIG.flow).map((item) => {
+    const title = item.title === 'DATE_AWARE_ACTION' ? periodActionTitle(dateInfo) : item.title;
+    if (item.kind === 'timing') {
+      return timingText ? { title, visible: '흐름이 한 번 크게 움직이는 때가 있어.', hidden: timingText } : null;
+    }
+    const slice = narrativeSlice(secMap[item.sec], item.part);
+    return slice ? { title, visible: slice.visible, hidden: slice.hidden } : null;
+  }).filter(Boolean);
+
+  let lockTransitionHero = null;
+  if (lockedItems.length) {
+    const introParts = periodIntroParts(bucket, dateInfo);
+    lockTransitionHero = buildHeroSection(
+      opPath('현담_최종이미지_1부', '02_손가락으로_사주읽기.png'),
+      esc(introParts.title),
+      introParts.sub ? esc(introParts.sub) : '',
+      { objectPosition: 'center 20%' }
+    );
+    page.appendChild(lockTransitionHero);
+    page.appendChild(buildRvSection(null, `
+      ${lockedItems.map((it) => `
+        <div class="rv-locked-item">
+          <div class="rv-locked-title">${esc(it.title)}</div>
+          <div class="rv-body"><p>${esc(it.visible)}</p><p><span class="rv-veil">${esc(it.hidden)}</span><span class="rv-unlock-chip" data-rv-unlock>🔒 이어보기</span></p></div>
+        </div>
+      `).join('')}
+    `));
+  }
+
+  // ---- E. 현담의 차별화 선언 ----
+  // Eyes/face shown alone first (title at the bottom, well clear of the eyes); the
+  // full body/diff-list live in a separate dark panel below, never over the face.
+  const diffHero = buildHeroSection(
+    opPath('현담_최종이미지_1부', '03_오드아이_발광_클로즈업.png'),
+    '길다고, 더 깊은 건 아니야.',
+    '',
+    { objectPosition: 'center 12%', alignEnd: true }
+  );
+  page.appendChild(diffHero);
+  page.appendChild(buildRvSection(null, `
+    <div class="rv-body">
+      <p>50장, 100장을 채우려고<br/>같은 말을 반복하지 않아.</p>
+      <p>네가 지금 알아야 할 시기와 선택,<br/>실제로 움직일 수 있는 답만 남겼어.</p>
     </div>
-    <button class="primary-btn" id="unlockBtn">전체 리포트 받기</button>
+    <div class="rv-diff-list">
+      <div class="rv-diff-row"><span class="rv-diff-no">전문용어보다</span>→<span class="rv-diff-yes">내가 이해할 수 있는 말</span></div>
+      <div class="rv-diff-row"><span class="rv-diff-no">막연한 운세보다</span>→<span class="rv-diff-yes">구체적인 시기</span></div>
+      <div class="rv-diff-row"><span class="rv-diff-no">긴 설명보다</span>→<span class="rv-diff-yes">지금 해야 할 행동</span></div>
+    </div>
+    <div class="rv-sub">읽고 끝나는 풀이가 아니라,<br/>선택할 수 있게 만드는 풀이.</div>
+  `));
+
+  // ---- F. 실제 결과 미리보기 (제목+앞부분 정상 공개, 나머지만 부분 블러) ----
+  if (secWuxing && secWuxing.body) {
+    page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '06_월호명식첩_단독.png'), `
+      <div class="rv-title">실제 결과 미리보기</div>
+      <div class="rv-card">
+        <div class="rv-card-title">${esc(secWuxing.title || '오행이 말해주는 것')}</div>
+        <div class="rv-body">${partialVeilHtml(secWuxing.body, 2)}</div>
+        ${evidenceHtml(secWuxing)}
+      </div>
+    `, 'rv-image-mid'));
+  }
+
+  // ---- G. 8개 맞춤 챕터 ----
+  const chapterTitles = (CHAPTER_TITLES[bucket] || CHAPTER_TITLES.flow)
+    .map((t) => (t === 'DATE_AWARE_CHAPTER' ? periodChapterTitle(dateInfo) : t));
+  const descs = chapterDescs(bucket, dateInfo);
+  page.appendChild(buildRvSection(null, `
+    <div class="rv-title">현담이 끝까지 읽어주는 것</div>
+    <div class="rv-chapters">
+      ${chapterTitles.map((t, i) => `
+        <div class="rv-chapter">
+          <div class="rv-chapter-num">${String(i + 1).padStart(2, '0')}</div>
+          <div>
+            <div class="rv-chapter-title">${esc(t)}</div>
+            <div class="rv-chapter-desc">${esc(descs[i] || '')}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="rv-quantity">
+      <div class="rv-quantity-line1">당신에게 필요한 8개의 핵심 해석</div>
+      <div class="rv-quantity-line2">약 10,000자 내외의 개인 맞춤 리포트</div>
+      <div class="rv-quantity-line3">불필요한 반복 없이, 중요한 흐름만 읽기 쉽게 정리합니다.</div>
+    </div>
+  `));
+
+  // ---- H. 최종 CTA (결제 미연동 — 클릭 시 준비 중 모달만 표시) ----
+  // alignEnd + compact: text sits near the bottom of a shorter (not full 100svh)
+  // hero, so it flows straight into the benefit chips/button panel below instead
+  // of leaving a near-full-screen gap of "just image" before the CTA appears.
+  const ctaHero = buildHeroSection(
+    opPath('현담_최종이미지_2부', '12_손을_내미는_초대.webp'),
+    '네 운명이 정해져 있다는 말은 하지 않을게.',
+    '다만 지금 어느 쪽으로 움직여야 덜 흔들리는지는 보여줄 수 있어.',
+    { objectPosition: 'center 22%', alignEnd: true, compact: true }
+  );
+  page.appendChild(ctaHero);
+  const ctaPanel = buildRvSection(null, `
+    <div class="rv-keywords">
+      <span class="rv-keyword">정확한 시기</span>
+      <span class="rv-keyword">피해야 할 선택</span>
+      <span class="rv-keyword">지금 실행할 행동</span>
+      <span class="rv-keyword">주제별 8개 핵심 해석</span>
+    </div>
+    <button class="rv-cta-btn" type="button" id="rvUnlockBtn">내 시기와 선택 확인하기</button>
+    <div class="rv-cta-note">결제 기능은 준비 중이야. 곧 열릴 예정이야.</div>
   `);
-  page.appendChild(lockedSection);
+  page.appendChild(ctaPanel);
 
   sceneRoot.appendChild(page);
 
-  page.querySelectorAll('.tease-tag').forEach((tag) => {
-    tag.onclick = () => lockedSection.scrollIntoView({ behavior: 'smooth' });
+  page.querySelectorAll('[data-rv-unlock]').forEach((chip) => {
+    chip.onclick = () => ctaPanel.scrollIntoView({ behavior: 'smooth' });
   });
-
-  lockedSection.querySelector('#unlockBtn').onclick = () => {
-    const email = lockedSection.querySelector('#emailInput').value.trim();
-    if (!email) return;
-    lockedSection.querySelector('.locked-text').style.filter = 'none';
-    lockedSection.querySelector('.lock-overlay').classList.add('hidden');
-    lockedSection.querySelector('.panel').innerHTML = '<div class="bubble">확인했어. (실제 발송 기능은 다음 단계에서 연결될 예정이야)</div>';
-    page.querySelectorAll('.tease-blur').forEach((el) => { el.style.filter = 'none'; });
-    page.querySelectorAll('.tease-tag').forEach((el) => { el.classList.add('hidden'); });
-  };
+  ctaPanel.querySelector('#rvUnlockBtn').onclick = () => showComingSoonModal();
 
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) entry.target.classList.add('in-view');
     });
   }, { threshold: 0.35 });
-  page.querySelectorAll('.reveal-section').forEach((s) => io.observe(s));
+  page.querySelectorAll('.rv-section:not(.rv-hero-section)').forEach((s) => io.observe(s));
+
+  // Hero scenes: reveal is image -> title -> subtitle, triggered once when the scene
+  // scrolls into view (never auto-scrolling/auto-advancing the page itself). The
+  // arrival hero is already on screen at mount, so it runs immediately instead.
+  const heroSections = page.querySelectorAll('.rv-hero-section');
+  const heroIo = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      activateHero(entry.target, 900, 1400);
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.4 });
+  heroSections.forEach((s) => {
+    if (s === arrivalHero) return; // handled separately below, on mount
+    heroIo.observe(s);
+  });
+  activateHero(arrivalHero, 1200, 1700);
 }
 
 render();
