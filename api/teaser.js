@@ -1,8 +1,41 @@
 import { calcSaju, callClaude } from './_saju-core.js';
 
-function safeParseJson(text) {
-  const cleaned = text.trim().replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
-  return JSON.parse(cleaned);
+// Pull the JSON payload out of a model response that may be a bare JSON string,
+// wrapped in a ```json fence, wrapped in a plain ``` fence, or (defensively) an
+// object the caller already parsed for us.
+function extractJsonText(rawText) {
+  if (rawText == null) return '';
+  let text = String(rawText).trim();
+  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenceMatch) text = fenceMatch[1].trim();
+  const first = text.indexOf('{');
+  const last = text.lastIndexOf('}');
+  if (first !== -1 && last !== -1 && last > first) {
+    text = text.slice(first, last + 1);
+  }
+  return text;
+}
+
+// Normalizes whatever the model returned into the strict shape the frontend relies
+// on: { opening: string, sections: Array<{ title: string, body: string }> }.
+// Throws on anything that doesn't reduce to usable content — callers must treat
+// that as a request failure, never surface the raw text to the user.
+function normalizeTeaser(rawText) {
+  const parsed = rawText && typeof rawText === 'object' ? rawText : JSON.parse(extractJsonText(rawText));
+  if (!parsed || typeof parsed !== 'object') throw new Error('Invalid teaser response shape');
+
+  const opening = typeof parsed.opening === 'string' ? parsed.opening.trim() : '';
+  const sectionsRaw = Array.isArray(parsed.sections) ? parsed.sections : [];
+  const sections = sectionsRaw
+    .filter((s) => s && typeof s === 'object')
+    .map((s) => ({
+      title: typeof s.title === 'string' ? s.title.trim() : '',
+      body: typeof s.body === 'string' ? s.body.trim() : '',
+    }))
+    .filter((s) => s.body);
+
+  if (!opening && sections.length === 0) throw new Error('Empty teaser content');
+  return { opening, sections };
 }
 
 export default async function handler(req, res) {
@@ -45,6 +78,7 @@ export default async function handler(req, res) {
 - 모든 문장은 반드시 사주 데이터(일간/십성/오행/지장간/대운 중 최소 하나)를 구체적으로 근거로 삼아야 합니다. "직장인이니까", "연애 중이니까" 처럼 사용자가 알려준 상황 라벨만 보고 일반적인 이야기를 지어내지 마세요 — jobStatus/relationshipStatus는 사주 해석에 어떤 각도로 접근할지 정하는 참고 정보일 뿐, 내용의 근거가 되어선 안 됩니다.
 - jobStatus가 "겸업"이나 복수 활동을 나타내면, 하나의 정체성으로 단정하지 말고 사주 데이터(십성 조합 등)가 다중 활동/부업 성향과 어떻게 맞아떨어지는지로 풀어내세요.
 - 주어진 사주/대운 데이터만 사실로 취급하고, 새로운 간지·연도·데이터를 지어내지 마세요.
+- 상대방의 생년월일은 주어지지 않았습니다. 궁합이나 상대방의 속마음을 안다고 단정하지 마세요.
 - 죽음, 질병, 사고 등 공포를 조장하는 단정적 표현은 쓰지 마세요.
 - 반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트나 마크다운 코드펜스 없이 순수 JSON만 출력하세요.
 
@@ -56,8 +90,7 @@ export default async function handler(req, res) {
     { "title": "연애·관계", "body": "년/월/시주의 십성(정관/편관/정재/편재/식신/상관 등 실제 값) 중 관계와 관련된 것을 짚어서 relationshipStatus 맥락과 연결. 3~5문장." },
     { "title": "재물·커리어", "body": "십성과 오행 조합에서 재물/일 방식이 어떻게 드러나는지. jobStatus는 지금 상황 설명에만 참고하고, 근거는 사주 데이터로. 3~5문장." },
     { "title": "네가 물어본 것", "body": "question이 있으면 관련된 사주 요소(십성/대운)를 근거로 직접 답하듯. question이 없으면 daYun 중 지금 구간의 간지가 무엇인지 밝히고 그 의미. 3~5문장." }
-  ],
-  "locked_teaser": "이메일 인증 후 볼 수 있는 전체 리포트를 궁금하게 만드는 미리보기 한 문단 (3~4문장, 뒷부분이 궁금해지도록 끊기는 느낌으로)"
+  ]
 }`;
 
     const userMessage = `사주 및 상황 데이터:\n${JSON.stringify(context, null, 2)}\n\n위 데이터로 JSON 응답을 만들어줘.`;
@@ -68,12 +101,14 @@ export default async function handler(req, res) {
       maxTokens: 2500,
     });
 
-    const rawText = data?.content?.[0]?.text || '{}';
+    const rawText = data?.content?.[0]?.text;
     let teaser;
     try {
-      teaser = safeParseJson(rawText);
+      teaser = normalizeTeaser(rawText);
     } catch {
-      teaser = { opening: rawText, sections: [], locked_teaser: '' };
+      const err = new Error('사주 리딩을 만드는 데 실패했어. 다시 시도해줘.');
+      err.status = 502;
+      throw err;
     }
 
     return res.status(200).json({ saju, teaser });

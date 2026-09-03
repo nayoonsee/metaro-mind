@@ -66,16 +66,6 @@
     display: flex; flex-direction: column; gap: 12px;
   }
 
-  .impact {
-    font-family: 'Gugi', cursive;
-    text-align: center; font-size: 30px; line-height: 1.4;
-    letter-spacing: 0.5px;
-    text-shadow: 0 2px 18px rgba(0,0,0,0.8);
-    margin: 8px 0 4px;
-    animation: fadeUp .5s ease both;
-  }
-  .impact .accent { color: #a9b6f5; }
-
   .bubble {
     font-family: 'Gaegu', cursive;
     font-weight: 700;
@@ -216,47 +206,129 @@
   .pillar .label { font-size: 10.5px; color: #a9b3e0; margin-top: 3px; }
   .pillar .sub { font-size: 10px; color: #cbb98a; margin-top: 1px; }
 
-  .reveal-page { display: flex; flex-direction: column; }
-  .reveal-section {
+  /* ===== Result scroll page (rv- prefix) ===== */
+  .rv-page { display: flex; flex-direction: column; }
+  .rv-section {
     position: relative; width: 100%; min-height: 100dvh;
     display: flex; flex-direction: column; justify-content: center;
-    overflow: hidden; padding: 90px 22px 60px;
+    overflow: hidden; padding: 90px 22px 64px;
   }
-  .reveal-section .r-content {
+  .rv-section.rv-plain { background: linear-gradient(180deg, #0a0d1a, #05070f); }
+  .rv-inner {
     position: relative; z-index: 2;
     opacity: 0; transform: translateY(24px);
     transition: opacity .7s ease, transform .7s ease;
-    display: flex; flex-direction: column; gap: 12px;
+    display: flex; flex-direction: column; gap: 14px;
   }
-  .reveal-section.in-view .r-content { opacity: 1; transform: translateY(0); }
-  .r-title {
-    font-family: 'Gugi', cursive;
-    font-size: 24px; text-shadow: 0 2px 14px rgba(0,0,0,0.8);
+  .rv-section.in-view .rv-inner { opacity: 1; transform: translateY(0); }
+
+  .rv-eyebrow {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 12.5px; letter-spacing: 1.5px; color: #cbd3f5; opacity: .85; text-align: center;
   }
-  .r-body {
-    font-size: 15.5px; line-height: 1.7; text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  .rv-title {
+    font-family: 'Song Myung', serif;
+    font-size: 28px; line-height: 1.35; text-align: center;
+    text-shadow: 0 2px 16px rgba(0,0,0,0.8);
   }
-  .tease-blur { filter: blur(5px); user-select: none; }
-  .tease-tag {
-    display: inline-block; margin-left: 6px; font-size: 11.5px; color: #e8caa0;
-    border: 1px solid rgba(169,135,63,0.5); border-radius: 999px; padding: 2px 8px;
+  .rv-title .accent { color: #d7c48a; }
+  .rv-sub {
+    font-family: 'Gowun Batang', serif;
+    font-size: 16px; line-height: 1.6; color: #e7e0d2; text-align: center;
+    text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  }
+  .rv-body {
+    font-family: 'Gowun Batang', serif;
+    font-size: 16.5px; line-height: 1.75; text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  }
+  .rv-body p { margin: 0 0 12px; }
+  .rv-body p:last-child { margin-bottom: 0; }
+
+  .rv-card {
+    background: rgba(10,13,26,0.62); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 18px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .rv-card-title {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 13px; font-weight: 600; color: #cbb98a; letter-spacing: .3px;
+  }
+
+  .rv-stat-row { display: flex; gap: 8px; }
+  .rv-stat { flex: 1; text-align: center; background: rgba(0,0,0,0.35); border-radius: 12px; padding: 10px 6px; border: 1px solid rgba(255,255,255,0.12); }
+  .rv-stat .rv-stat-label { font-family: 'Pretendard', -apple-system, sans-serif; font-size: 11px; color: #97a0cf; }
+  .rv-stat .rv-stat-value { font-family: 'Song Myung', serif; font-size: 17px; color: #f3ead5; margin-top: 3px; }
+
+  .rv-keywords { display: flex; flex-wrap: wrap; gap: 8px; }
+  .rv-keyword {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 13.5px; color: #f3ead5; background: rgba(205,176,105,0.1);
+    border: 1px solid rgba(205,176,105,0.5); border-radius: 999px; padding: 6px 13px;
+  }
+
+  .rv-veil { filter: blur(6px); user-select: none; }
+  .rv-unlock-chip {
+    display: inline-flex; align-items: center; gap: 4px; margin-left: 6px;
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 11.5px; color: #e8caa0;
+    border: 1px solid rgba(169,135,63,0.5); border-radius: 999px; padding: 3px 10px;
     white-space: nowrap; vertical-align: middle; cursor: pointer;
   }
-  .scroll-hint {
+
+  .rv-mask { letter-spacing: .5px; }
+
+  .rv-chapters { display: flex; flex-direction: column; gap: 10px; }
+  .rv-chapter {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: rgba(10,13,26,0.5); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; padding: 12px 14px;
+  }
+  .rv-chapter .rv-chapter-num { font-family: 'Song Myung', serif; font-size: 15px; color: #d7c48a; min-width: 20px; }
+  .rv-chapter .rv-chapter-title {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-weight: 600; font-size: 14.5px; color: #f2f4fb;
+  }
+  .rv-chapter .rv-chapter-desc {
+    font-family: 'Gowun Batang', serif; font-size: 13.5px; color: #c7cde8; line-height: 1.55; margin-top: 3px;
+  }
+  .rv-scope-note {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 11.5px; color: #8d96c4; text-align: center; line-height: 1.6;
+  }
+
+  .rv-scroll-hint {
+    font-family: 'Pretendard', -apple-system, sans-serif;
     text-align: center; font-size: 12.5px; color: #cbd3f5;
-    margin-top: 8px;
+    margin-top: 4px;
     animation: bounce 1.6s ease-in-out infinite;
   }
   @keyframes bounce { 0%,100% { transform: translateY(0); opacity: .7; } 50% { transform: translateY(6px); opacity: 1; } }
 
-  .locked-card { position: relative; border-radius: 16px; overflow: hidden; }
-  .locked-text { filter: blur(5px); user-select: none; line-height: 1.6; font-size: 14px; padding: 16px; background: rgba(12,16,30,0.72); }
-  .lock-overlay {
-    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: rgba(5,7,15,0.55); gap: 6px; font-size: 13px; color: #cbd3f5; text-align: center; padding: 0 20px;
+  .rv-cta-btn {
+    font-family: 'Song Myung', serif;
+    width: 100%; padding: 17px; border-radius: 14px; cursor: pointer;
+    background: linear-gradient(160deg, rgba(48,38,16,0.92), rgba(10,8,4,0.94));
+    border: 1px solid rgba(205,176,105,0.65); color: #f3ead5; font-size: 17px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
-  .lock-overlay .icon { font-size: 24px; }
-  .note { font-size: 11.5px; color: #97a0cf; text-align: center; line-height: 1.5; }
+  .rv-cta-note {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 12px; color: #97a0cf; text-align: center;
+  }
+
+  .rv-modal-backdrop {
+    position: fixed; inset: 0; z-index: 50; background: rgba(5,7,15,0.72);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .rv-modal {
+    background: rgba(14,17,32,0.97); border: 1px solid rgba(205,176,105,0.4);
+    border-radius: 16px; padding: 26px 22px; max-width: 320px; width: 100%;
+    text-align: center; display: flex; flex-direction: column; gap: 14px;
+  }
+  .rv-modal-title { font-family: 'Song Myung', serif; font-size: 19px; color: #f3ead5; }
+  .rv-modal-body { font-family: 'Gowun Batang', serif; font-size: 14.5px; color: #e7e0d2; line-height: 1.6; }
+  .rv-modal-btn {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 14px; font-weight: 600;
+    padding: 12px; border-radius: 10px; cursor: pointer;
+    background: rgba(205,176,105,0.15); border: 1px solid rgba(205,176,105,0.5); color: #f3ead5;
+  }
 
   /* ===== Opening sequence (scoped, does not affect other steps) ===== */
   .op-stage {
@@ -1258,25 +1330,106 @@ function renderLoadingSequence() {
   });
 }
 
-const REVEAL_CYCLE = ['hyundam-reveal.webp', 'hyundam-avatar.webp', 'hyundam-dialogue.webp', 'hyundam-focus.webp'];
+// Reserved for future use (real testimonials / pricing / event copy). Intentionally
+// not rendered anywhere yet — populate later with real data, never placeholders.
+const RV_TESTIMONIALS = []; // { name: string, quote: string }[]
+const RV_PRICING = null; // { amount: number, currency: string, eventLabel?: string, eventEndsAt?: string } | null
 
-function teaseBody(body) {
-  const match = body.match(/^(.{8,60}?[.!?…])\s*(.*)$/s);
-  if (!match) return `<div class="r-body">${body}</div>`;
-  const [, visible, rest] = match;
-  if (!rest) return `<div class="r-body">${visible}</div>`;
-  return `<div class="r-body">${visible} <span class="tease-blur">${rest}</span><span class="tease-tag">🔒 이어보기</span></div>`;
+function esc(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function buildRevealSection(imgSrc, innerHtml, extraClass) {
-  const section = el(`
-    <div class="reveal-section${extraClass ? ' ' + extraClass : ''}">
-      <img class="scene-bg" src="/characters/${imgSrc}" alt="" />
-      <div class="scene-overlay"></div>
-      <div class="r-content">${innerHtml}</div>
+function splitSentences(text) {
+  if (!text) return [];
+  const matches = String(text).match(/[^.!?…]+[.!?…]+|[^.!?…]+$/g);
+  return (matches || [String(text)]).map((s) => s.trim()).filter(Boolean);
+}
+
+// Groups sentences into short paragraphs (2-4 sentences each) instead of one wall of text.
+function paragraphsHtml(text, perParagraph) {
+  const per = perParagraph || 3;
+  const sentences = splitSentences(text);
+  if (!sentences.length) return '';
+  const paras = [];
+  for (let i = 0; i < sentences.length; i += per) {
+    paras.push(sentences.slice(i, i + per).join(' '));
+  }
+  return paras.map((p) => `<p>${esc(p)}</p>`).join('');
+}
+
+// Reveals the first `visibleCount` sentences in full; the rest render for real but
+// stay visually veiled (blurred), never a whole-card/whole-page blur.
+function partialVeilHtml(text, visibleCount) {
+  const n = visibleCount || 2;
+  const sentences = splitSentences(text);
+  if (!sentences.length) return '';
+  const visible = sentences.slice(0, n).join(' ');
+  const rest = sentences.slice(n).join(' ');
+  let html = `<p>${esc(visible)}</p>`;
+  if (rest) {
+    html += `<p><span class="rv-veil">${esc(rest)}</span><span class="rv-unlock-chip" data-rv-unlock>🔒 이어보기</span></p>`;
+  }
+  return html;
+}
+
+const GAN_INFO = {
+  '甲': { name: '갑목', element: '木', yinyang: '양' }, '乙': { name: '을목', element: '木', yinyang: '음' },
+  '丙': { name: '병화', element: '火', yinyang: '양' }, '丁': { name: '정화', element: '火', yinyang: '음' },
+  '戊': { name: '무토', element: '土', yinyang: '양' }, '己': { name: '기토', element: '土', yinyang: '음' },
+  '庚': { name: '경금', element: '金', yinyang: '양' }, '辛': { name: '신금', element: '金', yinyang: '음' },
+  '壬': { name: '임수', element: '水', yinyang: '양' }, '癸': { name: '계수', element: '水', yinyang: '음' },
+};
+const WUXING_NAME = { '木': '목', '火': '화', '土': '토', '金': '금', '水': '수' };
+const WUXING_TRAITS = {
+  '木': ['성장', '추진력', '유연함'], '火': ['열정', '표현력', '직관'], '土': ['안정감', '포용력', '신중함'],
+  '金': ['결단력', '원칙', '냉철함'], '水': ['통찰력', '적응력', '융통성'],
+};
+
+// Real, deterministic derivations from the already-computed saju data — never invented.
+function analyzeWuxing(count) {
+  const entries = Object.entries(count || {});
+  if (!entries.length) return { strongestChar: null, weakestChar: null, sorted: [] };
+  const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+  const minN = sorted[sorted.length - 1][1];
+  const weakestChar = [...sorted].reverse().find(([, n]) => n === minN)[0];
+  return { strongestChar: sorted[0][0], weakestChar, sorted };
+}
+
+function deriveKeywords(sorted) {
+  const words = [];
+  for (const [elem] of sorted) {
+    for (const w of (WUXING_TRAITS[elem] || [])) {
+      if (!words.includes(w)) words.push(w);
+      if (words.length >= 3) return words;
+    }
+  }
+  return words;
+}
+
+function buildRvSection(imgPath, innerHtml, extraClass) {
+  const bg = imgPath ? `<img class="scene-bg" src="${imgPath}" alt="" /><div class="scene-overlay"></div>` : '';
+  const plainClass = imgPath ? '' : ' rv-plain';
+  return el(`
+    <div class="rv-section${plainClass}${extraClass ? ' ' + extraClass : ''}">
+      ${bg}
+      <div class="rv-inner">${innerHtml}</div>
     </div>
   `);
-  return section;
+}
+
+function showComingSoonModal() {
+  const backdrop = el(`
+    <div class="rv-modal-backdrop">
+      <div class="rv-modal">
+        <div class="rv-modal-title">결제 기능을 준비 중입니다.</div>
+        <div class="rv-modal-body">현담의 전체 명식 리포트는 곧 결제로 열람할 수 있게 될 거야. 조금만 기다려줘.</div>
+        <button class="rv-modal-btn" type="button">닫기</button>
+      </div>
+    </div>
+  `);
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) backdrop.remove(); });
+  backdrop.querySelector('.rv-modal-btn').onclick = () => backdrop.remove();
+  document.body.appendChild(backdrop);
 }
 
 function renderRevealPage() {
@@ -1284,73 +1437,168 @@ function renderRevealPage() {
     const scene = buildScene('reveal');
     sceneRoot.appendChild(scene);
     const content = scene.querySelector('#content');
-    content.appendChild(el(`<div class="bubble">앗, 문제가 생겼어: ${fetchError}</div>`));
+    content.appendChild(el(`<div class="bubble">앗, 문제가 생겼어: ${esc(fetchError)}</div>`));
     scene.appendChild(buildCta('다시 시도', () => goTo('loading'), { raised: false }));
     return;
   }
   if (!resultData) return;
 
   const { saju, teaser } = resultData;
-  const order = [['year','년주'],['month','월주'],['day','일주'],['time','시주']];
+  const sections = teaser.sections || [];
+  const secTemperament = sections[0] || null; // 타고난 기질
+  const secWuxing = sections[1] || null;      // 오행이 말해주는 것
+  const secLove = sections[2] || null;        // 연애·관계
+  const secMoney = sections[3] || null;       // 재물·커리어
+  const secQuestion = sections[4] || null;    // 네가 물어본 것
+
+  const name = state.name || saju.name || '손님';
+  const order = [['year', '년주'], ['month', '월주'], ['day', '일주'], ['time', '시주']];
   const pillarsHtml = order.map(([key, label]) => {
     const p = saju.pillars[key];
-    return `<div class="pillar"><div class="gz">${p.ganzhi}</div><div class="label">${label}</div><div class="sub">${p.stage}</div></div>`;
+    return `<div class="pillar"><div class="gz">${esc(p.ganzhi)}</div><div class="label">${label}</div><div class="sub">${esc(p.stage)}</div></div>`;
   }).join('');
 
-  const page = el('<div class="reveal-page"></div>');
+  const isLoveTopic = state.topic === '인연과 연애' || state.topic === '지나간 사람과의 재회';
+  const isMoneyTopic = state.topic === '돈과 일';
 
-  page.appendChild(buildRevealSection('hyundam-reveal.webp', `
-    <div class="impact">${state.name}의 <span class="accent">사주</span></div>
+  const page = el('<div class="rv-page"></div>');
+
+  // ---- A. 결과 도착 ----
+  page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '05_월호명식첩_펼치기.png'), `
+    <div class="rv-title">${esc(name)}의 명식이 열렸어</div>
+    <div class="rv-sub">먼저, 네 사주에서 가장 선명하게 보이는 것부터 말해줄게.</div>
     <div class="pillars">${pillarsHtml}</div>
-    <div class="bubble">${teaser.opening || '지금부터 하나씩 풀어볼게.'}</div>
-    <div class="scroll-hint">▾ 스크롤해서 계속 보기</div>
+    <div class="rv-body">${paragraphsHtml(teaser.opening || '지금부터 하나씩 풀어볼게.', 3)}</div>
+    <div class="rv-scroll-hint">▾ 스크롤해서 계속 보기</div>
   `));
 
-  (teaser.sections || []).forEach((sec, i) => {
-    const img = REVEAL_CYCLE[(i + 1) % REVEAL_CYCLE.length];
-    const bodyHtml = i === 0 ? `<div class="r-body">${sec.body || ''}</div>` : teaseBody(sec.body || '');
-    page.appendChild(buildRevealSection(img, `
-      <div class="r-title">${sec.title || ''}</div>
-      ${bodyHtml}
-    `));
-  });
+  // ---- B. 무료 핵심 결과 (완전 공개, 블러 없음) ----
+  const ganInfo = GAN_INFO[saju.dayMaster] || null;
+  const { strongestChar, weakestChar, sorted } = analyzeWuxing(saju.wuxingCount);
+  const keywords = deriveKeywords(sorted);
+  const centerSentence = ganInfo
+    ? `너의 일간은 ${ganInfo.name}, ${WUXING_NAME[ganInfo.element]}(${ganInfo.element})의 ${ganInfo.yinyang} 기운이야.`
+    : `너의 일간은 ${saju.dayMaster || ''}야.`;
+  const concernLabel = state.question ? `“${state.question}”` : (state.topic || '지금 이 흐름');
+  const bridgeSentence = `${concernLabel} 앞에서도 그 기운은 그대로 드러나.`;
+  const personalParas = [...splitSentences(secTemperament && secTemperament.body).slice(0, 2), bridgeSentence].filter(Boolean);
 
-  const lockedSection = buildRevealSection('hyundam-reveal.webp', `
-    <div class="r-title">아직 안 끝났어</div>
-    <div class="locked-card">
-      <div class="locked-text">${teaser.locked_teaser || '더 자세한 이야기가 준비되어 있어...'}</div>
-      <div class="lock-overlay"><div class="icon">🔒</div><div>이메일 남기면 전체 리포트를 볼 수 있어</div></div>
+  page.appendChild(buildRvSection(opPath('현담_최종이미지_2부', '08_붓으로_사주읽기.png'), `
+    <div class="rv-title">무료로 먼저 열어본 것</div>
+    <div class="rv-card">
+      <div class="rv-card-title">내 사주의 중심 기운</div>
+      <div class="rv-body"><p>${esc(centerSentence)}</p></div>
     </div>
-    <div class="panel">
-      <input type="email" id="emailInput" placeholder="이메일 주소" />
-      <div class="note">지금은 데모 단계라 실제 이메일 발송은 아직 연결되어 있지 않아. 입력한 주소는 저장되지 않아.</div>
+    ${strongestChar ? `
+    <div class="rv-stat-row">
+      <div class="rv-stat"><div class="rv-stat-label">가장 강한 오행</div><div class="rv-stat-value">${esc(WUXING_NAME[strongestChar] || strongestChar)} (${saju.wuxingCount[strongestChar]})</div></div>
+      <div class="rv-stat"><div class="rv-stat-label">부족한 오행</div><div class="rv-stat-value">${esc(WUXING_NAME[weakestChar] || weakestChar)} (${saju.wuxingCount[weakestChar]})</div></div>
+    </div>` : ''}
+    ${keywords.length ? `
+    <div class="rv-card">
+      <div class="rv-card-title">핵심 성향 키워드</div>
+      <div class="rv-keywords">${keywords.map((k) => `<span class="rv-keyword">${esc(k)}</span>`).join('')}</div>
+    </div>` : ''}
+    <div class="rv-body">${personalParas.map((p) => `<p>${esc(p)}</p>`).join('')}</div>
+  `));
+
+  // ---- C. 고민 연결 (API sections 중 가장 관련 높은 것 1개, 정상 공개) ----
+  if (secQuestion && secQuestion.body) {
+    const concernHeadline = state.question ? `“${esc(state.question)}”` : `네가 고른 주제, “${esc(state.topic || '')}”`;
+    page.appendChild(buildRvSection(null, `
+      <div class="rv-title">네가 지금 이 문제 앞에서 멈춘 이유</div>
+      <div class="rv-sub">${concernHeadline}</div>
+      <div class="rv-body">${paragraphsHtml(secQuestion.body, 2)}</div>
+    `));
+  }
+
+  // ---- D. 잠금 전환 (제목+앞 2문장 공개, 구체적 조언 부분만 부분 블러) ----
+  const nextSection = isMoneyTopic ? (secMoney || secLove) : (secLove || secMoney);
+  if (nextSection && nextSection.body) {
+    page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '02_손가락으로_사주읽기.png'), `
+      <div class="rv-body"><p>여기서부터는 조금 더 구체적이야.</p><p>흐름이 바뀌지는 시기와, 네가 피해야 할 선택까지 보여.</p></div>
+      <div class="rv-card">
+        <div class="rv-card-title">${esc(nextSection.title || '다음 이야기')}</div>
+        <div class="rv-body">${partialVeilHtml(nextSection.body, 2)}</div>
+      </div>
+    `));
+  }
+
+  // ---- E. 구체적 시기 미리보기 (실제 daYun 기반, 자리만 시각적으로 가림) ----
+  const daYun = saju.daYun || [];
+  const nowYear = new Date().getFullYear();
+  const activePeriod = daYun.find((d) => nowYear >= d.startYear && nowYear <= d.endYear) || daYun[0] || null;
+  if (activePeriod) {
+    const yearStr = String(activePeriod.startYear);
+    const maskedYear = yearStr.length === 4 ? `${yearStr.slice(0, 2)}○○년` : `${yearStr}년`;
+    const ageStr = String(activePeriod.startAge);
+    const maskedAge = ageStr.length >= 2 ? `${ageStr.slice(0, -1)}○세` : '○세';
+    page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '06_월호명식첩_단독.png'), `
+      <div class="rv-title">네 흐름이 달라지는 시기</div>
+      <div class="rv-card">
+        <div class="rv-body"><p>대운이 <span class="rv-mask">${esc(maskedYear)}</span> 무렵, 만 <span class="rv-mask">${esc(maskedAge)}</span> 즈음부터 바뀌어.</p></div>
+        <div class="rv-scope-note">정확한 시기와 흐름의 방향은 전체 리포트에서 확인할 수 있어.</div>
+      </div>
+    `));
+  }
+
+  // ---- F. 전체 결과에서 제공할 내용 (8챕터 미리보기; 4/5/7장은 주제에 따라 문구 변화) ----
+  const relatePattern = isLoveTopic
+    ? '연애에서 반복해온 패턴을 십성으로 짚어.'
+    : (isMoneyTopic ? '일과 관계에서 반복되는 태도를 살펴봐.' : '네가 관계에서 반복해온 흐름을 짚어.');
+  const cautionPattern = isLoveTopic
+    ? '관계에서 조심할 선택과, 놓치면 아까운 기회를 짚어.'
+    : (isMoneyTopic ? '돈과 일에서 조심할 선택과, 놓치면 아까운 기회를 짚어.' : '지금 조심할 선택과, 놓치면 아까운 기회를 짚어.');
+  const concernReason = state.question
+    ? `"${state.question}"에 이르게 된 사주적 배경을 설명해.`
+    : `${state.topic || '지금 이 흐름'}에 마음이 쏠리게 된 사주적 배경을 설명해.`;
+  const CHAPTERS = [
+    { title: '내 사주의 중심과 일간', desc: `일간 ${ganInfo ? ganInfo.name : (saju.dayMaster || '')}을 축으로 타고난 기질의 뿌리를 짚어.` },
+    { title: '오행의 강약과 부족한 기운', desc: '다섯 기운의 균형과 결핍을 수치로 짚고 보완법을 제안해.' },
+    { title: '겉으로 보이는 나와 내면의 성향', desc: '겉모습과 실제 성향의 온도차를 십성으로 풀어줘.' },
+    { title: '반복되는 관계·감정 패턴', desc: relatePattern },
+    { title: '지금 고민이 생긴 이유', desc: concernReason },
+    { title: '올해 운의 변화와 중요한 시기', desc: '대운과 세운의 흐름에서 올해가 가지는 의미를 짚어.' },
+    { title: '조심해야 할 선택과 놓치지 말아야 할 기회', desc: cautionPattern },
+    { title: '현담이 정리한 현실적인 행동 방향', desc: '지금부터 할 수 있는 현실적인 다음 걸음을 정리해.' },
+  ];
+  page.appendChild(buildRvSection(null, `
+    <div class="rv-title">현담이 끝까지 읽어주는 것</div>
+    <div class="rv-chapters">
+      ${CHAPTERS.map((c, i) => `
+        <div class="rv-chapter">
+          <div class="rv-chapter-num">${String(i + 1).padStart(2, '0')}</div>
+          <div>
+            <div class="rv-chapter-title">${esc(c.title)}</div>
+            <div class="rv-chapter-desc">${esc(c.desc)}</div>
+          </div>
+        </div>
+      `).join('')}
     </div>
-    <button class="primary-btn" id="unlockBtn">전체 리포트 받기</button>
+    <div class="rv-scope-note">총 8개 챕터・약 9,000~12,000자(A4 약 20~25페이지) 구성 기준. 실제 분량은 결제 후 생성 결과에 따라 달라질 수 있어.</div>
+  `));
+
+  // ---- G. 잠금 CTA (결제 미연동 — 클릭 시 준비 중 모달만 표시) ----
+  const ctaSection = buildRvSection(opPath('현담_최종이미지_2부', '12_손을_내미는_초대.webp'), `
+    <div class="rv-title">여기서 멈출래, 끝까지 볼래?</div>
+    <button class="rv-cta-btn" type="button" id="rvUnlockBtn">내 명식 전체 열어보기</button>
+    <div class="rv-cta-note">결제 기능은 준비 중이야. 곧 열릴 예정이야.</div>
   `);
-  page.appendChild(lockedSection);
+  page.appendChild(ctaSection);
 
   sceneRoot.appendChild(page);
 
-  page.querySelectorAll('.tease-tag').forEach((tag) => {
-    tag.onclick = () => lockedSection.scrollIntoView({ behavior: 'smooth' });
+  page.querySelectorAll('[data-rv-unlock]').forEach((chip) => {
+    chip.onclick = () => ctaSection.scrollIntoView({ behavior: 'smooth' });
   });
-
-  lockedSection.querySelector('#unlockBtn').onclick = () => {
-    const email = lockedSection.querySelector('#emailInput').value.trim();
-    if (!email) return;
-    lockedSection.querySelector('.locked-text').style.filter = 'none';
-    lockedSection.querySelector('.lock-overlay').classList.add('hidden');
-    lockedSection.querySelector('.panel').innerHTML = '<div class="bubble">확인했어. (실제 발송 기능은 다음 단계에서 연결될 예정이야)</div>';
-    page.querySelectorAll('.tease-blur').forEach((el) => { el.style.filter = 'none'; });
-    page.querySelectorAll('.tease-tag').forEach((el) => { el.classList.add('hidden'); });
-  };
+  ctaSection.querySelector('#rvUnlockBtn').onclick = () => showComingSoonModal();
 
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) entry.target.classList.add('in-view');
     });
   }, { threshold: 0.35 });
-  page.querySelectorAll('.reveal-section').forEach((s) => io.observe(s));
+  page.querySelectorAll('.rv-section').forEach((s) => io.observe(s));
 }
 
 render();
