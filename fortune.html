@@ -208,11 +208,12 @@
   /* ===== Result scroll page (rv- prefix) ===== */
   .rv-page { display: flex; flex-direction: column; }
   .rv-section {
-    position: relative; width: 100%; min-height: 100dvh;
+    position: relative; width: 100%;
     display: flex; flex-direction: column; justify-content: center;
-    overflow: hidden; padding: 90px 22px 64px;
+    overflow: hidden; padding: 72px 22px 72px;
   }
   .rv-section.rv-plain { background: linear-gradient(180deg, #0a0d1a, #05070f); }
+  .rv-section.rv-image-mid { min-height: 55svh; }
   .rv-inner {
     position: relative; z-index: 2;
     opacity: 0; transform: translateY(24px);
@@ -220,6 +221,36 @@
     display: flex; flex-direction: column; gap: 14px;
   }
   .rv-section.in-view .rv-inner { opacity: 1; transform: translateY(0); }
+
+  /* ---- Cinematic hero scenes (arrival / lock-transition / differentiation / final CTA) ---- */
+  .rv-hero-section {
+    min-height: 100svh; justify-content: flex-start;
+    padding: 88px 22px 40px;
+  }
+  .rv-hero-section.rv-hero-align-end { justify-content: flex-end; padding: 40px 22px 56px; }
+  .rv-hero-img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    opacity: 0; transform: scale(1) translateX(0);
+    transition: opacity 1s ease;
+  }
+  .rv-hero-img.rv-hero-show { opacity: 1; }
+  .rv-hero-img.rv-hero-zoom { animation: rvHeroZoom 8s ease-out forwards; }
+  @keyframes rvHeroZoom { from { transform: scale(1) translateX(0); } to { transform: scale(1.035) translateX(-1.2%); } }
+  .rv-hero-sweep {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none; mix-blend-mode: screen; opacity: 0;
+    background: linear-gradient(115deg, transparent 30%, rgba(200,210,255,0.10) 48%, transparent 66%);
+    background-size: 250% 100%; background-position: 130% 0;
+  }
+  .rv-hero-sweep.rv-hero-show { opacity: 1; animation: rvHeroSweep 6.5s ease-in-out .3s 1; }
+  @keyframes rvHeroSweep { 0% { background-position: 130% 0; } 65% { background-position: -30% 0; } 100% { background-position: -30% 0; } }
+  .rv-hero-content { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 10px; }
+  .rv-reveal { opacity: 0; transform: translateY(10px); transition: opacity .6s ease, transform .6s ease; }
+  .rv-reveal.rv-show { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    .rv-hero-img.rv-hero-zoom { animation: none; }
+    .rv-hero-sweep { display: none; }
+    .rv-reveal { transition-duration: .15s; }
+  }
 
   .rv-eyebrow {
     font-family: 'Pretendard', -apple-system, sans-serif;
@@ -275,7 +306,7 @@
 
   .rv-mask { letter-spacing: .5px; }
 
-  .rv-chapters { display: flex; flex-direction: column; gap: 10px; }
+  .rv-chapters { display: flex; flex-direction: column; gap: 12px; }
   .rv-chapter {
     display: flex; gap: 12px; align-items: flex-start;
     background: rgba(10,13,26,0.5); border: 1px solid rgba(255,255,255,0.1);
@@ -1260,7 +1291,10 @@ function buildPayload() {
     name: state.name, gender: state.gender, calendar: state.calendar,
     year: Number(state.year), month: Number(state.month), day: Number(state.day),
     relationshipStatus: state.relationshipStatus, jobStatus: state.jobStatus,
-    question: [state.topic, state.question].filter(Boolean).join(' - '),
+    // Kept as two separate fields (not concatenated) so the backend/model never
+    // mistakes a topic label like "관계와 선택" for a two-part question.
+    topic: state.topic || '',
+    question: state.question || '',
   };
   if (state.hour !== '') payload.hour = Number(state.hour);
   if (state.minute !== '') payload.minute = Number(state.minute);
@@ -1515,19 +1549,21 @@ function periodActionTitle(dateInfo) {
   return range ? `${range}, 이렇게 움직여` : '지금부터의 행동 순서';
 }
 
-function periodIntroHtml(bucket, dateInfo) {
+// Returns the D-scene's raw (unescaped) title/subtitle text — the title/sub go in
+// the hero, the caller escapes them at insertion.
+function periodIntroParts(bucket, dateInfo) {
   const frag = yearMonthsFragment(dateInfo);
   if (!frag) {
-    return '<p>여기서부터는 조금 더 구체적이야.</p><p>흐름이 바뀌는 시기와, 네가 피해야 할 선택까지 보여.</p>';
+    return { title: '여기서부터는 조금 더 구체적이야.', sub: '흐름이 바뀌는 시기와, 네가 피해야 할 선택까지 보여.' };
   }
   if (bucket === 'money') {
     const rangePhrase = monthRangePhrase(dateInfo);
-    return `<p>${esc(frag)}, 금전 흐름은 이렇게 움직여.</p><p>${esc(rangePhrase)} 돈의 흐름이 강해지는 때와 조심해야 할 선택을 짚어줄게.</p>`;
+    return { title: `${frag}, 금전 흐름은 이렇게 움직여.`, sub: `${rangePhrase} 돈의 흐름이 강해지는 때와 조심해야 할 선택을 짚어줄게.` };
   }
-  if (bucket === 'love') return `<p>${esc(frag)}, 인연의 흐름을 볼게.</p>`;
-  if (bucket === 'reunion') return '<p>올해 남은 기간, 관계가 다시 움직일 가능성이 있는 시기를 볼게.</p>';
-  if (bucket === 'choice') return '<p>올해 남은 기간, 관계와 선택의 흐름이 바뀌는 지점을 볼게.</p>';
-  return `<p>${esc(frag)}의 중요한 변화를 볼게.</p>`;
+  if (bucket === 'love') return { title: `${frag}, 인연의 흐름을 볼게.`, sub: '' };
+  if (bucket === 'reunion') return { title: '올해 남은 기간, 관계가 다시 움직일 가능성이 있는 시기를 볼게.', sub: '' };
+  if (bucket === 'choice') return { title: '올해 남은 기간, 관계와 선택의 흐름이 바뀌는 지점을 볼게.', sub: '' };
+  return { title: `${frag}의 중요한 변화를 볼게.`, sub: '' };
 }
 
 // Renders a section's model-provided technical justification behind a collapsed
@@ -1567,33 +1603,33 @@ function narrativeSlice(section, part) {
 // everything else pulls a real sentence out of the matching API section.
 const LOCKED_CONFIG = {
   money: [
-    { title: '돈의 흐름이 강해지는 시기', kind: 'timing' },
-    { title: '지금 밀어야 할 수익 방식', kind: 'narrative', sec: 'money', part: 'first' },
-    { title: '돈이 새는 선택과 주의할 시기', kind: 'narrative', sec: 'money', part: 'second' },
+    { title: '수입 흐름이 강해지는 시기', kind: 'timing' },
+    { title: '지금 먼저 밀어야 할 수익 방식', kind: 'narrative', sec: 'money', part: 'first' },
+    { title: '돈이 새기 쉬운 선택', kind: 'narrative', sec: 'money', part: 'second' },
     { title: 'DATE_AWARE_ACTION', kind: 'narrative', sec: 'question', part: 'all' },
   ],
   love: [
     { title: '인연이 들어오는 시기', kind: 'timing' },
-    { title: '반복되는 연애 패턴', kind: 'narrative', sec: 'love', part: 'first' },
+    { title: '자꾸 같은 사람에게 끌리는 이유', kind: 'narrative', sec: 'love', part: 'first' },
     { title: '피해야 할 상대와 관계', kind: 'narrative', sec: 'love', part: 'second' },
-    { title: '지금 해야 할 행동', kind: 'narrative', sec: 'question', part: 'all' },
+    { title: '지금 먼저 다가가도 되는지', kind: 'narrative', sec: 'question', part: 'all' },
   ],
   reunion: [
     { title: '다시 접점이 생길 가능성이 높은 시기', kind: 'timing' },
     { title: '먼저 움직여도 되는지', kind: 'narrative', sec: 'question', part: 'first' },
     { title: '다시 만나도 반복될 문제', kind: 'narrative', sec: 'love', part: 'first' },
-    { title: '지금 해야 할 행동', kind: 'narrative', sec: 'love', part: 'second' },
+    { title: '지금 연락해도 될지 판단하는 기준', kind: 'narrative', sec: 'love', part: 'second' },
   ],
   choice: [
-    { title: '이 관계의 핵심 패턴', kind: 'narrative', sec: 'love', part: 'all' },
-    { title: '선택해야 할 시기', kind: 'timing' },
-    { title: '놓아야 할 것', kind: 'narrative', sec: 'money', part: 'first' },
-    { title: '관계를 바꾸는 행동', kind: 'narrative', sec: 'question', part: 'all' },
+    { title: '이 관계를 정리하기 전에 확인해야 할 신호', kind: 'narrative', sec: 'love', part: 'all' },
+    { title: '먼저 대화를 꺼내도 되는 시기', kind: 'timing' },
+    { title: '유지하면 반복될 가능성이 큰 문제', kind: 'narrative', sec: 'money', part: 'first' },
+    { title: '관계를 바꾸기 위해 지금 해야 할 행동', kind: 'narrative', sec: 'question', part: 'all' },
   ],
   flow: [
-    { title: '가장 큰 변화', kind: 'narrative', sec: 'wuxing', part: 'first' },
+    { title: '올해 가장 크게 흔들리는 지점', kind: 'narrative', sec: 'wuxing', part: 'first' },
     { title: '기회가 열리는 시기', kind: 'timing' },
-    { title: '조심해야 할 시기', kind: 'narrative', sec: 'money', part: 'second' },
+    { title: '방향을 잘못 잡기 쉬운 시기', kind: 'narrative', sec: 'money', part: 'second' },
     { title: '지금부터의 행동 순서', kind: 'narrative', sec: 'question', part: 'all' },
   ],
 };
@@ -1674,6 +1710,47 @@ function buildRvSection(imgPath, innerHtml, extraClass) {
   `);
 }
 
+// A cinematic, image-first hero scene: the image (with a slow zoom + moonlight sweep)
+// is on screen alone first, then the title, then the subtitle — never a card or long
+// paragraph on top of it. Reserved for the 4 flagged scenes (arrival, lock-transition,
+// differentiation, final CTA); everything else stays a plain buildRvSection.
+function buildHeroSection(imgPath, titleHtml, subHtml, opts) {
+  const options = opts || {};
+  const objectPosition = options.objectPosition || 'center 22%';
+  const alignEnd = options.alignEnd ? ' rv-hero-align-end' : '';
+  return el(`
+    <div class="rv-section rv-hero-section${alignEnd}">
+      <img class="rv-hero-img" src="${imgPath}" alt="" style="object-position: ${objectPosition};" />
+      <div class="rv-hero-sweep"></div>
+      <div class="scene-overlay"></div>
+      <div class="rv-hero-content">
+        <div class="rv-title rv-reveal" data-hero-title>${titleHtml}</div>
+        ${subHtml ? `<div class="rv-sub rv-reveal" data-hero-sub>${subHtml}</div>` : ''}
+      </div>
+    </div>
+  `);
+}
+
+// Runs a hero scene's reveal sequence once: image+sweep start immediately, title at
+// titleDelay, subtitle at subDelay. Respects prefers-reduced-motion (skips the zoom/
+// sweep animation and shows the end state right away — no navigation, no auto-scroll).
+function activateHero(section, titleDelay, subDelay) {
+  const img = section.querySelector('.rv-hero-img');
+  const sweep = section.querySelector('.rv-hero-sweep');
+  const title = section.querySelector('[data-hero-title]');
+  const sub = section.querySelector('[data-hero-sub]');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (img) requestAnimationFrame(() => { img.classList.add('rv-hero-show'); if (!reduced) img.classList.add('rv-hero-zoom'); });
+  if (reduced) {
+    if (title) title.classList.add('rv-show');
+    if (sub) sub.classList.add('rv-show');
+    return;
+  }
+  if (sweep) requestAnimationFrame(() => sweep.classList.add('rv-hero-show'));
+  if (title) setTimeout(() => title.classList.add('rv-show'), titleDelay);
+  if (sub) setTimeout(() => sub.classList.add('rv-show'), subDelay);
+}
+
 function showComingSoonModal() {
   const backdrop = el(`
     <div class="rv-modal-backdrop">
@@ -1719,20 +1796,32 @@ function renderRevealPage() {
 
   const page = el('<div class="rv-page"></div>');
 
-  // ---- 도착: 4주 카드 + opening (사주 계산/명식 표시는 그대로 유지) ----
-  page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '05_월호명식첩_펼치기.png'), `
-    <div class="rv-title">${esc(name)}의 명식이 열렸어</div>
-    <div class="rv-sub">먼저, 네 사주에서 가장 선명하게 보이는 것부터 말해줄게.</div>
+  // ---- 도착 (hero): 현담+명식첩 이미지 먼저, 제목/보조문구만 상단에 순차 등장 ----
+  // No pillars/long body here — moved to the plain section right after, so the
+  // image's face/hands/booklet are never covered by a card or paragraph.
+  const arrivalHero = buildHeroSection(
+    opPath('현담_최종이미지_1부', '05_월호명식첩_펼치기.png'),
+    `${esc(name)}의 명식이 열렸어`,
+    '먼저, 네 사주에서 가장 선명하게 보이는 것부터 말해줄게.',
+    { objectPosition: 'center 24%' }
+  );
+  page.appendChild(arrivalHero);
+
+  // ---- 사주 명식 카드 (도착 히어로에서 분리) ----
+  page.appendChild(buildRvSection(null, `
+    <div class="rv-eyebrow">${esc(name)}의 사주 명식</div>
     <div class="pillars">${pillarsHtml}</div>
     <div class="rv-body">${paragraphsHtml(teaser.opening || '지금부터 하나씩 풀어볼게.', 3)}</div>
     <div class="rv-scroll-hint">▾ 스크롤해서 계속 보기</div>
   `));
 
-  // ---- A. 내 고민 재확인 ----
-  const concernQuote = state.question || state.topic || '내 흐름이 궁금해서';
+  // ---- A. 내 고민 재확인 (고민 원문 우선, 건너뛴 경우에만 주제명 표시) ----
+  const hasQuestion = !!state.question;
+  const quoteTitle = hasQuestion ? '네가 정말 묻고 싶었던 건 이거였지.' : '네가 고른 건 이거였지.';
+  const quoteText = state.question || state.topic || '내 흐름이 궁금해서';
   page.appendChild(buildRvSection(null, `
-    <div class="rv-title">네가 묻고 싶은 건 이거였지.</div>
-    <div class="rv-quote">“${esc(concernQuote)}”</div>
+    <div class="rv-title">${quoteTitle}</div>
+    <div class="rv-quote">“${esc(quoteText)}”</div>
   `));
 
   // ---- B. 알아듣기 쉬운 개인화 무료 통찰 (완전 공개, 블러 없음, 전문용어는 근거 토글 안에만) ----
@@ -1750,7 +1839,10 @@ function renderRevealPage() {
   const patternSentences = splitSentences(secTemperament && secTemperament.body).slice(0, 2);
   const stuckSentence = topicSection ? splitSentences(topicSection.body).slice(0, 1) : [];
   const concernLabel = state.question ? `“${state.question}”` : (state.topic || '지금 이 흐름');
-  const bridgeSentence = `${concernLabel} 앞에서도 이 패턴은 똑같이 드러나.`;
+  const statusLabel = state.relationshipStatus || state.jobStatus || '';
+  const bridgeSentence = statusLabel
+    ? `${concernLabel} 앞에서도, 지금 ${statusLabel} 상황이라 이 패턴은 더 또렷하게 드러나.`
+    : `${concernLabel} 앞에서도 이 패턴은 똑같이 드러나.`;
   const personalParas = [...patternSentences, ...stuckSentence, bridgeSentence].filter(Boolean);
 
   page.appendChild(buildRvSection(opPath('현담_최종이미지_2부', '08_붓으로_사주읽기.png'), `
@@ -1772,7 +1864,7 @@ function renderRevealPage() {
     </div>` : ''}
     <div class="rv-body">${personalParas.map((p) => `<p>${esc(p)}</p>`).join('')}</div>
     ${evidenceHtml(secTemperament)}
-  `));
+  `, 'rv-image-mid'));
 
   // ---- C. 지금 이 문제 앞에서 멈춘 이유 (실제 API 섹션 1개, 정상 공개) ----
   if (secQuestion && secQuestion.body) {
@@ -1805,9 +1897,17 @@ function renderRevealPage() {
     return slice ? { title, visible: slice.visible, hidden: slice.hidden } : null;
   }).filter(Boolean);
 
+  let lockTransitionHero = null;
   if (lockedItems.length) {
-    page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '02_손가락으로_사주읽기.png'), `
-      <div class="rv-body">${periodIntroHtml(bucket, dateInfo)}</div>
+    const introParts = periodIntroParts(bucket, dateInfo);
+    lockTransitionHero = buildHeroSection(
+      opPath('현담_최종이미지_1부', '02_손가락으로_사주읽기.png'),
+      esc(introParts.title),
+      introParts.sub ? esc(introParts.sub) : '',
+      { objectPosition: 'center 20%' }
+    );
+    page.appendChild(lockTransitionHero);
+    page.appendChild(buildRvSection(null, `
       ${lockedItems.map((it) => `
         <div class="rv-locked-item">
           <div class="rv-locked-title">${esc(it.title)}</div>
@@ -1818,8 +1918,16 @@ function renderRevealPage() {
   }
 
   // ---- E. 현담의 차별화 선언 ----
-  page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '03_오드아이_발광_클로즈업.png'), `
-    <div class="rv-title">길다고, 더 깊은 건 아니야.</div>
+  // Eyes/face shown alone first (title at the bottom, well clear of the eyes); the
+  // full body/diff-list live in a separate dark panel below, never over the face.
+  const diffHero = buildHeroSection(
+    opPath('현담_최종이미지_1부', '03_오드아이_발광_클로즈업.png'),
+    '길다고, 더 깊은 건 아니야.',
+    '',
+    { objectPosition: 'center 12%', alignEnd: true }
+  );
+  page.appendChild(diffHero);
+  page.appendChild(buildRvSection(null, `
     <div class="rv-body">
       <p>50장, 100장을 채우려고 같은 말을 반복하지 않아.</p>
       <p>네가 지금 알아야 할 시기와 선택, 실제로 움직일 수 있는 답만 남겼어.</p>
@@ -1841,7 +1949,7 @@ function renderRevealPage() {
         <div class="rv-body">${partialVeilHtml(secWuxing.body, 2)}</div>
         ${evidenceHtml(secWuxing)}
       </div>
-    `));
+    `, 'rv-image-mid'));
   }
 
   // ---- G. 8개 맞춤 챕터 ----
@@ -1869,26 +1977,55 @@ function renderRevealPage() {
   `));
 
   // ---- H. 최종 CTA (결제 미연동 — 클릭 시 준비 중 모달만 표시) ----
-  const ctaSection = buildRvSection(opPath('현담_최종이미지_2부', '12_손을_내미는_초대.webp'), `
-    <div class="rv-body"><p>네 운명이 정해져 있다는 말은 하지 않을게.</p><p>다만 지금 어느 쪽으로 움직여야 덜 흔들리는지는 보여줄 수 있어.</p></div>
+  const ctaHero = buildHeroSection(
+    opPath('현담_최종이미지_2부', '12_손을_내미는_초대.webp'),
+    '네 운명이 정해져 있다는 말은 하지 않을게.',
+    '다만 지금 어느 쪽으로 움직여야 덜 흔들리는지는 보여줄 수 있어.',
+    { objectPosition: 'center 22%' }
+  );
+  page.appendChild(ctaHero);
+  const ctaPanel = buildRvSection(null, `
+    <div class="rv-keywords">
+      <span class="rv-keyword">정확한 시기</span>
+      <span class="rv-keyword">피해야 할 선택</span>
+      <span class="rv-keyword">지금 실행할 행동</span>
+      <span class="rv-keyword">주제별 8개 핵심 해석</span>
+    </div>
     <button class="rv-cta-btn" type="button" id="rvUnlockBtn">내 시기와 선택 확인하기</button>
     <div class="rv-cta-note">결제 기능은 준비 중이야. 곧 열릴 예정이야.</div>
   `);
-  page.appendChild(ctaSection);
+  page.appendChild(ctaPanel);
 
   sceneRoot.appendChild(page);
 
   page.querySelectorAll('[data-rv-unlock]').forEach((chip) => {
-    chip.onclick = () => ctaSection.scrollIntoView({ behavior: 'smooth' });
+    chip.onclick = () => ctaPanel.scrollIntoView({ behavior: 'smooth' });
   });
-  ctaSection.querySelector('#rvUnlockBtn').onclick = () => showComingSoonModal();
+  ctaPanel.querySelector('#rvUnlockBtn').onclick = () => showComingSoonModal();
 
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) entry.target.classList.add('in-view');
     });
   }, { threshold: 0.35 });
-  page.querySelectorAll('.rv-section').forEach((s) => io.observe(s));
+  page.querySelectorAll('.rv-section:not(.rv-hero-section)').forEach((s) => io.observe(s));
+
+  // Hero scenes: reveal is image -> title -> subtitle, triggered once when the scene
+  // scrolls into view (never auto-scrolling/auto-advancing the page itself). The
+  // arrival hero is already on screen at mount, so it runs immediately instead.
+  const heroSections = page.querySelectorAll('.rv-hero-section');
+  const heroIo = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      activateHero(entry.target, 900, 1400);
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.4 });
+  heroSections.forEach((s) => {
+    if (s === arrivalHero) return; // handled separately below, on mount
+    heroIo.observe(s);
+  });
+  activateHero(arrivalHero, 1200, 1700);
 }
 
 render();
