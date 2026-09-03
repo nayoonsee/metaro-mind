@@ -394,6 +394,63 @@
     .op-fog, .op-sheen, .op-gate-btn .op-sheen { animation: none !important; }
     .op-shake { animation: none !important; }
   }
+
+  /* Gate-open title beat (fits inside existing open-gate hold; no timing changes) */
+  .op-eyebrow {
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px; letter-spacing: 2px; color: #cbd3f5;
+    opacity: 0; transform: translateY(6px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .op-eyebrow.op-show { opacity: .85; transform: translateY(0); }
+  .op-title2 {
+    font-family: 'Song Myung', serif;
+    font-size: 28px; letter-spacing: 1px; color: #fbf6ec;
+    text-shadow: 0 2px 16px rgba(0,0,0,0.75);
+    opacity: 0; transform: translateY(6px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .op-title2.op-show { opacity: 1; transform: translateY(0); }
+  .op-sub2 {
+    font-family: 'Gowun Batang', serif;
+    font-size: 15px; color: #e7e0d2;
+    opacity: 0; transform: translateY(6px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .op-sub2.op-show { opacity: .92; transform: translateY(0); }
+
+  /* ===== New input-step dialogue line (현담 대사) ===== */
+  .hd-line {
+    font-family: 'Gowun Batang', serif;
+    font-weight: 700;
+    background: rgba(12,16,30,0.72);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px 20px 20px 4px;
+    padding: 14px 18px; max-width: 88%;
+    font-size: 16.5px; line-height: 1.6;
+    animation: fadeUp .45s ease both;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  /* ===== Reading/loading sequence ===== */
+  .load-content {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 10;
+    padding: 24px 22px calc(40px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center;
+  }
+  .load-line {
+    font-family: 'Gowun Batang', serif;
+    font-size: 15.5px; color: #e7e0d2; line-height: 1.6; opacity: .9;
+  }
+  .load-caption {
+    font-family: 'Song Myung', serif;
+    font-size: 20px; color: #fbf6ec; letter-spacing: .5px;
+    text-shadow: 0 2px 14px rgba(0,0,0,0.75);
+    opacity: 0; transition: opacity .35s ease;
+    min-height: 28px;
+  }
+  .load-caption.load-found { color: #e8caa0; }
 </style>
 </head>
 <body>
@@ -403,27 +460,29 @@
 </div>
 
 <script>
-const STEPS = ['intro','question','name','profile','birthdate','birthtime','relationship','job','loading','reveal'];
-const INPUT_STEPS = new Set(['question','name','profile','birthdate','birthtime','relationship','job']);
+const STEPS = ['intro','name','topic','concern','birth','birthtime','loading','reveal'];
+const INPUT_STEPS = new Set(['name','topic','concern','birth','birthtime']);
 const NO_BACK_STEPS = new Set(['intro','loading']);
 let stepIndex = 0;
 const state = {
   name: '', gender: '여성', calendar: 'solar',
   year: '', month: '', day: '', hour: '', minute: '',
+  topic: '', relSub: '', jobSub: '',
   relationshipStatus: '', jobStatus: '', question: '',
 };
 
+function opPath(folder, file) {
+  return '/characters/' + encodeURIComponent(folder) + '/' + encodeURIComponent(file);
+}
+
 const SCENE_IMAGE = {
-  intro: 'hyundam-reveal.webp',
-  name: 'hyundam-dialogue.webp',
-  profile: 'hyundam-dialogue.webp',
-  birthdate: 'hyundam-dialogue.webp',
-  birthtime: 'hyundam-dialogue.webp',
-  relationship: 'hyundam-focus.webp',
-  job: 'hyundam-focus.webp',
-  question: 'hyundam-focus.webp',
-  loading: 'hyundam-focus.webp',
-  reveal: 'hyundam-reveal.webp',
+  intro: '/characters/hyundam-reveal.webp',
+  name: opPath('현담_최종이미지_2부', '07_달빛과_방울_대표얼굴.png'),
+  topic: opPath('현담_최종이미지_1부', '04_초승달_매혹표정.png'),
+  concern: opPath('현담_최종이미지_2부', '09_방울을_든_앉은자세.png'),
+  birth: opPath('현담_최종이미지_1부', '03_오드아이_발광_클로즈업.png'),
+  birthtime: opPath('현담_최종이미지_2부', '08_붓으로_사주읽기.png'),
+  reveal: '/characters/hyundam-reveal.webp',
 };
 
 const sceneRoot = document.getElementById('sceneRoot');
@@ -456,7 +515,7 @@ function buildScene(step) {
   const overlayClass = INPUT_STEPS.has(step) ? ' deep' : '';
   const scene = el(`
     <div class="scene">
-      <img class="scene-bg" src="/characters/${SCENE_IMAGE[step]}" alt="" />
+      <img class="scene-bg" src="${SCENE_IMAGE[step]}" alt="" />
       <div class="scene-overlay${overlayClass}"></div>
       <div class="scene-content" id="content"></div>
     </div>
@@ -494,25 +553,20 @@ function render() {
   sceneRoot.innerHTML = '';
   if (step === 'reveal') { renderRevealPage(); return; }
   if (step === 'intro') { renderOpeningSequence(); return; }
+  if (step === 'loading') { renderLoadingSequence(); return; }
   const scene = buildScene(step);
   sceneRoot.appendChild(scene);
   const content = scene.querySelector('#content');
   const renderers = {
-    question: renderQuestion,
     name: renderName,
-    profile: renderProfile,
-    birthdate: renderBirthdate,
+    topic: renderTopic,
+    concern: renderConcern,
+    birth: renderBirth,
     birthtime: renderBirthtime,
-    relationship: renderRelationship,
-    job: renderJob,
-    loading: renderLoading,
   };
   renderers[step](content, scene);
 }
 
-function opPath(folder, file) {
-  return '/characters/' + encodeURIComponent(folder) + '/' + encodeURIComponent(file);
-}
 const OP_IMG = {
   moon: opPath('현담_최종이미지_2부', '13_보름달_전신.webp'),
   eye: opPath('현담_최종이미지_1부', '03_오드아이_발광_클로즈업.webp'),
@@ -804,6 +858,24 @@ function renderOpeningSequence() {
     });
 
     // open gate fully visible at 3650+2600=6250; hold 1.2s -> lead inward at 7450
+    // Title beat lives entirely inside this existing hold window (no added time).
+    after(6250, () => {
+      const eyebrow = el(`<div class="op-eyebrow">운명을 기록하는 안내자</div>`);
+      opContent.appendChild(eyebrow);
+      requestAnimationFrame(() => eyebrow.classList.add('op-show'));
+    });
+    after(6550, () => {
+      const title2 = el(`<div class="op-title2">현담의 명식첩</div>`);
+      opContent.appendChild(title2);
+      requestAnimationFrame(() => title2.classList.add('op-show'));
+    });
+    after(6850, () => {
+      const sub2 = el(`<div class="op-sub2">네 사주에 숨은 흐름을 읽다</div>`);
+      opContent.appendChild(sub2);
+      requestAnimationFrame(() => sub2.classList.add('op-show'));
+    });
+    after(7350, () => { opContent.innerHTML = ''; });
+
     // leading scene keeps drifting inward the whole time it's held (feels like walking in together)
     after(7450, () => {
       trueCrossfadeTo(OP_IMG.leading, 1400, { zoomTo: 1.05, zoomMs: 3400 });
@@ -823,20 +895,8 @@ function renderOpeningSequence() {
 
 const MOON_SVG = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 3.5C11 3.5 7 7.8 7 12s4 8.5 9 8.5c-6.5-1-9.5-6-9.5-8.5S9.5 4.5 16 3.5Z" fill="#e8caa0" opacity="0.9"/></svg>';
 
-function renderQuestion(content, scene) {
-  content.appendChild(el('<div class="bubble">그래서, 뭐가 그렇게 물어보고 싶어서 여기까지 왔어? 하나만 말해봐, 거기서부터 풀어줄 테니까.</div>'));
-  const panel = el('<div class="panel"></div>');
-  const ta = el('<textarea placeholder="예: 올해 이직해도 될까?"></textarea>');
-  panel.appendChild(ta);
-  content.appendChild(panel);
-  scene.appendChild(buildCta('다음', () => { state.question = ta.value.trim(); next(); }, {
-    ghostLabel: '딱히 없어, 그냥 봐줘',
-    onGhost: () => { state.question = ''; next(); },
-  }));
-}
-
 function renderName(content, scene) {
-  content.appendChild(el('<div class="bubble">이름부터. 불러줘야 제대로 보이지.</div>'));
+  content.appendChild(el('<div class="hd-line">이름부터. 오늘 밤엔 뭐라고 불러줄까?</div>'));
   const panel = el('<div class="panel"></div>');
   const input = el('<input type="text" placeholder="이름 또는 별명" />');
   input.value = state.name;
@@ -849,29 +909,76 @@ function renderName(content, scene) {
   setTimeout(() => input.focus(), 50);
 }
 
-function renderProfile(content, scene) {
-  content.appendChild(el(`<div class="bubble">${state.name}이라... 성별이랑, 태어난 걸 양력으로 셀지 음력으로 셀지 알려줘.</div>`));
+function renderTopic(content, scene) {
+  content.appendChild(el(`<div class="hd-line">좋아, ${state.name || '손님'}. 오늘 네가 알고 싶은 건 어느 쪽이지?</div>`));
+
   const panel = el('<div class="panel"></div>');
-  const genderRow = el('<div class="toggle-row"></div>');
-  ['여성', '남성'].forEach((g) => {
-    const b = el(`<div class="toggle-btn ${state.gender === g ? 'active' : ''}">${g}</div>`);
-    b.onclick = () => { state.gender = g; render(); };
-    genderRow.appendChild(b);
+  const topics = ['인연과 연애', '지나간 사람과의 재회', '돈과 일', '관계와 선택', '앞으로의 전체 흐름'];
+  topics.forEach((t) => {
+    const b = el(`<div class="choice-btn ${state.topic === t ? 'selected' : ''}">${t}</div>`);
+    b.onclick = () => {
+      state.topic = t;
+      if (t !== '인연과 연애' && t !== '지나간 사람과의 재회') { state.relSub = ''; state.relationshipStatus = ''; }
+      if (t !== '돈과 일') { state.jobSub = ''; state.jobStatus = ''; }
+      render();
+    };
+    panel.appendChild(b);
   });
-  const calRow = el('<div class="toggle-row"></div>');
-  [['solar','양력'], ['lunar','음력']].forEach(([v, label]) => {
-    const b = el(`<div class="toggle-btn ${state.calendar === v ? 'active' : ''}">${label}</div>`);
-    b.onclick = () => { state.calendar = v; render(); };
-    calRow.appendChild(b);
-  });
-  panel.appendChild(genderRow);
-  panel.appendChild(calRow);
   content.appendChild(panel);
-  scene.appendChild(buildCta('다음', next));
+
+  const isLove = state.topic === '인연과 연애' || state.topic === '지나간 사람과의 재회';
+  const isMoney = state.topic === '돈과 일';
+
+  if (isLove) {
+    const subPanel = el('<div class="panel"></div>');
+    ['솔로', '썸 또는 애매한 관계', '연애 중', '이별 후', '말하고 싶지 않음'].forEach((o) => {
+      const b = el(`<div class="choice-btn ${state.relSub === o ? 'selected' : ''}">${o}</div>`);
+      b.onclick = () => {
+        state.relSub = o;
+        state.relationshipStatus = (o === '말하고 싶지 않음') ? '' : o;
+        render();
+      };
+      subPanel.appendChild(b);
+    });
+    content.appendChild(subPanel);
+  } else if (isMoney) {
+    const subPanel = el('<div class="panel"></div>');
+    ['직장인', '사업·프리랜서', '취업·이직 준비', '학생', '말하고 싶지 않음'].forEach((o) => {
+      const b = el(`<div class="choice-btn ${state.jobSub === o ? 'selected' : ''}">${o}</div>`);
+      b.onclick = () => {
+        state.jobSub = o;
+        state.jobStatus = (o === '말하고 싶지 않음') ? '' : o;
+        render();
+      };
+      subPanel.appendChild(b);
+    });
+    content.appendChild(subPanel);
+  }
+
+  const needsSub = isLove || isMoney;
+  const subSelected = isLove ? !!state.relSub : (isMoney ? !!state.jobSub : true);
+  const canProceed = !!state.topic && (!needsSub || subSelected);
+
+  const cta = buildCta('다음', next);
+  if (!canProceed) cta.querySelector('#ctaBtn').disabled = true;
+  scene.appendChild(cta);
 }
 
-function renderBirthdate(content, scene) {
-  content.appendChild(el('<div class="bubble">태어난 날. 정확하게, 하나도 빼놓지 말고.</div>'));
+function renderConcern(content, scene) {
+  content.appendChild(el('<div class="hd-line">하나만 말해봐. 자꾸 마음이 돌아가는 그 지점.</div>'));
+  const panel = el('<div class="panel"></div>');
+  const ta = el('<textarea placeholder="예: 그 사람과 다시 이어질 수 있을까?"></textarea>');
+  ta.value = state.question;
+  panel.appendChild(ta);
+  content.appendChild(panel);
+  scene.appendChild(buildCta('다음', () => { state.question = ta.value.trim(); next(); }, {
+    ghostLabel: '말로 꺼내고 싶진 않아',
+    onGhost: () => { state.question = ''; next(); },
+  }));
+}
+
+function renderBirth(content, scene) {
+  content.appendChild(el('<div class="hd-line">이제 네가 태어난 날을 볼게. 양력인지 음력인지도 잊지 말고.</div>'));
   const panel = el('<div class="panel"></div>');
   const row = el('<div class="row"></div>');
   const y = el('<input type="number" placeholder="년(YYYY)" min="1900" max="2100" />');
@@ -880,7 +987,23 @@ function renderBirthdate(content, scene) {
   y.value = state.year; mo.value = state.month; d.value = state.day;
   row.appendChild(y); row.appendChild(mo); row.appendChild(d);
   panel.appendChild(row);
+
+  const genderRow = el('<div class="toggle-row"></div>');
+  ['여성', '남성'].forEach((g) => {
+    const b = el(`<div class="toggle-btn ${state.gender === g ? 'active' : ''}">${g}</div>`);
+    b.onclick = () => { state.gender = g; render(); };
+    genderRow.appendChild(b);
+  });
+  const calRow = el('<div class="toggle-row"></div>');
+  [['solar', '양력'], ['lunar', '음력']].forEach(([v, label]) => {
+    const b = el(`<div class="toggle-btn ${state.calendar === v ? 'active' : ''}">${label}</div>`);
+    b.onclick = () => { state.calendar = v; render(); };
+    calRow.appendChild(b);
+  });
+  panel.appendChild(genderRow);
+  panel.appendChild(calRow);
   content.appendChild(panel);
+
   const errorBox = el('<div class="error hidden"></div>');
   content.appendChild(errorBox);
   scene.appendChild(buildCta('다음', () => {
@@ -895,7 +1018,7 @@ function renderBirthdate(content, scene) {
 }
 
 function renderBirthtime(content, scene) {
-  content.appendChild(el('<div class="bubble">시(時)까지 알아야 진짜가 보여. 몇 시에 태어났어?</div>'));
+  content.appendChild(el('<div class="hd-line">시간까지 알면 흐름이 더 선명해져. 몰라도 괜찮아.</div>'));
   const panel = el('<div class="panel"></div>');
   const row = el('<div class="row"></div>');
   const h = el('<input type="number" placeholder="시(0-23)" min="0" max="23" />');
@@ -906,59 +1029,37 @@ function renderBirthtime(content, scene) {
   content.appendChild(panel);
   scene.appendChild(buildCta('다음', () => {
     state.hour = h.value; state.minute = m.value;
-    next();
+    goTo('loading');
   }, {
     ghostLabel: '시간 몰라',
-    onGhost: () => { state.hour = ''; state.minute = ''; next(); },
+    onGhost: () => { state.hour = ''; state.minute = ''; goTo('loading'); },
   }));
-}
-
-function renderChoiceStep(content, scene, prompt, options, stateKey, onSelect) {
-  content.appendChild(el(`<div class="bubble">${prompt}</div>`));
-  const panel = el('<div class="panel"></div>');
-  options.forEach((opt) => {
-    const b = el(`<div class="choice-btn ${state[stateKey] === opt ? 'selected' : ''}">${opt}</div>`);
-    b.onclick = () => { state[stateKey] = opt; onSelect(); };
-    panel.appendChild(b);
-  });
-  content.appendChild(panel);
-}
-
-function renderRelationship(content, scene) {
-  renderChoiceStep(content, scene, '연애는. 지금 누구랑 얽혀있어?', ['솔로예요', '마음 가는 사람 있어요', '연애 중이에요', '헤어진 지 얼마 안 됐어요', '기혼이에요'], 'relationshipStatus', next);
-}
-
-function renderJob(content, scene) {
-  renderChoiceStep(content, scene, '먹고사는 건 어떻게 하고 있어? 하나로 안 끝나면 제일 크게 걸리는 걸로.', ['학생이에요', '일 구하고 있어요', '직장 다녀요', '직장 다니면서 다른 일도 병행해요', '사업/프리랜서예요', '무직이에요'], 'jobStatus', startFetch);
-}
-
-function renderLoading(content) {
-  content.appendChild(el(`
-    <div class="spinner-scene">
-      <div class="spinner"></div>
-      <div class="bubble">가만있어봐. 지금 네 팔자 짚어보고 있으니까.</div>
-    </div>
-  `));
 }
 
 let resultData = null;
 let fetchError = null;
+let fetchInFlight = false;
 
-async function startFetch() {
-  goTo('loading');
+function buildPayload() {
+  const payload = {
+    name: state.name, gender: state.gender, calendar: state.calendar,
+    year: Number(state.year), month: Number(state.month), day: Number(state.day),
+    relationshipStatus: state.relationshipStatus, jobStatus: state.jobStatus,
+    question: [state.topic, state.question].filter(Boolean).join(' - '),
+  };
+  if (state.hour !== '') payload.hour = Number(state.hour);
+  if (state.minute !== '') payload.minute = Number(state.minute);
+  return payload;
+}
+
+async function doFetch() {
+  if (fetchInFlight) return;
+  fetchInFlight = true;
   try {
-    const payload = {
-      name: state.name, gender: state.gender, calendar: state.calendar,
-      year: Number(state.year), month: Number(state.month), day: Number(state.day),
-      relationshipStatus: state.relationshipStatus, jobStatus: state.jobStatus, question: state.question,
-    };
-    if (state.hour !== '') payload.hour = Number(state.hour);
-    if (state.minute !== '') payload.minute = Number(state.minute);
-
     const res = await fetch('/api/teaser', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(buildPayload()),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '분석에 실패했어.');
@@ -967,8 +1068,90 @@ async function startFetch() {
   } catch (err) {
     fetchError = err.message;
     resultData = null;
+  } finally {
+    fetchInFlight = false;
   }
-  goTo('reveal');
+}
+
+const LOADING_STAGES = [
+  { img: opPath('현담_최종이미지_2부', '08_붓으로_사주읽기.png'), caption: '명식을 펼치는 중' },
+  { img: opPath('현담_최종이미지_1부', '02_손가락으로_사주읽기.png'), caption: '오행의 기울기를 살피는 중' },
+  { img: opPath('현담_최종이미지_1부', '05_월호명식첩_펼치기.png'), caption: '운이 꺾이는 시기를 찾는 중' },
+  { img: opPath('현담_최종이미지_1부', '03_오드아이_발광_클로즈업.png'), caption: '네 고민과 흐름을 맞춰보는 중' },
+];
+
+function renderLoadingSequence() {
+  document.body.style.overflow = 'hidden';
+  document.documentElement.style.overflow = 'hidden';
+
+  const stage = el(`
+    <div class="op-stage">
+      <img class="op-layer op-show" id="loadImg" src="${LOADING_STAGES[0].img}" alt="" />
+      <div class="op-overlay"></div>
+      <div class="load-content">
+        <div class="load-line">말은 여기까지. 이제 내가 읽을 차례야.</div>
+        <div class="load-caption" id="loadCaption">${LOADING_STAGES[0].caption}</div>
+      </div>
+    </div>
+  `);
+  sceneRoot.appendChild(stage);
+
+  const loadImg = stage.querySelector('#loadImg');
+  const loadCaption = stage.querySelector('#loadCaption');
+  loadImg.style.transition = 'opacity 450ms ease';
+  requestAnimationFrame(() => { loadCaption.style.opacity = '1'; });
+
+  const MIN_MS = 5500;
+  const STAGE_MS = MIN_MS / LOADING_STAGES.length;
+  let stageIdx = 0;
+  let stopped = false;
+  let cycleTimer = null;
+
+  function showStage(i) {
+    const st = LOADING_STAGES[i % LOADING_STAGES.length];
+    loadImg.style.opacity = '0';
+    setTimeout(() => {
+      if (stopped) return;
+      loadImg.src = st.img;
+      loadCaption.style.opacity = '0';
+      requestAnimationFrame(() => {
+        loadImg.style.opacity = '1';
+        setTimeout(() => {
+          if (stopped) return;
+          loadCaption.textContent = st.caption;
+          requestAnimationFrame(() => { loadCaption.style.opacity = '1'; });
+        }, 150);
+      });
+    }, 450);
+  }
+
+  function cycle() {
+    stageIdx++;
+    showStage(stageIdx);
+    cycleTimer = setTimeout(cycle, STAGE_MS);
+  }
+  cycleTimer = setTimeout(cycle, STAGE_MS);
+
+  const minDelay = new Promise((resolve) => setTimeout(resolve, MIN_MS));
+  const fetchPromise = doFetch();
+
+  Promise.all([fetchPromise, minDelay]).then(() => {
+    stopped = true;
+    clearTimeout(cycleTimer);
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    if (fetchError) {
+      goTo('reveal');
+      return;
+    }
+    loadCaption.style.opacity = '0';
+    setTimeout(() => {
+      loadCaption.textContent = '찾았다.';
+      loadCaption.classList.add('load-found');
+      requestAnimationFrame(() => { loadCaption.style.opacity = '1'; });
+      setTimeout(() => { goTo('reveal'); }, 700);
+    }, 300);
+  });
 }
 
 const REVEAL_CYCLE = ['hyundam-reveal.webp', 'hyundam-avatar.webp', 'hyundam-dialogue.webp', 'hyundam-focus.webp'];
@@ -998,7 +1181,7 @@ function renderRevealPage() {
     sceneRoot.appendChild(scene);
     const content = scene.querySelector('#content');
     content.appendChild(el(`<div class="bubble">앗, 문제가 생겼어: ${fetchError}</div>`));
-    scene.appendChild(buildCta('다시 시도', startFetch));
+    scene.appendChild(buildCta('다시 시도', () => goTo('loading')));
     return;
   }
   if (!resultData) return;
