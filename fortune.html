@@ -222,8 +222,8 @@
   .op-layer {
     position: absolute; inset: 0; width: 100%; height: 100%;
     object-fit: cover; object-position: center 18%;
-    opacity: 0; transition: opacity 1.5s ease, transform 1.5s ease;
-    transform: scale(1.06);
+    opacity: 0; transition: opacity 1.4s ease, transform 2.6s ease;
+    transform: scale(1.05);
   }
   .op-layer.op-show { opacity: 1; transform: scale(1); }
   .op-layer.op-under { transition: none; opacity: 1; transform: scale(1); z-index: 1; }
@@ -295,12 +295,14 @@
 
   .op-eye-glow-a, .op-eye-glow-b {
     position: absolute; z-index: 7; width: 46px; height: 46px; border-radius: 50%;
-    pointer-events: none; opacity: 0; transition: opacity .35s ease;
+    pointer-events: none; opacity: 0; transition: opacity .7s ease;
     filter: blur(10px);
   }
   .op-eye-glow-a { top: 30%; left: 40%; background: radial-gradient(circle, rgba(230,180,100,0.85), transparent 70%); }
   .op-eye-glow-b { top: 30%; left: 55%; background: radial-gradient(circle, rgba(150,190,230,0.85), transparent 70%); }
   .op-eye-glow-a.op-show, .op-eye-glow-b.op-show { opacity: 1; }
+  .op-eye-glow-a.op-pulse, .op-eye-glow-b.op-pulse { animation: opEyePulse .4s ease; }
+  @keyframes opEyePulse { 0% { filter: blur(10px) brightness(1); } 50% { filter: blur(10px) brightness(1.7); } 100% { filter: blur(10px) brightness(1); } }
 
   .op-bubble {
     font-family: 'Gowun Batang', serif;
@@ -336,7 +338,7 @@
     overflow: hidden;
   }
   .op-gate-btn.op-show { opacity: 1; transform: translateY(0); }
-  .op-gate-btn:active { transform: scale(0.98); box-shadow: inset 0 0 0 1px rgba(243,221,184,0.18), inset 0 4px 16px rgba(0,0,0,0.5); }
+  .op-gate-btn:active, .op-gate-btn.op-pressed { transform: scale(0.98); box-shadow: inset 0 0 0 1px rgba(243,221,184,0.18), inset 0 4px 16px rgba(0,0,0,0.5); transition: transform .15s ease, box-shadow .15s ease; }
   .op-gate-btn::before {
     content: ''; position: absolute; inset: 6px;
     border: 1px solid rgba(243,221,184,0.28); border-radius: 3px; pointer-events: none;
@@ -354,6 +356,21 @@
     animation: opSheen 3.2s ease-in-out infinite;
   }
   @keyframes opSheen { 0%, 70% { background-position: 120% 0; } 100% { background-position: -20% 0; } }
+
+  .op-mute-btn {
+    position: absolute; z-index: 30;
+    top: calc(14px + env(safe-area-inset-top)); right: 14px;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(5,7,15,0.55); border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; opacity: 0; transition: opacity .4s ease;
+  }
+  .op-mute-btn.op-show { opacity: 1; }
+  .op-mute-btn svg { width: 20px; height: 20px; }
+  .op-mute-btn .op-mute-x { opacity: 0; }
+  .op-mute-btn .op-mute-wave { opacity: 1; }
+  .op-mute-btn.op-muted .op-mute-x { opacity: 1; }
+  .op-mute-btn.op-muted .op-mute-wave { opacity: 0; }
 
   @media (prefers-reduced-motion: reduce) {
     .op-layer, .op-title, .op-sub, .op-bubble, .op-gate-btn { transition-duration: .15s !important; }
@@ -488,6 +505,15 @@ const OP_IMG = {
   leading: opPath('현담_최종이미지_1부', '01_신당으로_이끄는_전신.webp'),
 };
 
+const OP_AUDIO_SRC = {
+  bell: '/audio/shrine-bell.mp3',
+  wind: '/audio/shrine-wind.mp3',
+  creak: '/audio/shrine-door-creak.mp3',
+};
+const OP_AUDIO_VOL = { bell: 0.32, creak: 0.42, wind: 0.12 };
+
+const MUTE_SVG = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 9v6h4l5 5V4L8 9H4Z" fill="#f2f4fb"/><path class="op-mute-x" d="M16 9l5 6M21 9l-5 6" stroke="#f2f4fb" stroke-width="1.6" stroke-linecap="round"/><path class="op-mute-wave" d="M16.5 8.5c1.8 1.8 1.8 5.2 0 7" stroke="#f2f4fb" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg>';
+
 function renderOpeningSequence() {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.body.style.overflow = 'hidden';
@@ -503,6 +529,7 @@ function renderOpeningSequence() {
       <div class="op-overlay"></div>
       <div class="op-content" id="opContent"></div>
       <div class="op-blackout" id="opBlackout"></div>
+      <button class="op-mute-btn" id="opMuteBtn" aria-label="음소거">${MUTE_SVG}</button>
     </div>
   `);
   sceneRoot.appendChild(stage);
@@ -513,6 +540,60 @@ function renderOpeningSequence() {
   const eyeA = stage.querySelector('#opEyeA');
   const eyeB = stage.querySelector('#opEyeB');
   const opFog = stage.querySelector('#opFog');
+  const muteBtn = stage.querySelector('#opMuteBtn');
+
+  // ---- Audio (lazily created; missing files fail silently) ----
+  let muted = false;
+  const sfx = {
+    bell: new Audio(OP_AUDIO_SRC.bell),
+    wind: new Audio(OP_AUDIO_SRC.wind),
+    creak: new Audio(OP_AUDIO_SRC.creak),
+  };
+  sfx.bell.volume = OP_AUDIO_VOL.bell;
+  sfx.creak.volume = OP_AUDIO_VOL.creak;
+  sfx.wind.volume = OP_AUDIO_VOL.wind;
+  sfx.wind.loop = true;
+  Object.values(sfx).forEach((a) => { a.preload = 'auto'; a.addEventListener('error', () => {}); });
+
+  function unlockAudio() {
+    // Mobile browsers require each element to be touched inside a user gesture once.
+    Object.values(sfx).forEach((a) => {
+      try {
+        const p = a.play();
+        if (p && p.catch) p.catch(() => {});
+        a.pause();
+        a.currentTime = 0;
+      } catch (e) {}
+    });
+  }
+  function playSfx(name) {
+    if (muted) return;
+    try {
+      const a = sfx[name];
+      a.currentTime = 0;
+      const p = a.play();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+  }
+  function fadeOutWind(ms) {
+    try {
+      const a = sfx.wind;
+      const startVol = a.volume;
+      const steps = 10;
+      const stepMs = ms / steps;
+      let i = 0;
+      const iv = setInterval(() => {
+        i++;
+        a.volume = Math.max(0, startVol * (1 - i / steps));
+        if (i >= steps) { clearInterval(iv); a.pause(); a.currentTime = 0; }
+      }, stepMs);
+    } catch (e) {}
+  }
+  muteBtn.onclick = () => {
+    muted = !muted;
+    Object.values(sfx).forEach((a) => { a.muted = muted; });
+    muteBtn.classList.toggle('op-muted', muted);
+  };
 
   const timers = [];
   const after = (ms, fn) => { timers.push(setTimeout(fn, ms)); };
@@ -522,19 +603,22 @@ function renderOpeningSequence() {
   }
   function proceed() {
     cleanup();
+    Object.values(sfx).forEach((a) => { try { a.pause(); } catch (e) {} });
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
     next();
   }
 
+  // Sequential fade (image dips through transparent) — used for quick cuts.
   function crossfadeTo(newSrc, opts = {}) {
-    const fadeMs = opts.fadeMs || 500;
-    opImg.style.transition = `opacity ${fadeMs}ms ease`;
+    const outMs = opts.outMs != null ? opts.outMs : (opts.fadeMs || 500);
+    const inMs = opts.inMs != null ? opts.inMs : (opts.fadeMs || 500);
+    opImg.style.transition = `opacity ${outMs}ms ease`;
     opImg.style.opacity = '0';
-    after(fadeMs, () => {
+    after(outMs, () => {
       opImg.src = newSrc;
-      const zoomMs = opts.zoomMs || fadeMs;
-      opImg.style.transition = `opacity ${fadeMs}ms ease, transform ${zoomMs}ms ease`;
+      const zoomMs = opts.zoomMs || inMs;
+      opImg.style.transition = `opacity ${inMs}ms ease, transform ${zoomMs}ms ease`;
       requestAnimationFrame(() => {
         opImg.style.opacity = '1';
         if (opts.zoomTo) opImg.style.transform = `scale(${opts.zoomTo})`;
@@ -542,10 +626,34 @@ function renderOpeningSequence() {
     });
   }
 
+  // True simultaneous crossfade via a temporary overlay layer (no dark dip).
+  function trueCrossfadeTo(newSrc, ms, opts = {}) {
+    const overlay = document.createElement('img');
+    overlay.className = 'op-layer op-top';
+    overlay.alt = '';
+    overlay.style.opacity = '0';
+    overlay.style.transform = 'scale(1)';
+    const zoomMs = opts.zoomMs || ms;
+    overlay.style.transition = `opacity ${ms}ms ease, transform ${zoomMs}ms ease`;
+    overlay.src = newSrc;
+    stage.insertBefore(overlay, opFog);
+    requestAnimationFrame(() => {
+      overlay.style.opacity = '1';
+      if (opts.zoomTo) overlay.style.transform = `scale(${opts.zoomTo})`;
+    });
+    after(ms, () => {
+      opImg.style.transition = 'none';
+      opImg.src = newSrc;
+      opImg.style.opacity = '1';
+      if (opts.zoomTo) opImg.style.transform = `scale(${opts.zoomTo})`;
+      overlay.remove();
+    });
+  }
+
   function skipLeading() { proceed(); }
 
   if (reduced) {
-    // Reduced motion: minimal, fast, no shake/zoom/looping fog
+    // Reduced motion: minimal, fast, no shake/zoom/looping fog/audio-heavy cues
     opFog.style.display = 'none';
     opImg.classList.add('op-show');
     opContent.innerHTML = `
@@ -562,6 +670,9 @@ function renderOpeningSequence() {
       const btn = el(`<button class="op-gate-btn op-show">현담의 신당으로 들어가기</button>`);
       btn.onclick = () => {
         btn.disabled = true;
+        unlockAudio();
+        playSfx('bell');
+        muteBtn.classList.add('op-show');
         opBlackout.classList.remove('op-hide');
         after(200, () => {
           opImg.src = OP_IMG.leading;
@@ -576,9 +687,9 @@ function renderOpeningSequence() {
     return;
   }
 
-  // ---- Phase 1: moonlit reveal ----
-  after(350, () => opBlackout.classList.add('op-hide'));
-  after(400, () => opImg.classList.add('op-show'));
+  // ================= Phase 1: moonlit reveal (13_보름달_전신, 4.2s total) =================
+  after(300, () => opBlackout.classList.add('op-hide'));
+  after(350, () => opImg.classList.add('op-show')); // 1.4s opacity fade / 2.6s slow scale
 
   after(1100, () => {
     const title = el(`<div class="op-title">네 <span class="accent">운명</span>, 내가<br/>가감 없이 읽어줄게</div>`);
@@ -591,35 +702,41 @@ function renderOpeningSequence() {
     requestAnimationFrame(() => sub.classList.add('op-show'));
   });
 
-  // ---- Phase 2: eye impact (brief) ----
-  after(3900, () => {
+  // ================= Phase 2: eye impact (03_오드아이, 1.6s, 0.5s crossfade) =================
+  after(4200, () => {
     opContent.innerHTML = '';
-    crossfadeTo(OP_IMG.eye, { fadeMs: 280 });
-    after(300, () => {
+    crossfadeTo(OP_IMG.eye, { fadeMs: 500 });
+    after(500, () => { // glow builds gradually as image settles in
       eyeA.classList.add('op-show');
       eyeB.classList.add('op-show');
-      stage.classList.add('op-shake');
-      after(180, () => stage.classList.remove('op-shake'));
+      after(700, () => { // then intensifies once
+        eyeA.classList.add('op-pulse');
+        eyeB.classList.add('op-pulse');
+      });
     });
   });
 
-  // ---- Phase 3: invitation ----
-  after(4750, () => {
-    eyeA.classList.remove('op-show');
-    eyeB.classList.remove('op-show');
-    crossfadeTo(OP_IMG.invite, { fadeMs: 450 });
-    after(600, () => {
+  // ================= Phase 3: invitation (12_손을_내미는_초대, 0.8s reveal, waits for tap) =================
+  after(5800, () => {
+    eyeA.classList.remove('op-show', 'op-pulse');
+    eyeB.classList.remove('op-show', 'op-pulse');
+    crossfadeTo(OP_IMG.invite, { outMs: 200, inMs: 800 });
+    after(200, () => {
       const bubble = el(`<div class="op-bubble">왔군. 네 운명이 문 앞에서 기다리고 있어.</div>`);
       opContent.appendChild(bubble);
       requestAnimationFrame(() => bubble.classList.add('op-show'));
-      after(300, () => {
+      after(500, () => {
         const btn = el(`<button class="op-gate-btn"><span class="op-sheen"></span><span class="op-corner op-corner-l">${MOON_SVG}</span>현담의 신당으로 들어가기<span class="op-corner op-corner-r">${MOON_SVG}</span></button>`);
         opContent.appendChild(btn);
         requestAnimationFrame(() => btn.classList.add('op-show'));
         btn.onclick = () => {
           btn.disabled = true;
           btn.style.pointerEvents = 'none';
-          enterShrine();
+          btn.classList.add('op-pressed');
+          unlockAudio();
+          playSfx('bell');
+          muteBtn.classList.add('op-show');
+          after(150, () => enterShrine());
         };
       });
     });
@@ -628,36 +745,47 @@ function renderOpeningSequence() {
   function enterShrine() {
     // Flat, non-overlapping schedule (all offsets relative to this call)
     opContent.innerHTML = '';
-    opBlackout.style.transitionDuration = '0.2s';
-    opBlackout.classList.remove('op-hide'); // t=0: screen darkens
+    opBlackout.style.transitionDuration = '0.45s';
+    opBlackout.classList.remove('op-hide'); // t=0: screen darkens over 0.45s
 
-    after(220, () => { // black is now opaque: swap to closed gate unseen
+    after(450, () => { // black is now opaque: swap to closed gate unseen
       opImg.style.transition = 'none';
       opImg.src = OP_IMG.gateClosed;
-      opImg.style.opacity = '1';
+      opImg.style.opacity = '0';
       opImg.style.transform = 'scale(1)';
-      opFog.classList.add('op-fog-burst');
-    });
-
-    after(280, () => { // reveal closed gate
-      opBlackout.style.transitionDuration = '0.5s';
+      requestAnimationFrame(() => {
+        opImg.style.transition = 'opacity 800ms ease, transform 2000ms ease';
+        opImg.style.opacity = '1';
+        opImg.style.transform = 'scale(1.03)'; // very slow, barely-there zoom
+      });
+      opBlackout.style.transitionDuration = '0.35s';
       opBlackout.classList.add('op-hide');
+      playSfx('wind');
     });
 
-    after(1000, () => { // closed -> open crossfade + slow push-in zoom
-      crossfadeTo(OP_IMG.gateOpen, { fadeMs: 800, zoomTo: 1.08, zoomMs: 1600 });
+    // closed door fully visible at 450+800=1250; hold 1.2s -> creak starts at ~2450
+    after(2450, () => {
+      playSfx('creak');
     });
 
-    after(3100, () => { // open gate has been visible ~1.3s; now lead inward
-      crossfadeTo(OP_IMG.leading, { fadeMs: 500 });
+    // 0.4s after creak starts, begin the 2s crossfade to the open gate
+    after(2850, () => {
+      trueCrossfadeTo(OP_IMG.gateOpen, 2000, { zoomTo: 1.07, zoomMs: 3200 });
     });
 
-    after(4100, () => {
+    // open gate fully visible at 2850+2000=4850; hold 1.2s -> lead inward at 6050
+    after(6050, () => {
+      trueCrossfadeTo(OP_IMG.leading, 800);
+    });
+
+    // leading scene fully visible at 6050+800=6850; hold 2s (auto) / tap to skip
+    after(6850, () => {
       const bubble = el(`<div class="op-bubble">따라와. 네 사주는 안쪽에서 보지.</div>`);
       opContent.appendChild(bubble);
       requestAnimationFrame(() => bubble.classList.add('op-show'));
       stage.addEventListener('click', skipLeading);
-      after(1200, proceed);
+      fadeOutWind(1000);
+      after(2000, proceed);
     });
   }
 }
