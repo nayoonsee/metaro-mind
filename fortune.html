@@ -244,6 +244,17 @@
     animation: opFogDrift 14s ease-in-out infinite alternate;
   }
   @keyframes opFogDrift { from { transform: translateX(-3%); } to { transform: translateX(3%); } }
+
+  .op-doorlight {
+    position: absolute; z-index: 3; pointer-events: none;
+    left: 50%; top: 46%; width: 55%; height: 42%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(ellipse, rgba(120,160,230,0.5), transparent 72%);
+    opacity: 0; transition: opacity 1.1s ease;
+    filter: blur(8px);
+  }
+  .op-doorlight.op-show { opacity: 1; }
+
   .op-fog.op-fog-burst {
     animation: opFogBurst 1.4s ease-out 1;
   }
@@ -298,8 +309,8 @@
     pointer-events: none; opacity: 0; transition: opacity .7s ease;
     filter: blur(10px);
   }
-  .op-eye-glow-a { top: 30%; left: 40%; background: radial-gradient(circle, rgba(230,180,100,0.85), transparent 70%); }
-  .op-eye-glow-b { top: 30%; left: 55%; background: radial-gradient(circle, rgba(150,190,230,0.85), transparent 70%); }
+  .op-eye-glow-a { top: 38%; left: 27%; background: radial-gradient(circle, rgba(230,180,100,0.85), transparent 70%); }
+  .op-eye-glow-b { top: 36%; left: 61%; background: radial-gradient(circle, rgba(150,190,230,0.85), transparent 70%); }
   .op-eye-glow-a.op-show, .op-eye-glow-b.op-show { opacity: 1; }
   .op-eye-glow-a.op-pulse, .op-eye-glow-b.op-pulse { animation: opEyePulse .4s ease; }
   @keyframes opEyePulse { 0% { filter: blur(10px) brightness(1); } 50% { filter: blur(10px) brightness(1.7); } 100% { filter: blur(10px) brightness(1); } }
@@ -526,6 +537,7 @@ function renderOpeningSequence() {
       <div class="op-flicker"></div>
       <div class="op-eye-glow-a" id="opEyeA"></div>
       <div class="op-eye-glow-b" id="opEyeB"></div>
+      <div class="op-doorlight" id="opDoorlight"></div>
       <div class="op-overlay"></div>
       <div class="op-content" id="opContent"></div>
       <div class="op-blackout" id="opBlackout"></div>
@@ -540,6 +552,7 @@ function renderOpeningSequence() {
   const eyeA = stage.querySelector('#opEyeA');
   const eyeB = stage.querySelector('#opEyeB');
   const opFog = stage.querySelector('#opFog');
+  const opDoorlight = stage.querySelector('#opDoorlight');
   const muteBtn = stage.querySelector('#opMuteBtn');
 
   // ---- Audio (lazily created; missing files fail silently) ----
@@ -609,16 +622,18 @@ function renderOpeningSequence() {
     next();
   }
 
+  const OP_EASE = 'cubic-bezier(0.33, 0, 0.2, 1)'; // slow start, slow end — no abrupt snap
+
   // Sequential fade (image dips through transparent) — used for quick cuts.
   function crossfadeTo(newSrc, opts = {}) {
     const outMs = opts.outMs != null ? opts.outMs : (opts.fadeMs || 500);
     const inMs = opts.inMs != null ? opts.inMs : (opts.fadeMs || 500);
-    opImg.style.transition = `opacity ${outMs}ms ease`;
+    opImg.style.transition = `opacity ${outMs}ms ${OP_EASE}`;
     opImg.style.opacity = '0';
     after(outMs, () => {
       opImg.src = newSrc;
       const zoomMs = opts.zoomMs || inMs;
-      opImg.style.transition = `opacity ${inMs}ms ease, transform ${zoomMs}ms ease`;
+      opImg.style.transition = `opacity ${inMs}ms ${OP_EASE}, transform ${zoomMs}ms ${OP_EASE}`;
       requestAnimationFrame(() => {
         opImg.style.opacity = '1';
         if (opts.zoomTo) opImg.style.transform = `scale(${opts.zoomTo})`;
@@ -634,7 +649,7 @@ function renderOpeningSequence() {
     overlay.style.opacity = '0';
     overlay.style.transform = 'scale(1)';
     const zoomMs = opts.zoomMs || ms;
-    overlay.style.transition = `opacity ${ms}ms ease, transform ${zoomMs}ms ease`;
+    overlay.style.transition = `opacity ${ms}ms ${OP_EASE}, transform ${zoomMs}ms ${OP_EASE}`;
     overlay.src = newSrc;
     stage.insertBefore(overlay, opFog);
     requestAnimationFrame(() => {
@@ -702,11 +717,11 @@ function renderOpeningSequence() {
     requestAnimationFrame(() => sub.classList.add('op-show'));
   });
 
-  // ================= Phase 2: eye impact (03_오드아이, 1.6s, 0.5s crossfade) =================
+  // ================= Phase 2: eye impact (03_오드아이, slow crossfade + longer hold) =================
   after(4200, () => {
     opContent.innerHTML = '';
-    crossfadeTo(OP_IMG.eye, { fadeMs: 500 });
-    after(500, () => { // glow builds gradually as image settles in
+    crossfadeTo(OP_IMG.eye, { fadeMs: 900 });
+    after(1200, () => { // (900ms swap + 300ms settle) glow builds gradually as image settles in
       eyeA.classList.add('op-show');
       eyeB.classList.add('op-show');
       after(700, () => { // then intensifies once
@@ -716,12 +731,12 @@ function renderOpeningSequence() {
     });
   });
 
-  // ================= Phase 3: invitation (12_손을_내미는_초대, 0.8s reveal, waits for tap) =================
-  after(5800, () => {
+  // ================= Phase 3: invitation (12_손을_내미는_초대, waits for tap) =================
+  after(8400, () => {
     eyeA.classList.remove('op-show', 'op-pulse');
     eyeB.classList.remove('op-show', 'op-pulse');
-    crossfadeTo(OP_IMG.invite, { outMs: 200, inMs: 800 });
-    after(200, () => {
+    crossfadeTo(OP_IMG.invite, { outMs: 400, inMs: 1200 });
+    after(400, () => {
       const bubble = el(`<div class="op-bubble">왔군. 네 운명이 문 앞에서 기다리고 있어.</div>`);
       opContent.appendChild(bubble);
       requestAnimationFrame(() => bubble.classList.add('op-show'));
@@ -754,7 +769,7 @@ function renderOpeningSequence() {
       opImg.style.opacity = '0';
       opImg.style.transform = 'scale(1)';
       requestAnimationFrame(() => {
-        opImg.style.transition = 'opacity 800ms ease, transform 2000ms ease';
+        opImg.style.transition = `opacity 1300ms ${OP_EASE}, transform 2600ms ${OP_EASE}`;
         opImg.style.opacity = '1';
         opImg.style.transform = 'scale(1.03)'; // very slow, barely-there zoom
       });
@@ -763,23 +778,29 @@ function renderOpeningSequence() {
       playSfx('wind');
     });
 
-    // closed door fully visible at 450+800=1250; hold 1.2s -> creak starts at ~2450
-    after(2450, () => {
+    // closed door fully visible at 450+1300=1750; hold 1.2s
+    // light seeps through the door crack BEFORE it opens (no abrupt cut)
+    after(2950, () => {
+      opDoorlight.classList.add('op-show');
+    });
+    after(3250, () => {
       playSfx('creak');
     });
 
-    // 0.4s after creak starts, begin the 2s crossfade to the open gate
-    after(2850, () => {
-      trueCrossfadeTo(OP_IMG.gateOpen, 2000, { zoomTo: 1.07, zoomMs: 3200 });
+    // 0.4s after creak starts, begin the slow crossfade to the open gate
+    after(3650, () => {
+      opDoorlight.classList.remove('op-show');
+      trueCrossfadeTo(OP_IMG.gateOpen, 2600, { zoomTo: 1.07, zoomMs: 3800 });
     });
 
-    // open gate fully visible at 2850+2000=4850; hold 1.2s -> lead inward at 6050
-    after(6050, () => {
-      trueCrossfadeTo(OP_IMG.leading, 800);
+    // open gate fully visible at 3650+2600=6250; hold 1.2s -> lead inward at 7450
+    // leading scene keeps drifting inward the whole time it's held (feels like walking in together)
+    after(7450, () => {
+      trueCrossfadeTo(OP_IMG.leading, 1400, { zoomTo: 1.05, zoomMs: 3400 });
     });
 
-    // leading scene fully visible at 6050+800=6850; hold 2s (auto) / tap to skip
-    after(6850, () => {
+    // leading scene fully visible at 7450+1400=8850; hold 2s (auto) / tap to skip
+    after(8850, () => {
       const bubble = el(`<div class="op-bubble">따라와. 네 사주는 안쪽에서 보지.</div>`);
       opContent.appendChild(bubble);
       requestAnimationFrame(() => bubble.classList.add('op-show'));
