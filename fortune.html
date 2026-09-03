@@ -140,6 +140,8 @@
   .chip-hint { font-size: 12px; color: #97a0cf; margin: 0 2px; }
   .panel-compact { padding: 8px 10px; gap: 6px; }
   .scene-content.content-tight { gap: 8px; }
+  /* Input-step content group lifted ~44px off the bottom edge (button moves with it) */
+  .scene-content.content-raised { padding-bottom: calc(152px + env(safe-area-inset-bottom)); }
 
   .cta-fixed {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
@@ -147,6 +149,7 @@
     padding: 14px 22px calc(16px + env(safe-area-inset-bottom));
     background: linear-gradient(180deg, transparent, rgba(5,7,15,0.85) 35%, #05070f 85%);
   }
+  .cta-fixed.cta-raised { bottom: 44px; }
   .cta-inner { width: 100%; max-width: 436px; display: flex; flex-direction: column; gap: 8px; }
   .primary-btn {
     font-family: 'Gugi', cursive;
@@ -169,10 +172,32 @@
     width: 100%; padding: 11px; border-radius: 12px;
     background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.25); color: #d6dafc; font-size: 13.5px; cursor: pointer;
   }
-  /* Input-step CTAs only (scoped to .cta-fixed so the reveal page's button is untouched) */
-  .cta-fixed .primary-btn, .cta-fixed .ghost-btn {
+  /* Input-step CTAs only (scoped to .cta-fixed.cta-raised, which only input steps get —
+     the reveal/error-retry screen's buildCta call opts out via {raised:false}, so it
+     keeps the original .primary-btn styling untouched) */
+  .cta-fixed.cta-raised .ghost-btn {
     height: 52px; padding: 0 16px; font-size: 16px;
     display: flex; align-items: center; justify-content: center;
+  }
+  .cta-fixed.cta-raised .primary-btn {
+    height: 52px; padding: 0 16px;
+    font-family: 'Gowun Batang', serif;
+    font-size: 17px; font-weight: 600; letter-spacing: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(10, 14, 28, 0.82);
+    border: 1px solid rgba(205, 176, 105, 0.55);
+    border-radius: 14px;
+    color: #f3ead5;
+    box-shadow: none;
+    text-shadow: none;
+    transition: border-color .15s, color .15s;
+  }
+  .cta-fixed.cta-raised .primary-btn::before, .cta-fixed.cta-raised .primary-btn::after { content: none; }
+  .cta-fixed.cta-raised .primary-btn:disabled { opacity: 0.45; }
+  .cta-fixed.cta-raised .primary-btn:not(:disabled):hover,
+  .cta-fixed.cta-raised .primary-btn:not(:disabled):active {
+    border-color: rgba(205, 176, 105, 0.85);
+    color: #fbf3df;
   }
   .error { color: #ff9b9b; font-size: 13px; text-align: center; }
   .hidden { display: none !important; }
@@ -535,11 +560,12 @@ function el(html) {
 
 function buildScene(step) {
   const overlayClass = INPUT_STEPS.has(step) ? ' deep' : '';
+  const raisedClass = INPUT_STEPS.has(step) ? ' content-raised' : '';
   const scene = el(`
     <div class="scene">
       <img class="scene-bg" src="${SCENE_IMAGE[step]}" alt="" />
       <div class="scene-overlay${overlayClass}"></div>
-      <div class="scene-content" id="content"></div>
+      <div class="scene-content${raisedClass}" id="content"></div>
     </div>
   `);
   if (!NO_BACK_STEPS.has(step) && stepIndex > 0) {
@@ -555,8 +581,9 @@ function buildScene(step) {
 }
 
 function buildCta(label, onClick, opts = {}) {
+  const raisedClass = opts.raised === false ? '' : ' cta-raised';
   const wrap = el(`
-    <div class="cta-fixed">
+    <div class="cta-fixed${raisedClass}">
       <div class="cta-inner">
         ${opts.ghostLabel ? `<button class="ghost-btn" id="ghostBtn">${opts.ghostLabel}</button>` : ''}
         <button class="primary-btn" id="ctaBtn">${label}</button>
@@ -1258,7 +1285,7 @@ function renderRevealPage() {
     sceneRoot.appendChild(scene);
     const content = scene.querySelector('#content');
     content.appendChild(el(`<div class="bubble">앗, 문제가 생겼어: ${fetchError}</div>`));
-    scene.appendChild(buildCta('다시 시도', () => goTo('loading')));
+    scene.appendChild(buildCta('다시 시도', () => goTo('loading'), { raised: false }));
     return;
   }
   if (!resultData) return;
