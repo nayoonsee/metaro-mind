@@ -17,10 +17,23 @@
 // This file is the SINGLE place that Korea-specific offset is encoded. Nothing else in
 // this codebase should hardcode a Korea solar-term hour offset.
 //
-// Explicitly OUT OF SCOPE here (tracked separately, not implemented): true solar time /
-// local mean time correction for birthplace longitude, and the equation of time. Those
-// are independent corrections lunar-javascript has no support for at all, unrelated to
-// this UTC+8-vs-UTC+9 labeling bug.
+// SCOPE OF THIS FILE: year & month pillar (연주·월주) and their derived fields only.
+// Explicitly OUT OF SCOPE / NOT implemented here:
+//   - True solar time / local mean time correction for birthplace longitude, and the
+//     equation of time. Independent corrections lunar-javascript has no support for at
+//     all, unrelated to this UTC+8-vs-UTC+9 labeling bug.
+//   - 대운(DaYun)/교운 timing. getYun()'s day-count-to-age arithmetic discretizes each
+//     side into a 2-hour 시진 bucket index and takes their INDEX DIFFERENCE (plus a
+//     separate whole-calendar-day count) — NOT a simple threshold comparison like the
+//     year/month pillar check below. The "shift the query input backward" trick that
+//     correctly fixes year/month does NOT correctly fix this: getNextJie()/getPrevJie()
+//     return an absolute, pre-computed instant that does not itself shift when the
+//     query's input hour changes (confirmed: identical raw output whether queried from
+//     an unshifted or a shifted Lunar object built for the same calendar date) — so
+//     correcting this would require reimplementing getYun()'s internals against a
+//     KST-corrected jieqi instant, and 대운 시작 시점 계산법 itself is a school-dependent
+//     choice this file does not attempt to resolve. 대운/교운 stays on the plain,
+//     unshifted library path in api/_saju-core.js — KST-unverified, separate future work.
 
 import { Solar } from 'lunar-javascript';
 
@@ -49,16 +62,18 @@ export function shiftSolarByMinutes(solar, minutes) {
   return shifted;
 }
 
-// Converts a TRUE KST instant into the "probe" instant that, when handed to any
-// lunar-javascript jieqi-boundary comparison (year/month pillar, getYun's prev/next
-// jie, LiuNian/LiuYue), makes that comparison land on the correct side of the TRUE KST
-// boundary. This works because the library's own jieqi instants carry the same fixed
-// -1h-from-KST bias: shifting the input backward by the same amount makes both sides of
-// every internal comparison share an identical bias, which cancels out for boundary
-// (before/after) decisions and for any duration/offset computed as a difference of two
-// such instants (this is exactly why getYun()'s day-count-based 대운 math and the
-// resulting 교운 offset/ganzhi/direction all come out correct when built from the probe
-// — verified against 나윤's case below, where the offset instant is unaffected).
+// Converts a TRUE KST instant into the "probe" instant that, when handed to a
+// lunar-javascript jieqi-boundary THRESHOLD comparison (year/month pillar: is my input
+// before or after this year's 입춘/절 instant?), makes that comparison land on the
+// correct side of the TRUE KST boundary. This works because the library's own jieqi
+// instants carry the same fixed -1h-from-KST bias: shifting the input backward by the
+// same amount puts both sides of the comparison in the same ("library pseudo-time")
+// frame, which cancels out for a before/after decision.
+//
+// This does NOT generalize to every jieqi-derived computation — see the file header for
+// why it does not correctly fix getYun()'s 대운 day-count arithmetic (a bucket-index
+// DIFFERENCE, not a threshold comparison). Only use this for threshold/boundary
+// decisions, not for duration or offset math built from getNextJie()/getPrevJie().
 export function toLunarJsProbe(trueSolarKst) {
   return shiftSolarByMinutes(trueSolarKst, -KST_CORRECTION_MINUTES);
 }
@@ -151,16 +166,6 @@ export function getKstYearMonthPillars(trueSolarKst) {
   return { year: buildPillar('Year'), month: buildPillar('Month') };
 }
 
-// ---- 대운 (DaYun): built entirely from a probe EightChar, because getYun()'s whole
-// day-count-to-age-offset algorithm is a chain of DIFFERENCES between jieqi-derived
-// instants and the birth instant — the constant -1h bias cancels out of every such
-// difference as long as ALL of them (birth reference included) go through the same
-// probe shift. Ganzhi identity, direction (forward/backward), and startAge/endAge are
-// therefore correct read directly off the probe object; only an ABSOLUTE timestamp
-// pulled from it (e.g. yun.getStartSolar(), not currently exposed to the API) would
-// need fromLunarJsProbeToKst() applied afterward.
-export function getKstYun(trueSolarKst, genderCode) {
-  const probe = toLunarJsProbe(trueSolarKst);
-  const probeEightChar = probe.getLunar().getEightChar();
-  return probeEightChar.getYun(genderCode);
-}
+// 대운 (DaYun) is intentionally NOT exported from this file. See the file header for why
+// the toLunarJsProbe() trick does not correctly fix getYun()'s day-count arithmetic —
+// api/_saju-core.js's buildDaYun() uses the plain, unshifted library path instead.

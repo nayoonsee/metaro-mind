@@ -37,7 +37,6 @@ import {
   tenGod,
   twelveStageForZhi,
   getKstYearMonthPillars,
-  getKstYun,
 } from '../api/_kst-solar-term-adapter.js';
 import { calcSaju } from '../api/_saju-core.js';
 
@@ -211,19 +210,32 @@ console.log('\n7. 대운 순서와 시작 연도는 유지되는지 (나윤)');
 }
 
 // ---------------------------------------------------------------------------
-console.log('\n8. 교운의 정확한 날짜가 어떤 방식으로 변경되는지');
+console.log('\n8. 교운/대운: 이번 PR은 KST 보정을 적용하지 않음을 코드·실행값으로 확인');
 // ---------------------------------------------------------------------------
+// A prior version of this PR claimed 대운/교운 also went through the KST fix and that
+// 나윤's result was "identical either way, unaffected". That claim was WRONG — this
+// section replaces it. See section 12 below for the full re-investigation (source +
+// intermediate values + boundary-crossing cases); this section just pins the resulting,
+// corrected scope decision: buildDaYun() takes the plain `trueEightChar` and does not
+// import anything from the KST adapter.
 {
-  const trueBirth = Solar.fromYmdHms(1983, 7, 19, 10, 30, 0);
-  const yunFixed = getKstYun(trueBirth, 0); // female
-  const jiaoYunFixedKst = fromLunarJsProbeToKst(yunFixed.getStartSolar());
-  const yunOld = trueBirth.getLunar().getEightChar().getYun(0); // old, unfixed path
-  const jiaoYunOld = yunOld.getStartSolar();
-  check('나윤의 경우 교운 절대시각이 기존과 동일 (경계에서 멀어 영향 없음)', () => {
-    assert.equal(jiaoYunFixedKst.toYmdHms(), jiaoYunOld.toYmdHms());
+  const src = await (await import('node:fs/promises')).readFile(
+    new URL('../api/_saju-core.js', import.meta.url), 'utf8',
+  );
+  check('_saju-core.js가 KST 어댑터에서 오직 getKstYearMonthPillars만 import (getKstYun 없음)', () => {
+    assert.match(src, /import \{ getKstYearMonthPillars \} from '\.\/_kst-solar-term-adapter\.js';/);
+    assert.doesNotMatch(src, /getKstYun/);
   });
-  console.log(`     참고: 나윤 교운 = ${jiaoYunFixedKst.toYmdHms()} (기존과 동일, 변경 없음)`);
-  console.log('     * 경계 부근 출생자는 이 값이 최대 1일 안팎 달라질 수 있음(방향/폭은 케이스마다 다름) — 이번 스위트는 이를 별도로 계량 검증하지 않음(교운 절대시각은 현재 API 응답 필드에도 없음)');
+  check('buildDaYun이 trueEightChar.getYun(...)을 직접 사용 (probe/shift 경유 없음)', () => {
+    assert.match(src, /export function buildDaYun\(trueEightChar, gender\)/);
+    assert.match(src, /trueEightChar\.getYun\(genderCode\)/);
+  });
+  const adapterSrc = await (await import('node:fs/promises')).readFile(
+    new URL('../api/_kst-solar-term-adapter.js', import.meta.url), 'utf8',
+  );
+  check('어댑터 파일 자체에 getKstYun export가 존재하지 않음', () => {
+    assert.doesNotMatch(adapterSrc, /export function getKstYun/);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -276,6 +288,179 @@ console.log('\n10. 서버 실행환경의 TZ가 UTC/Asia/Seoul로 달라도 결�
     assert.equal(results[0].out, results[1].out, `UTC=${results[0].out} vs Seoul=${results[1].out}`);
   });
   console.log(`     결과(양쪽 동일): ${results[0].out}`);
+}
+
+// ---------------------------------------------------------------------------
+console.log('\n11. 독립 KST fixture 대조 (라이브러리 원본에 런타임 +60 하여 만들지 않음)');
+// ---------------------------------------------------------------------------
+// These six values are literal, hardcoded strings — NOT computed by calling
+// shiftSolarByMinutes()/fromLunarJsProbeToKst() here. That is the point: a prior test
+// suite version asked the adapter itself for its own "expected" value and then compared
+// the adapter's output to that same self-supplied value, which is circular — a broken
+// KST_CORRECTION_MINUTES (e.g. mistakenly set to 30) would still have passed. Comparing
+// against these fixed literals catches that class of regression.
+//
+// Confirmed-verification level (read this before trusting these numbers for anything
+// beyond regression-testing this repo): SECONDARY-SOURCE / DERIVED, not a primary-source
+// transcription. These six values were derived from this repo's own source-code finding
+// (lunar-javascript's ONE_THIRD = 1/3 day = 8h constant, i.e. library raw output + 60
+// minutes) — they are the same six 2026 raw jieqi instants already read from the
+// vendored library, with 60 minutes added by hand when this fixture list was written,
+// NOT by re-invoking any function in this repository at test time. Direct access to
+// KASI's (한국천문연구원) 공식 월력요항 (kasi.re.kr) and to lunar-javascript's own hosted
+// docs (6tail.cn) was blocked by this environment's network egress proxy on every
+// attempt so far (original audit, first PR, and this follow-up) — neither has been
+// fetched and quoted directly at any point. If official KASI values are obtained later,
+// replace the literals below and keep this comment updated with the real source/URL/
+// retrieval date.
+{
+  // [절기명, KST fixture 문자열, 대응하는 라이브러리 원본(UTC+8) 문자열]
+  const KST_FIXTURES_2026 = [
+    ['立春(입춘)', '2026-02-04 05:02:08', '2026-02-04 04:02:08'],
+    ['立秋(입추)', '2026-08-07 20:42:43', '2026-08-07 19:42:43'],
+    ['白露(백로)', '2026-09-07 23:41:16', '2026-09-07 22:41:16'],
+    ['寒露(한로)', '2026-10-08 15:29:17', '2026-10-08 14:29:17'],
+    ['立冬(입동)', '2026-11-07 18:52:05', '2026-11-07 17:52:05'],
+    ['大雪(대설)', '2026-12-07 11:52:32', '2026-12-07 10:52:32'],
+  ];
+  const rawTable2026 = Solar.fromYmdHms(2026, 9, 3, 0, 0, 0).getLunar().getJieQiTable();
+  const NAME_TO_KEY = { '立春(입춘)': '立春', '立秋(입추)': '立秋', '白露(백로)': '白露', '寒露(한로)': '寒露', '立冬(입동)': '立冬', '大雪(대설)': '大雪' };
+  KST_FIXTURES_2026.forEach(([label, kstFixture, rawFixture]) => {
+    check(`${label}: 라이브러리 원본이 hardcoded raw fixture와 일치`, () => {
+      const actualRaw = rawTable2026[NAME_TO_KEY[label]].toYmdHms();
+      assert.equal(actualRaw, rawFixture, `library's own raw output drifted from the recorded fixture (${actualRaw} vs ${rawFixture}) — re-derive the KST fixture too if this legitimately changed`);
+    });
+    check(`${label}: 어댑터 출력이 독립 hardcoded KST fixture와 일치`, () => {
+      const actual = fromLunarJsProbeToKst(rawTable2026[NAME_TO_KEY[label]]).toYmdHms();
+      assert.equal(actual, kstFixture);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+console.log('\n12. 대운 교운 계산 재검증 (source + 실행값)');
+// ---------------------------------------------------------------------------
+{
+  console.log('  12-1. KST 어댑터가 getYun() 내부 다음/이전 절기 시각에도 실제 적용되는지');
+  const trueBirth = Solar.fromYmdHms(1983, 7, 19, 10, 30, 0);
+  const trueLunar = trueBirth.getLunar();
+  const probeBirth = toLunarJsProbe(trueBirth);
+  const probeLunar = probeBirth.getLunar();
+  const trueNextJie = trueLunar.getNextJie().getSolar();
+  const probeNextJie = probeLunar.getNextJie().getSolar();
+  console.log(`        true birth=${trueBirth.toYmdHms()}  probe birth=${probeBirth.toYmdHms()} (-60min)`);
+  console.log(`        true-path nextJie(입추, raw)  = ${trueNextJie.toYmdHms()}`);
+  console.log(`        probe-path nextJie(입추, raw) = ${probeNextJie.toYmdHms()}`);
+  check('결론: getNextJie()는 shift와 무관하게 항상 동일한 원본(raw, UTC+8) 값을 반환 — 적용되지 않음', () => {
+    assert.equal(trueNextJie.toYmdHms(), probeNextJie.toYmdHms(),
+      '만약 이 값이 서로 달랐다면 probe shift가 실제로 nextJie에 반영된 것 — 하지만 실제로는 동일함을 확인');
+  });
+  console.log('        이유: getNextJie()/getPrevJie()는 Lunar 생성 시점에 연도 단위로 미리 계산·캐싱된 절기표를 조회만 할 뿐,');
+  console.log('        조회에 쓰인 시:분(query hour)에 따라 다시 계산되지 않음 — 그래서 birth를 아무리 shift해도 nextJie 자체는 바뀌지 않음.');
+
+  console.log('\n  12-2. 연주·월주만 보정되고 대운은 기존 EightChar(비보정)를 쓰는지 — 소스 재확인');
+  const saju = (await (await import('node:fs/promises')).readFile(new URL('../api/_saju-core.js', import.meta.url), 'utf8'));
+  check('calcSaju()가 buildDaYun에 trueEightChar를 그대로 넘김 (probe 아님)', () => {
+    assert.match(saju, /daYun: buildDaYun\(trueEightChar, gender\)/);
+  });
+
+  console.log('\n  12-3. 출생시각-절입시각 실제 차이 (시:분 단위, 수정 전/후 동일 — 대운은 애초에 미수정)');
+  const diffMinutesRaw = Math.round(
+    (Date.UTC(trueNextJie.getYear(), trueNextJie.getMonth() - 1, trueNextJie.getDay(), trueNextJie.getHour(), trueNextJie.getMinute(), trueNextJie.getSecond())
+      - Date.UTC(trueBirth.getYear(), trueBirth.getMonth() - 1, trueBirth.getDay(), trueBirth.getHour(), trueBirth.getMinute(), trueBirth.getSecond())) / 60000,
+  );
+  const trueKstNextJie = fromLunarJsProbeToKst(trueNextJie); // what the TRUE KST instant of 입추 actually is
+  const diffMinutesIfCorrected = Math.round(
+    (Date.UTC(trueKstNextJie.getYear(), trueKstNextJie.getMonth() - 1, trueKstNextJie.getDay(), trueKstNextJie.getHour(), trueKstNextJie.getMinute(), trueKstNextJie.getSecond())
+      - Date.UTC(trueBirth.getYear(), trueBirth.getMonth() - 1, trueBirth.getDay(), trueBirth.getHour(), trueBirth.getMinute(), trueBirth.getSecond())) / 60000,
+  );
+  console.log(`        현재(라이브러리 원본, buggy) 차이 = ${diffMinutesRaw}분 (${(diffMinutesRaw / 60).toFixed(2)}시간)`);
+  console.log(`        실제 KST 기준 차이(참고, 미적용) = ${diffMinutesIfCorrected}분 (${(diffMinutesIfCorrected / 60).toFixed(2)}시간)  <- raw보다 60분 더 큼`);
+  check('실제 KST 차이가 raw(buggy) 차이보다 정확히 60분 더 큼', () => {
+    assert.equal(diffMinutesIfCorrected - diffMinutesRaw, 60);
+  });
+
+  console.log('\n  12-4. 라이브러리가 이 차이를 년/월/일/시로 환산하는 중간값 (getYun sect=1, "3일=1년" 공식)');
+  // Faithful re-implementation of EightChar.getYun()'s sect===1 branch (see
+  // node_modules/lunar-javascript/lunar.js ~line 5798) for diagnostic purposes only —
+  // NOT wired into the app. Used here purely to print/compare intermediate values.
+  function getTimeZhiIndexLike(hm) {
+    let x = 1;
+    for (let i = 1; i < 22; i += 2) {
+      const lo = (i < 10 ? '0' : '') + i + ':00';
+      const hi = (i + 1 < 10 ? '0' : '') + (i + 1) + ':59';
+      if (hm >= lo && hm <= hi) return x;
+      x++;
+    }
+    return 0;
+  }
+  const hmOf = (s) => (s.getHour() < 10 ? '0' : '') + s.getHour() + ':' + (s.getMinute() < 10 ? '0' : '') + s.getMinute();
+  const zhiIdx = (s) => (s.getHour() === 23 ? 11 : getTimeZhiIndexLike(hmOf(s)));
+
+  function computeSect1Offset(startSolar, endSolar) {
+    const startIdx = zhiIdx(startSolar);
+    const endIdx = zhiIdx(endSolar);
+    let hourDiff = endIdx - startIdx;
+    let dayDiff = endSolar.subtract(startSolar); // whole calendar days only, no time-of-day
+    if (hourDiff < 0) { hourDiff += 12; dayDiff--; }
+    const monthDiff = Math.floor((hourDiff * 10) / 30);
+    let month = dayDiff * 4 + monthDiff;
+    const day = hourDiff * 10 - monthDiff * 30;
+    const year = Math.floor(month / 12);
+    month -= year * 12;
+    return { startIdx, endIdx, hourDiff, dayDiff, monthDiff, year, month, day };
+  }
+
+  const currentPath = computeSect1Offset(trueBirth, trueNextJie); // what the app actually computes today
+  console.log(`        [현재] start시진idx=${currentPath.startIdx} end시진idx=${currentPath.endIdx} hourDiff=${currentPath.hourDiff} dayDiff=${currentPath.dayDiff}`);
+  console.log(`        [현재] => 환산 offset: ${currentPath.year}년 ${currentPath.month}개월 ${currentPath.day}일 (교운 = 출생 + 이 offset)`);
+  check('현재(비보정) 환산 결과가 실제 라이브러리 getYun() 출력과 일치 (재구현 정확성 검증)', () => {
+    const realYun = trueLunar.getEightChar().getYun(0);
+    // NOTE: yun.getStartYear()/getStartMonth()/getStartDay() on the `yun` object itself
+    // are the OFFSET (e.g. 6 years), not an absolute calendar year — different from the
+    // same-named method on a DaYun block (getDaYun()[i].getStartYear(), an absolute
+    // year). Compare offsets directly against those.
+    assert.equal(realYun.getStartYear(), currentPath.year, 'year offset mismatch vs real getYun()');
+    assert.equal(realYun.getStartMonth(), currentPath.month, 'month offset mismatch vs real getYun()');
+    assert.equal(realYun.getStartDay(), currentPath.day, 'day offset mismatch vs real getYun()');
+    const realStart = realYun.getStartSolar();
+    const manualStart = trueBirth.nextYear(currentPath.year).nextMonth(currentPath.month).next(currentPath.day);
+    assert.equal(realStart.toYmdHms().slice(0, 10), manualStart.toYmdHms().slice(0, 10), 'reimplemented formula date mismatch vs real getYun().getStartSolar()');
+  });
+
+  console.log('\n  12-5. 절기 보정으로 시진 경계를 넘는 사례 (최소 2개)');
+  // Case A: 나윤 본인의 실제 다음 절기(1983년 입추). raw=10:29:37(巳시 구간 09:00-10:59)라서
+  // 사용자가 지적한 대로, KST로 보정하면 11:29:37(午시 구간 11:00-12:59)로 시진 버킷이 바뀐다.
+  const trueKstNextJieHm = hmOf(trueKstNextJie);
+  console.log(`        [사례A] 나윤 1983년 입추: raw=${hmOf(trueNextJie)}(시진idx=${zhiIdx(trueNextJie)}) -> KST 보정시=${trueKstNextJieHm}(시진idx=${zhiIdx(trueKstNextJie)})`);
+  check('사례A: 나윤 입추가 KST 보정 시 시진 경계(巳→午)를 넘음', () => {
+    assert.notEqual(zhiIdx(trueNextJie), zhiIdx(trueKstNextJie));
+  });
+  const correctedPathA = computeSect1Offset(trueBirth, trueKstNextJie);
+  console.log(`        [사례A] 만약 보정을 적용했다면: hourDiff=${correctedPathA.hourDiff} dayDiff=${correctedPathA.dayDiff} => ${correctedPathA.year}년 ${correctedPathA.month}개월 ${correctedPathA.day}일`);
+  console.log(`        [사례A] 현재(비보정) 결과와 비교: ${currentPath.year}년 ${currentPath.month}개월 ${currentPath.day}일  <- day 값이 다름(오프셋이 달라짐을 시연)`);
+  check('사례A: 시진 경계를 넘으면 환산 offset의 day 값이 실제로 달라짐 (보정 vs 비보정)', () => {
+    assert.notEqual(correctedPathA.day, currentPath.day);
+  });
+
+  // Case B: 2026년 청명(淸明). raw=02:40:00은 卯시 구간(01:00-02:59)의 마지막 구간에 위치,
+  // KST 보정하면 03:40:00으로 辰시 구간(03:00-04:59)으로 넘어간다. 이번 PR로 이미 연주/월주는
+  // 이 경계를 올바르게 반영하지만(섹션 3 참고), 대운 계산에 이 절기가 쓰이는 출생자가 있다면
+  // 동일한 시진 경계 이동 문제가 재현된다는 것을 보여주는 두 번째 독립 사례.
+  const rawQingMing2026 = Solar.fromYmdHms(2026, 9, 3, 0, 0, 0).getLunar().getJieQiTable()['清明'];
+  const kstQingMing2026 = fromLunarJsProbeToKst(rawQingMing2026);
+  console.log(`        [사례B] 2026년 청명: raw=${rawQingMing2026.toYmdHms()}(시진idx=${zhiIdx(rawQingMing2026)}) -> KST 보정시=${kstQingMing2026.toYmdHms()}(시진idx=${zhiIdx(kstQingMing2026)})`);
+  check('사례B: 2026년 청명이 KST 보정 시 시진 경계(卯→辰)를 넘음', () => {
+    assert.notEqual(zhiIdx(rawQingMing2026), zhiIdx(kstQingMing2026));
+  });
+
+  console.log('\n  12-6. 보정 전후 교운일이 나윤 케이스에서 "우연히" 같았던 이유 / 일반적으로는 달라져야 하는 이유');
+  console.log('        나윤의 실제 출생시각(10:30)과 raw nextJie(10:29:37)이 둘 다 같은 시진 버킷(09:00-10:59, 巳)에');
+  console.log('        위치해서, 이전 버전 PR이 시도한 "birth만 -60분 shift" 방식으로는 버킷 인덱스 차이(hourDiff)가');
+  console.log('        0에서 안 움직였다 — 이는 "보정이 통했다"가 아니라 "이 케이스에서만 우연히 버킷을 안 넘었다"는 뜻.');
+  console.log('        사례A(위)가 보여주듯, nextJie의 raw 시각 자체가 시진 경계 부근(마지막 ~1시간 이내)에 있는');
+  console.log('        출생자라면 실제로 day 오프셋이 달라져야 하며, "birth shift" 방식은 그 경우를 못 잡는다.');
+  console.log('        결론: 대운/교운은 이번 PR 범위에서 KST 미검증 상태로 남겨둔다 (섹션 8 참고, 별도 과제).');
 }
 
 console.log(`\n${passCount} checks passed.`);

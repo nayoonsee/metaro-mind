@@ -1,5 +1,5 @@
 import { Solar } from 'lunar-javascript';
-import { getKstYearMonthPillars, getKstYun } from './_kst-solar-term-adapter.js';
+import { getKstYearMonthPillars } from './_kst-solar-term-adapter.js';
 
 // Year/month pillars are jieqi-boundary-sensitive (see _kst-solar-term-adapter.js for
 // why) and come from `kstPillars`, KST-corrected. Day/time pillars never cross a jieqi
@@ -37,12 +37,24 @@ export function buildHideGan(trueEightChar, kstPillars) {
   };
 }
 
-// 대운 (DaYun) is built from a KST-corrected probe EightChar (see getKstYun) — its
-// day-count-based start-offset math is jieqi-sensitive the same way year/month pillars
-// are. Output shape is unchanged from before this fix.
-export function buildDaYun(trueSolarKst, gender) {
+// 대운 (DaYun) — DELIBERATELY NOT KST-corrected in this PR. getYun()'s day-count-to-age
+// arithmetic discretizes each side into a 2-hour 시진 bucket index (via
+// LunarUtil.getTimeZhiIndex) and takes their INDEX DIFFERENCE, plus a separate whole-
+// calendar-day count — it is not a simple "before/after" threshold comparison like the
+// year/month pillar check. Shifting only the birth-time input (the trick that correctly
+// fixes year/month, see _kst-solar-term-adapter.js) does NOT correctly fix this: the
+// library's own getNextJie()/getPrevJie() return an absolute, pre-computed instant that
+// does not itself shift when the query's input hour changes (verified: identical output
+// whether queried from the true or a shifted Lunar object, for the same calendar date),
+// so the correction would need to be applied to the jieqi instant itself before it enters
+// the bucket-index calculation — which requires reimplementing getYun()'s internals
+// rather than reusing them, and 대운 시작 시점 계산법 itself is a school-dependent choice
+// this PR does not attempt to resolve. Scope of this PR is limited to 연주·월주 and 절기
+// display (see PR description). 대운/교운 stays on the plain, unshifted library path
+// exactly as before this PR — KST-unverified, tracked as separate future work.
+export function buildDaYun(trueEightChar, gender) {
   const genderCode = gender === '남성' ? 1 : 0;
-  const yun = getKstYun(trueSolarKst, genderCode);
+  const yun = trueEightChar.getYun(genderCode);
   return yun
     .getDaYun()
     .filter((d) => d.getGanZhi())
@@ -85,7 +97,7 @@ export async function calcSaju({ year, month, day, hour, minute, gender, calenda
     hideGan: buildHideGan(trueEightChar, kstPillars),
     dayMaster: trueEightChar.getDayGan(),
     wuxingCount: buildWuxingCount(trueEightChar, kstPillars),
-    daYun: buildDaYun(solar, gender),
+    daYun: buildDaYun(trueEightChar, gender),
     hourKnown: Number.isInteger(hour),
   };
 }
