@@ -1,20 +1,25 @@
 import { Solar } from 'lunar-javascript';
+import { getKstYearMonthPillars, getKstYun } from './_kst-solar-term-adapter.js';
 
-export function buildPillars(eightChar) {
+// Year/month pillars are jieqi-boundary-sensitive (see _kst-solar-term-adapter.js for
+// why) and come from `kstPillars`, KST-corrected. Day/time pillars never cross a jieqi
+// boundary at all — they stay on `trueEightChar`, the ordinary, unshifted EightChar
+// built straight from the birth time exactly as given. Never swap these two sources.
+export function buildPillars(trueEightChar, kstPillars) {
   return {
-    year: { ganzhi: eightChar.getYear(), tenGod: eightChar.getYearShiShenGan(), stage: eightChar.getYearDiShi() },
-    month: { ganzhi: eightChar.getMonth(), tenGod: eightChar.getMonthShiShenGan(), stage: eightChar.getMonthDiShi() },
-    day: { ganzhi: eightChar.getDay(), tenGod: '日主', stage: eightChar.getDayDiShi() },
-    time: { ganzhi: eightChar.getTime(), tenGod: eightChar.getTimeShiShenGan(), stage: eightChar.getTimeDiShi() },
+    year: { ganzhi: kstPillars.year.ganzhi, tenGod: kstPillars.year.tenGod, stage: kstPillars.year.stage },
+    month: { ganzhi: kstPillars.month.ganzhi, tenGod: kstPillars.month.tenGod, stage: kstPillars.month.stage },
+    day: { ganzhi: trueEightChar.getDay(), tenGod: '日主', stage: trueEightChar.getDayDiShi() },
+    time: { ganzhi: trueEightChar.getTime(), tenGod: trueEightChar.getTimeShiShenGan(), stage: trueEightChar.getTimeDiShi() },
   };
 }
 
-export function buildWuxingCount(eightChar) {
+export function buildWuxingCount(trueEightChar, kstPillars) {
   const wuxing = [
-    eightChar.getYearWuXing(),
-    eightChar.getMonthWuXing(),
-    eightChar.getDayWuXing(),
-    eightChar.getTimeWuXing(),
+    kstPillars.year.wuxing,
+    kstPillars.month.wuxing,
+    trueEightChar.getDayWuXing(),
+    trueEightChar.getTimeWuXing(),
   ].join('');
   const count = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 };
   for (const ch of wuxing) {
@@ -23,18 +28,21 @@ export function buildWuxingCount(eightChar) {
   return count;
 }
 
-export function buildHideGan(eightChar) {
+export function buildHideGan(trueEightChar, kstPillars) {
   return {
-    year: eightChar.getYearHideGan(),
-    month: eightChar.getMonthHideGan(),
-    day: eightChar.getDayHideGan(),
-    time: eightChar.getTimeHideGan(),
+    year: kstPillars.year.hideGan,
+    month: kstPillars.month.hideGan,
+    day: trueEightChar.getDayHideGan(),
+    time: trueEightChar.getTimeHideGan(),
   };
 }
 
-export function buildDaYun(eightChar, gender) {
+// 대운 (DaYun) is built from a KST-corrected probe EightChar (see getKstYun) — its
+// day-count-based start-offset math is jieqi-sensitive the same way year/month pillars
+// are. Output shape is unchanged from before this fix.
+export function buildDaYun(trueSolarKst, gender) {
   const genderCode = gender === '남성' ? 1 : 0;
-  const yun = eightChar.getYun(genderCode);
+  const yun = getKstYun(trueSolarKst, genderCode);
   return yun
     .getDaYun()
     .filter((d) => d.getGanZhi())
@@ -62,18 +70,22 @@ export async function calcSaju({ year, month, day, hour, minute, gender, calenda
     lunar = solar.getLunar();
   }
 
-  const eightChar = lunar.getEightChar();
+  // `solar` is always the TRUE birth instant as given (interpreted as KST) regardless
+  // of which branch above ran — both the day/time source and the KST pillar adapter
+  // must be derived from this same, unshifted value.
+  const trueEightChar = lunar.getEightChar();
+  const kstPillars = getKstYearMonthPillars(solar);
 
   return {
     name: name || '',
     gender: gender || '',
     solarBirth: solar.toYmdHms(),
     lunarBirth: lunar.toString(),
-    pillars: buildPillars(eightChar),
-    hideGan: buildHideGan(eightChar),
-    dayMaster: eightChar.getDayGan(),
-    wuxingCount: buildWuxingCount(eightChar),
-    daYun: buildDaYun(eightChar, gender),
+    pillars: buildPillars(trueEightChar, kstPillars),
+    hideGan: buildHideGan(trueEightChar, kstPillars),
+    dayMaster: trueEightChar.getDayGan(),
+    wuxingCount: buildWuxingCount(trueEightChar, kstPillars),
+    daYun: buildDaYun(solar, gender),
     hourKnown: Number.isInteger(hour),
   };
 }
