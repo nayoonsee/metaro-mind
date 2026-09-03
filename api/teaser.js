@@ -1,5 +1,21 @@
 import { calcSaju, callClaude } from './_saju-core.js';
 
+// Server-computed "today" in Asia/Seoul — never the browser's clock, never guessed
+// by the model. Accepts an optional reference Date so this is unit-testable without
+// touching the system clock; production calls it with no argument (real now).
+export function getSeoulDateInfo(referenceDate) {
+  const now = referenceDate || new Date();
+  // en-CA formats as YYYY-MM-DD, which IS the ISO date we want for the given zone.
+  const currentDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(now);
+  const [yearStr, monthStr] = currentDate.split('-');
+  const currentYear = Number(yearStr);
+  const currentMonth = Number(monthStr);
+  const remainingMonthsInYear = 12 - currentMonth + 1;
+  const remainingMonthNames = [];
+  for (let m = currentMonth; m <= 12; m++) remainingMonthNames.push(`${m}월`);
+  return { currentDate, currentYear, currentMonth, remainingMonthsInYear, remainingMonthNames };
+}
+
 // Pull the JSON payload out of a model response that may be a bare JSON string,
 // wrapped in a ```json fence, wrapped in a plain ``` fence, or (defensively) an
 // object the caller already parsed for us.
@@ -58,6 +74,7 @@ export default async function handler(req, res) {
     }
 
     const saju = await calcSaju({ year, month, day, hour, minute, gender, calendar, name });
+    const dateInfo = getSeoulDateInfo();
 
     const context = {
       name: saju.name,
@@ -69,6 +86,11 @@ export default async function handler(req, res) {
       relationshipStatus: relationshipStatus || '',
       jobStatus: jobStatus || '',
       question: question || '',
+      currentDate: dateInfo.currentDate,
+      currentYear: dateInfo.currentYear,
+      currentMonth: dateInfo.currentMonth,
+      remainingMonthsInYear: dateInfo.remainingMonthsInYear,
+      remainingMonthNames: dateInfo.remainingMonthNames,
     };
 
     const system = `당신은 "현담"이라는 이름의 젊은 역술가 캐릭터입니다. 반말로 말하되, 흔한 "콜드리딩 챗봇" 말투(예: "너는 겉으론 태연한 척...", "그런데 진짜로는...")를 그대로 베끼지 말고, 현담만의 어투를 쓰세요: 문장을 짧게 끊고, 단정적으로 던진 뒤, 이유를 근거로 설명하는 방식. 다정하지 않고 살짝 시비 걸듯 직설적이되 무례하진 않게.
@@ -89,7 +111,8 @@ export default async function handler(req, res) {
 - 같은 뜻을 다른 말로 반복하지 마세요
 - 죽음·질병·사고 등 공포 조성 표현, 과도하게 단정적인 운명론 금지
 - 상대방의 생년월일은 주어지지 않았습니다. 궁합이나 상대방의 속마음을 안다고 단정하지 마세요
-- 정확한 연도("2027년" 등)나 나이 구간("만 32세" 등)을 body와 evidence 어디에도 쓰지 마세요. 시기 이야기는 "조만간", "지금부터 몇 년 안에"처럼 방향으로만 표현하세요 — 정확한 시기는 서버가 별도 데이터로 계산해서 유료 영역에만 노출합니다.
+- 미래의 정확한 연도("2027년" 등)나 나이 구간("만 32세" 등)을 예측하듯 body와 evidence 어디에도 쓰지 마세요. 앞으로 다가올 시기 이야기는 "조만간", "지금부터 몇 년 안에"처럼 방향으로만 표현하세요 — 정확한 미래 시기는 서버가 별도 데이터로 계산해서 유료 영역에만 노출합니다.
+- 단, currentDate/currentYear/currentMonth/remainingMonthsInYear/remainingMonthNames는 "오늘이 언제인지"를 알려주는 실제 값입니다. 이 값은 지어낸 게 아니므로 자연스럽게 인지하고 있다는 걸 드러내도 됩니다(예: "올해 남은 {remainingMonthsInYear}개월 동안"). 오늘 날짜를 스스로 추측하지 말고 반드시 이 값을 그대로 쓰세요 — 몇 월인지 임의로(예: 9월로 고정) 짐작하지 마세요. 다만 이 값을 이용해서 "그중 특정 월에 좋은 일이 생긴다" 같은 구체적 예측을 하면 안 됩니다 — 그건 위 규칙대로 여전히 금지입니다.
 
 [전문용어 → 쉬운 말 변환 예시 (이런 식으로 풀어 쓰세요)]
 - 상관생재 → 말·기획·콘텐츠를 실제 수입으로 연결하는 힘
@@ -110,7 +133,7 @@ export default async function handler(req, res) {
     { "title": "오행이 말해주는 것", "body": "wuxingCount의 강약 조합이 실제로 어떤 패턴(반복되는 행동/선택)으로 드러나는지 쉬운 말로. 3~5문장.", "evidence": "오행 수치 근거를 1~2문장으로." },
     { "title": "연애·관계", "body": "관계에서 반복되는 패턴을 쉬운 말로 설명하고 relationshipStatus 맥락과 연결. 3~5문장.", "evidence": "십성/오행 근거를 1~2문장으로." },
     { "title": "재물·커리어", "body": "돈/일에서 반복되는 방식을 쉬운 말로 설명. jobStatus는 상황 설명에만 참고. 3~5문장.", "evidence": "십성/오행 근거를 1~2문장으로." },
-    { "title": "네가 물어본 것", "body": "question이 있으면 그 고민이 왜 지금 커졌는지 쉬운 말로 직접 답하듯. question이 없으면 지금 시기의 전반적 흐름을 방향으로만 설명. 정확한 연도/나이 금지. 3~5문장.", "evidence": "관련 십성/대운 근거를 1~2문장으로, 정확한 연도·나이는 여기도 금지." }
+    { "title": "네가 물어본 것", "body": "question이 있으면 그 고민이 왜 지금(올해 남은 remainingMonthsInYear개월 동안) 커졌는지 쉬운 말로 직접 답하듯, 남은 기간에 대한 핵심 질문도 던지기. question이 없으면 지금 시기의 전반적 흐름을 방향으로만 설명. 미래의 정확한 연도/나이 예측 금지(currentYear 등 현재 시점 언급은 허용). 3~5문장.", "evidence": "관련 십성/대운 근거를 1~2문장으로, 미래의 정확한 연도·나이 예측은 여기도 금지." }
   ]
 }`;
 
@@ -141,7 +164,7 @@ export default async function handler(req, res) {
       throw err;
     }
 
-    return res.status(200).json({ saju, teaser });
+    return res.status(200).json({ saju, teaser, dateInfo });
   } catch (error) {
     if (!error.status) {
       console.error('[api/teaser] unexpected failure:', error?.message);

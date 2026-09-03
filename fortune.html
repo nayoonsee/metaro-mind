@@ -1484,6 +1484,43 @@ function topicBucket(topic) {
   return 'flow';
 }
 
+// "{year}년 남은 {N}개월" — with the Dec ("올해 마지막 한 달") / Jan ("올해") exceptions.
+// Fed by the server-computed (Asia/Seoul) dateInfo the API response carries; never
+// derived from the browser's clock, and never shown at all if dateInfo is missing.
+function yearMonthsFragment(dateInfo) {
+  if (!dateInfo) return null;
+  const { currentYear, currentMonth, remainingMonthsInYear } = dateInfo;
+  if (currentMonth === 1) return `${currentYear}년 올해`;
+  if (currentMonth === 12) return `${currentYear}년 올해 마지막 한 달`;
+  return `${currentYear}년 남은 ${remainingMonthsInYear}개월`;
+}
+
+function periodChapterTitle(dateInfo) {
+  const frag = yearMonthsFragment(dateInfo);
+  if (!frag) return '앞으로의 흐름';
+  return dateInfo.currentMonth === 1 ? `${frag}의 전체 흐름` : `${frag}의 흐름`;
+}
+
+function periodActionTitle(dateInfo) {
+  const frag = yearMonthsFragment(dateInfo);
+  return frag ? `${frag} 행동 순서` : '지금부터의 행동 순서';
+}
+
+function periodIntroHtml(bucket, dateInfo) {
+  const frag = yearMonthsFragment(dateInfo);
+  if (!frag) {
+    return '<p>여기서부터는 조금 더 구체적이야.</p><p>흐름이 바뀌는 시기와, 네가 피해야 할 선택까지 보여.</p>';
+  }
+  if (bucket === 'money') {
+    const rangePhrase = dateInfo.currentMonth === 12 ? '올해 마지막 한 달 동안' : `${dateInfo.currentMonth}월부터 12월까지`;
+    return `<p>${esc(frag)}, 금전 흐름은 이렇게 움직여.</p><p>${esc(rangePhrase)} 돈이 들어오는 시기와 조심해야 할 선택을 짚어줄게.</p>`;
+  }
+  if (bucket === 'love') return `<p>${esc(frag)}, 인연의 흐름을 볼게.</p>`;
+  if (bucket === 'reunion') return '<p>올해 남은 기간, 관계가 다시 움직일 가능성이 있는 시기를 볼게.</p>';
+  if (bucket === 'choice') return '<p>올해 남은 기간, 관계와 선택의 흐름이 바뀌는 지점을 볼게.</p>';
+  return `<p>${esc(frag)}의 중요한 변화를 볼게.</p>`;
+}
+
 // Renders a section's model-provided technical justification behind a collapsed
 // toggle — never shown in the main body text.
 function evidenceHtml(sec) {
@@ -1524,7 +1561,7 @@ const LOCKED_CONFIG = {
     { title: '돈의 흐름이 강해지는 시기', kind: 'timing' },
     { title: '지금 밀어야 할 수익 방식', kind: 'narrative', sec: 'money', part: 'first' },
     { title: '돈이 새는 선택과 주의할 시기', kind: 'narrative', sec: 'money', part: 'second' },
-    { title: '앞으로 12개월 행동 순서', kind: 'narrative', sec: 'question', part: 'all' },
+    { title: 'DATE_AWARE_ACTION', kind: 'narrative', sec: 'question', part: 'all' },
   ],
   love: [
     { title: '인연이 들어오는 시기', kind: 'timing' },
@@ -1553,15 +1590,16 @@ const LOCKED_CONFIG = {
 };
 
 const CHAPTER_TITLES = {
-  money: ['지금 돈과 일이 막힌 진짜 이유', '나에게 맞는 수입 구조', '직장·사업·프리랜서 중 유리한 방향', '돈이 들어오는 시기', '돈이 새기 쉬운 시기', '계약·이직·확장에서 조심할 선택', '앞으로 12개월의 흐름', '지금 실행할 행동 3가지'],
-  love: ['지금 연애가 막힌 진짜 이유', '나에게 맞는 연애 방식', '끌리는 사람과 오래가는 사람의 차이', '인연이 들어오는 시기', '관계가 흔들리기 쉬운 시기', '밀당·고백·이별에서 조심할 선택', '앞으로 12개월의 흐름', '지금 실행할 행동 3가지'],
-  reunion: ['지금 이 관계가 멈춘 진짜 이유', '다시 이어질 가능성이 있는 관계인지', '내가 먼저 움직여야 할지, 기다려야 할지', '다시 접점이 생기는 시기', '같은 문제가 반복되기 쉬운 시기', '연락·재회 시도에서 조심할 선택', '앞으로 12개월의 흐름', '지금 실행할 행동 3가지'],
-  choice: ['지금 이 관계에서 막힌 진짜 이유', '나에게 맞는 거리 두는 방식', '유지할 관계와 정리할 관계의 기준', '선택해야 할 시기', '흔들리기 쉬운 시기', '대화·거절·정리에서 조심할 선택', '앞으로 12개월의 흐름', '지금 실행할 행동 3가지'],
-  flow: ['지금 흐름이 막혀 보이는 진짜 이유', '나에게 맞는 삶의 리듬', '힘을 써야 할 영역과 아낄 영역', '기회가 열리는 시기', '흔들리기 쉬운 시기', '관계·돈·선택에서 조심할 결정', '앞으로 12개월의 흐름', '지금 실행할 행동 3가지'],
+  money: ['지금 돈과 일이 막힌 진짜 이유', '나에게 맞는 수입 구조', '직장·사업·프리랜서 중 유리한 방향', '돈이 들어오는 시기', '돈이 새기 쉬운 시기', '계약·이직·확장에서 조심할 선택', 'DATE_AWARE_CHAPTER', '지금 실행할 행동 3가지'],
+  love: ['지금 연애가 막힌 진짜 이유', '나에게 맞는 연애 방식', '끌리는 사람과 오래가는 사람의 차이', '인연이 들어오는 시기', '관계가 흔들리기 쉬운 시기', '밀당·고백·이별에서 조심할 선택', 'DATE_AWARE_CHAPTER', '지금 실행할 행동 3가지'],
+  reunion: ['지금 이 관계가 멈춘 진짜 이유', '다시 이어질 가능성이 있는 관계인지', '내가 먼저 움직여야 할지, 기다려야 할지', '다시 접점이 생기는 시기', '같은 문제가 반복되기 쉬운 시기', '연락·재회 시도에서 조심할 선택', 'DATE_AWARE_CHAPTER', '지금 실행할 행동 3가지'],
+  choice: ['지금 이 관계에서 막힌 진짜 이유', '나에게 맞는 거리 두는 방식', '유지할 관계와 정리할 관계의 기준', '선택해야 할 시기', '흔들리기 쉬운 시기', '대화·거절·정리에서 조심할 선택', 'DATE_AWARE_CHAPTER', '지금 실행할 행동 3가지'],
+  flow: ['지금 흐름이 막혀 보이는 진짜 이유', '나에게 맞는 삶의 리듬', '힘을 써야 할 영역과 아낄 영역', '기회가 열리는 시기', '흔들리기 쉬운 시기', '관계·돈·선택에서 조심할 결정', 'DATE_AWARE_CHAPTER', '지금 실행할 행동 3가지'],
 };
 
-function chapterDescs(bucket) {
+function chapterDescs(bucket, dateInfo) {
   const domain = { money: '돈과 일', love: '연애', reunion: '그 사람과의 관계', choice: '이 관계', flow: '삶의 흐름' }[bucket] || '지금 흐름';
+  const periodFrag = yearMonthsFragment(dateInfo) || '앞으로 12개월';
   return [
     `${domain}이 막힌 진짜 원인을 사주로 짚어.`,
     '너에게 맞는 방식이 무엇인지 실제 데이터로 설명해.',
@@ -1569,7 +1607,7 @@ function chapterDescs(bucket) {
     '진짜 흐름이 강해지는 시기를 정확한 시점으로 짚어.',
     '흔들리기 쉬운 시기를 미리 알려줘.',
     '조심해야 할 선택과 그 이유를 구체적으로 짚어.',
-    '앞으로 12개월의 흐름을 시기별로 정리해.',
+    `${periodFrag}의 흐름을 시기별로 정리해.`,
     '지금 바로 실행할 수 있는 행동 3가지를 제안해.',
   ];
 }
@@ -1653,7 +1691,7 @@ function renderRevealPage() {
   }
   if (!resultData) return;
 
-  const { saju, teaser } = resultData;
+  const { saju, teaser, dateInfo } = resultData;
   const sections = teaser.sections || [];
   const secTemperament = sections[0] || null; // 타고난 기질
   const secWuxing = sections[1] || null;      // 오행이 말해주는 것
@@ -1745,21 +1783,22 @@ function renderRevealPage() {
   // content entirely (a separate authenticated/paid endpoint) so an unpaid client
   // never receives the locked text at all.
   const daYun = saju.daYun || [];
-  const nowYear = new Date().getFullYear();
+  const nowYear = dateInfo ? dateInfo.currentYear : new Date().getFullYear();
   const activePeriod = daYun.find((d) => nowYear >= d.startYear && nowYear <= d.endYear) || daYun[0] || null;
   const timingText = activePeriod ? `${activePeriod.startYear}년, 만 ${activePeriod.startAge}세 무렵부터 흐름이 크게 움직여.` : null;
   const secMap = { temperament: secTemperament, wuxing: secWuxing, love: secLove, money: secMoney, question: secQuestion };
   const lockedItems = (LOCKED_CONFIG[bucket] || LOCKED_CONFIG.flow).map((item) => {
+    const title = item.title === 'DATE_AWARE_ACTION' ? periodActionTitle(dateInfo) : item.title;
     if (item.kind === 'timing') {
-      return timingText ? { title: item.title, visible: '흐름이 한 번 크게 움직이는 때가 있어.', hidden: timingText } : null;
+      return timingText ? { title, visible: '흐름이 한 번 크게 움직이는 때가 있어.', hidden: timingText } : null;
     }
     const slice = narrativeSlice(secMap[item.sec], item.part);
-    return slice ? { title: item.title, visible: slice.visible, hidden: slice.hidden } : null;
+    return slice ? { title, visible: slice.visible, hidden: slice.hidden } : null;
   }).filter(Boolean);
 
   if (lockedItems.length) {
     page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '02_손가락으로_사주읽기.png'), `
-      <div class="rv-body"><p>여기서부터는 조금 더 구체적이야.</p><p>흐름이 바뀌는 시기와, 네가 피해야 할 선택까지 보여.</p></div>
+      <div class="rv-body">${periodIntroHtml(bucket, dateInfo)}</div>
       ${lockedItems.map((it) => `
         <div class="rv-locked-item">
           <div class="rv-locked-title">${esc(it.title)}</div>
@@ -1797,8 +1836,9 @@ function renderRevealPage() {
   }
 
   // ---- G. 8개 맞춤 챕터 ----
-  const chapterTitles = CHAPTER_TITLES[bucket] || CHAPTER_TITLES.flow;
-  const descs = chapterDescs(bucket);
+  const chapterTitles = (CHAPTER_TITLES[bucket] || CHAPTER_TITLES.flow)
+    .map((t) => (t === 'DATE_AWARE_CHAPTER' ? periodChapterTitle(dateInfo) : t));
+  const descs = chapterDescs(bucket, dateInfo);
   page.appendChild(buildRvSection(null, `
     <div class="rv-title">현담이 끝까지 읽어주는 것</div>
     <div class="rv-chapters">
