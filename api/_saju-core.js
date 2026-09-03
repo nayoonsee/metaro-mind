@@ -103,6 +103,13 @@ export async function callClaude({ system, messages, maxTokens }) {
 
   const data = await response.json();
   if (!response.ok) {
+    // Server-side only — never logs the key. Surfaces auth/balance/permission/model
+    // failures (401/403/429/400) in Vercel Function Logs so they're diagnosable.
+    console.error('[callClaude] Anthropic API error:', {
+      httpStatus: response.status,
+      errorType: data?.error?.type,
+      errorMessage: data?.error?.message,
+    });
     const err = new Error(data?.error?.message || 'Claude API error');
     err.status = response.status;
     err.data = data;

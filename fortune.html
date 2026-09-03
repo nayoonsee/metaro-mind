@@ -162,14 +162,13 @@
     width: 100%; padding: 11px; border-radius: 12px;
     background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.25); color: #d6dafc; font-size: 13.5px; cursor: pointer;
   }
-  /* Input-step CTAs only (scoped to .cta-fixed.cta-raised, which only input steps get —
-     the reveal/error-retry screen's buildCta call opts out via {raised:false}, so it
-     keeps the original .primary-btn styling untouched) */
-  .cta-fixed.cta-raised .ghost-btn {
+  /* Every buildCta button (all 5 input steps + the error/retry screen) gets this
+     restrained design: no side decoration lines, no gold glow/text-shadow. */
+  .cta-fixed .ghost-btn {
     height: 52px; padding: 0 16px; font-size: 16px;
     display: flex; align-items: center; justify-content: center;
   }
-  .cta-fixed.cta-raised .primary-btn {
+  .cta-fixed .primary-btn {
     height: 52px; padding: 0 16px;
     font-family: 'Gowun Batang', serif;
     font-size: 17px; font-weight: 600; letter-spacing: 0;
@@ -182,10 +181,10 @@
     text-shadow: none;
     transition: border-color .15s, color .15s;
   }
-  .cta-fixed.cta-raised .primary-btn::before, .cta-fixed.cta-raised .primary-btn::after { content: none; }
-  .cta-fixed.cta-raised .primary-btn:disabled { opacity: 0.45; }
-  .cta-fixed.cta-raised .primary-btn:not(:disabled):hover,
-  .cta-fixed.cta-raised .primary-btn:not(:disabled):active {
+  .cta-fixed .primary-btn::before, .cta-fixed .primary-btn::after { content: none; }
+  .cta-fixed .primary-btn:disabled { opacity: 0.45; }
+  .cta-fixed .primary-btn:not(:disabled):hover,
+  .cta-fixed .primary-btn:not(:disabled):active {
     border-color: rgba(205, 176, 105, 0.85);
     color: #fbf3df;
   }
@@ -329,6 +328,45 @@
     padding: 12px; border-radius: 10px; cursor: pointer;
     background: rgba(205,176,105,0.15); border: 1px solid rgba(205,176,105,0.5); color: #f3ead5;
   }
+
+  .rv-quote {
+    font-family: 'Gowun Batang', serif; font-size: 19px; line-height: 1.6; color: #f3ead5;
+    text-align: center; text-shadow: 0 1px 10px rgba(0,0,0,0.7);
+  }
+
+  .rv-evidence { margin-top: 2px; }
+  .rv-evidence summary {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 12.5px; color: #97a0cf;
+    cursor: pointer; list-style: none;
+  }
+  .rv-evidence summary::-webkit-details-marker { display: none; }
+  .rv-evidence summary::before { content: '▸ '; }
+  .rv-evidence[open] summary::before { content: '▾ '; }
+  .rv-evidence-body {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 12.5px; color: #8d96c4;
+    line-height: 1.6; margin-top: 6px; padding-left: 2px;
+  }
+
+  .rv-locked-item {
+    background: rgba(10,13,26,0.5); border: 1px solid rgba(205,176,105,0.25);
+    border-radius: 14px; padding: 13px 15px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .rv-locked-title {
+    font-family: 'Pretendard', -apple-system, sans-serif; font-weight: 600; font-size: 14px; color: #e8caa0;
+  }
+
+  .rv-diff-list { display: flex; flex-direction: column; gap: 8px; }
+  .rv-diff-row {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Pretendard', -apple-system, sans-serif; font-size: 13.5px;
+  }
+  .rv-diff-no { color: #8d96c4; text-decoration: line-through; text-decoration-color: rgba(141,150,196,0.5); }
+  .rv-diff-yes { color: #f3ead5; font-weight: 600; }
+
+  .rv-quantity { display: flex; flex-direction: column; gap: 6px; text-align: center; margin-top: 6px; }
+  .rv-quantity-line1 { font-family: 'Song Myung', serif; font-size: 19px; color: #f3ead5; }
+  .rv-quantity-line2 { font-family: 'Gowun Batang', serif; font-size: 15px; color: #e7e0d2; }
+  .rv-quantity-line3 { font-family: 'Pretendard', -apple-system, sans-serif; font-size: 12.5px; color: #97a0cf; }
 
   /* ===== Opening sequence (scoped, does not affect other steps) ===== */
   .op-stage {
@@ -570,6 +608,21 @@
     min-height: 28px;
   }
   .load-caption.load-found { color: #e8caa0; }
+
+  .load-progress-track {
+    width: 100%; max-width: 220px; height: 3px; border-radius: 999px;
+    background: rgba(255,255,255,0.12); overflow: hidden; position: relative;
+  }
+  .load-progress-fill {
+    position: absolute; top: 0; bottom: 0; width: 42%; border-radius: 999px;
+    background: linear-gradient(90deg, rgba(180,196,255,0) 0%, rgba(180,196,255,0.9) 38%, rgba(215,196,138,0.95) 68%, rgba(215,196,138,0) 100%);
+    animation: loadProgressSlide 2.8s ease-in-out infinite;
+  }
+  @keyframes loadProgressSlide { 0% { left: -46%; } 100% { left: 104%; } }
+  .load-dots {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    font-size: 12px; color: #9aa3c7; letter-spacing: .3px;
+  }
 </style>
 </head>
 <body>
@@ -1037,7 +1090,7 @@ const JOB_OPTS = ['직장인', '사업·프리랜서', '취업·이직 준비', 
 
 function renderTopic(content, scene) {
   content.classList.add('content-tight');
-  const hdLine = el(`<div class="hd-line hd-line-compact">좋아, ${state.name || '손님'}. 오늘 네가 알고 싶은 건 어느 쪽이지?</div>`);
+  const hdLine = el(`<div class="hd-line hd-line-compact">좋아, ${esc(state.name || '손님')}. 오늘 네가 알고 싶은 건 어느 쪽이지?</div>`);
   content.appendChild(hdLine);
 
   const panel = el('<div class="panel panel-compact"></div>');
@@ -1140,6 +1193,13 @@ function renderBirth(content, scene) {
   const mo = el('<input type="number" placeholder="월" min="1" max="12" />');
   const d = el('<input type="number" placeholder="일" min="1" max="31" />');
   y.value = state.year; mo.value = state.month; d.value = state.day;
+  // Commit to state immediately (not just on next-button click) so a gender/calendar
+  // toggle re-render never wipes an already-typed date.
+  const syncDate = () => { state.year = y.value; state.month = mo.value; state.day = d.value; };
+  [y, mo, d].forEach((input) => {
+    input.addEventListener('input', syncDate);
+    input.addEventListener('change', syncDate);
+  });
   row.appendChild(y); row.appendChild(mo); row.appendChild(d);
   panel.appendChild(row);
 
@@ -1246,6 +1306,8 @@ function renderLoadingSequence() {
       <div class="op-overlay"></div>
       <div class="load-content">
         <div class="load-line">잠깐만. 지금 네 명식을 보고 있어.</div>
+        <div class="load-progress-track"><div class="load-progress-fill"></div></div>
+        <div class="load-dots" id="loadDots">분석 중.</div>
         <div class="load-caption" id="loadCaption">${LOADING_STAGES[0].caption}</div>
       </div>
     </div>
@@ -1254,6 +1316,7 @@ function renderLoadingSequence() {
 
   const loadImg = stage.querySelector('#loadImg');
   const loadCaption = stage.querySelector('#loadCaption');
+  const loadDots = stage.querySelector('#loadDots');
   loadImg.style.transition = 'opacity 450ms ease';
   requestAnimationFrame(() => { loadCaption.style.opacity = '1'; });
 
@@ -1290,6 +1353,16 @@ function renderLoadingSequence() {
     cycleTimers.push(setTimeout(() => { if (!stopped) showStage(i); }, triggerAt));
   }
 
+  // "분석 중." -> "분석 중.." -> "분석 중..." on the same >=1.6s cadence as the scene
+  // captions (no fast flicker), and keeps cycling for as long as the API takes.
+  let dotCount = 1;
+  const dotsTimer = setInterval(() => {
+    if (stopped) return;
+    dotCount = (dotCount % 3) + 1;
+    loadDots.textContent = '분석 중' + '.'.repeat(dotCount);
+  }, STAGE_MS);
+  cycleTimers.push(dotsTimer);
+
   const TIMEOUT_MS = 45000; // hard cap: fall back to the error/retry screen past this
   const controller = new AbortController();
   const timeoutTimer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -1298,20 +1371,23 @@ function renderLoadingSequence() {
   const fetchPromise = doFetch(controller.signal).then(() => { fetchSettled = true; });
   const minDelay = new Promise((resolve) => setTimeout(resolve, MIN_MS));
 
-  // Past the normal 4-scene walkthrough, if the API still hasn't answered, swap to a
-  // dedicated "still waiting" line instead of holding the last scene's caption forever.
-  minDelay.then(() => {
+  // Past 10s, if the API still hasn't answered, swap to a dedicated "still waiting"
+  // line instead of holding the last scene's caption indefinitely. The progress bar
+  // and dots keep animating regardless.
+  const longWaitTimer = setTimeout(() => {
     if (stopped || fetchSettled) return;
     loadCaption.style.opacity = '0';
     setTimeout(() => {
       if (stopped || fetchSettled) return;
-      loadCaption.textContent = '거의 다 봤어. 마지막 흐름을 확인하는 중이야.';
+      loadCaption.textContent = '조금만 더 기다려줘. 마지막 흐름을 확인하고 있어.';
       requestAnimationFrame(() => { loadCaption.style.opacity = '1'; });
     }, 300);
-  });
+  }, 10000);
+  cycleTimers.push(longWaitTimer);
 
   Promise.all([fetchPromise, minDelay]).then(() => {
     stopped = true;
+    clearInterval(dotsTimer);
     clearTimeout(timeoutTimer);
     cycleTimers.forEach(clearTimeout);
     document.body.style.overflow = '';
@@ -1379,11 +1455,145 @@ const GAN_INFO = {
   '庚': { name: '경금', element: '金', yinyang: '양' }, '辛': { name: '신금', element: '金', yinyang: '음' },
   '壬': { name: '임수', element: '水', yinyang: '양' }, '癸': { name: '계수', element: '水', yinyang: '음' },
 };
+// Plain-language versions of the day-master (no hanja/technical terms) — used in the
+// free area's prose. The hanja/element name still appears, but only inside the
+// collapsed "사주 근거 보기" evidence toggle.
+const GAN_TRAITS = {
+  '甲': '방향을 정하면 웬만해선 굽히지 않는 편이야',
+  '乙': '상황에 맞춰 유연하게 휘어지면서도 결국 원하는 쪽으로 나아가는 편이야',
+  '丙': '감정과 에너지를 숨기지 않고 바로 드러내는 편이야',
+  '丁': '겉으론 잔잔해 보여도 속에서 꾸준히 타오르는 편이야',
+  '戊': '웬만한 흔들림엔 끄떡없이 중심을 지키는 편이야',
+  '己': '주변을 살피고 다독이며 조율하는 데 강한 편이야',
+  '庚': '결정을 내리면 망설임 없이 밀어붙이는 편이야',
+  '辛': '디테일과 완성도에 예민하게 신경 쓰는 편이야',
+  '壬': '상황에 맞춰 빠르게 흐름을 읽고 움직이는 편이야',
+  '癸': '겉으론 조용해도 안에서 깊이 파고드는 편이야',
+};
 const WUXING_NAME = { '木': '목', '火': '화', '土': '토', '金': '금', '水': '수' };
 const WUXING_TRAITS = {
   '木': ['성장', '추진력', '유연함'], '火': ['열정', '표현력', '직관'], '土': ['안정감', '포용력', '신중함'],
   '金': ['결단력', '원칙', '냉철함'], '水': ['통찰력', '적응력', '융통성'],
 };
+
+function topicBucket(topic) {
+  if (topic === '인연과 연애') return 'love';
+  if (topic === '지나간 사람과의 재회') return 'reunion';
+  if (topic === '돈과 일') return 'money';
+  if (topic === '관계와 선택') return 'choice';
+  return 'flow';
+}
+
+// Renders a section's model-provided technical justification behind a collapsed
+// toggle — never shown in the main body text.
+function evidenceHtml(sec) {
+  if (!sec || !sec.evidence) return '';
+  return `<details class="rv-evidence"><summary>이 해석의 사주 근거 보기</summary><div class="rv-evidence-body">${esc(sec.evidence)}</div></details>`;
+}
+
+// Splits a section's body into a visible lead sentence and a hidden (blurred) rest —
+// used for the D/F paid-value teasers. Falls back to reusing the visible sentence as
+// the hidden one only when the real text is too short to split (never fabricated).
+function narrativeSlice(section, part) {
+  if (!section || !section.body) return null;
+  const sentences = splitSentences(section.body);
+  if (!sentences.length) return null;
+  let visible;
+  let hidden;
+  if (part === 'second') {
+    // Draws from later in the section so a "first" + "second" pair from the same
+    // section never repeats the same visible sentence.
+    if (sentences.length >= 3) { visible = sentences.slice(1, 2); hidden = sentences.slice(2, 3); }
+    else if (sentences.length === 2) { visible = sentences.slice(1, 2); hidden = sentences.slice(0, 1); }
+    else { visible = sentences.slice(0, 1); hidden = sentences.slice(0, 1); }
+  } else if (part === 'all') {
+    visible = sentences.slice(0, 1);
+    hidden = sentences.slice(1, 3);
+  } else {
+    visible = sentences.slice(0, 1);
+    hidden = sentences.slice(1, 2);
+  }
+  if (!hidden.length) hidden = visible;
+  return { visible: visible.join(' '), hidden: hidden.join(' ') };
+}
+
+// The 4 paid-unlock items per topic (item D). "timing" pulls the real daYun period;
+// everything else pulls a real sentence out of the matching API section.
+const LOCKED_CONFIG = {
+  money: [
+    { title: '돈의 흐름이 강해지는 시기', kind: 'timing' },
+    { title: '지금 밀어야 할 수익 방식', kind: 'narrative', sec: 'money', part: 'first' },
+    { title: '돈이 새는 선택과 주의할 시기', kind: 'narrative', sec: 'money', part: 'second' },
+    { title: '앞으로 12개월 행동 순서', kind: 'narrative', sec: 'question', part: 'all' },
+  ],
+  love: [
+    { title: '인연이 들어오는 시기', kind: 'timing' },
+    { title: '반복되는 연애 패턴', kind: 'narrative', sec: 'love', part: 'first' },
+    { title: '피해야 할 상대와 관계', kind: 'narrative', sec: 'love', part: 'second' },
+    { title: '지금 해야 할 행동', kind: 'narrative', sec: 'question', part: 'all' },
+  ],
+  reunion: [
+    { title: '다시 접점이 생길 가능성이 높은 시기', kind: 'timing' },
+    { title: '먼저 움직여도 되는지', kind: 'narrative', sec: 'question', part: 'first' },
+    { title: '다시 만나도 반복될 문제', kind: 'narrative', sec: 'love', part: 'first' },
+    { title: '지금 해야 할 행동', kind: 'narrative', sec: 'love', part: 'second' },
+  ],
+  choice: [
+    { title: '이 관계의 핵심 패턴', kind: 'narrative', sec: 'love', part: 'all' },
+    { title: '선택해야 할 시기', kind: 'timing' },
+    { title: '놓아야 할 것', kind: 'narrative', sec: 'money', part: 'first' },
+    { title: '관계를 바꾸는 행동', kind: 'narrative', sec: 'question', part: 'all' },
+  ],
+  flow: [
+    { title: '가장 큰 변화', kind: 'narrative', sec: 'wuxing', part: 'first' },
+    { title: '기회가 열리는 시기', kind: 'timing' },
+    { title: '조심해야 할 시기', kind: 'narrative', sec: 'money', part: 'second' },
+    { title: '지금부터의 행동 순서', kind: 'narrative', sec: 'question', part: 'all' },
+  ],
+};
+
+const CHAPTER_TITLES = {
+  money: ['지금 돈과 일이 막힌 진짜 이유', '나에게 맞는 수입 구조', '직장·사업·프리랜서 중 유리한 방향', '돈이 들어오는 시기', '돈이 새기 쉬운 시기', '계약·이직·확장에서 조심할 선택', '앞으로 12개월의 흐름', '지금 실행할 행동 3가지'],
+  love: ['지금 연애가 막힌 진짜 이유', '나에게 맞는 연애 방식', '끌리는 사람과 오래가는 사람의 차이', '인연이 들어오는 시기', '관계가 흔들리기 쉬운 시기', '밀당·고백·이별에서 조심할 선택', '앞으로 12개월의 흐름', '지금 실행할 행동 3가지'],
+  reunion: ['지금 이 관계가 멈춘 진짜 이유', '다시 이어질 가능성이 있는 관계인지', '내가 먼저 움직여야 할지, 기다려야 할지', '다시 접점이 생기는 시기', '같은 문제가 반복되기 쉬운 시기', '연락·재회 시도에서 조심할 선택', '앞으로 12개월의 흐름', '지금 실행할 행동 3가지'],
+  choice: ['지금 이 관계에서 막힌 진짜 이유', '나에게 맞는 거리 두는 방식', '유지할 관계와 정리할 관계의 기준', '선택해야 할 시기', '흔들리기 쉬운 시기', '대화·거절·정리에서 조심할 선택', '앞으로 12개월의 흐름', '지금 실행할 행동 3가지'],
+  flow: ['지금 흐름이 막혀 보이는 진짜 이유', '나에게 맞는 삶의 리듬', '힘을 써야 할 영역과 아낄 영역', '기회가 열리는 시기', '흔들리기 쉬운 시기', '관계·돈·선택에서 조심할 결정', '앞으로 12개월의 흐름', '지금 실행할 행동 3가지'],
+};
+
+function chapterDescs(bucket) {
+  const domain = { money: '돈과 일', love: '연애', reunion: '그 사람과의 관계', choice: '이 관계', flow: '삶의 흐름' }[bucket] || '지금 흐름';
+  return [
+    `${domain}이 막힌 진짜 원인을 사주로 짚어.`,
+    '너에게 맞는 방식이 무엇인지 실제 데이터로 설명해.',
+    '여러 선택지 중 어느 쪽이 유리한지 근거를 들어 비교해.',
+    '진짜 흐름이 강해지는 시기를 정확한 시점으로 짚어.',
+    '흔들리기 쉬운 시기를 미리 알려줘.',
+    '조심해야 할 선택과 그 이유를 구체적으로 짚어.',
+    '앞으로 12개월의 흐름을 시기별로 정리해.',
+    '지금 바로 실행할 수 있는 행동 3가지를 제안해.',
+  ];
+}
+
+// Real, deterministic derivations from the already-computed saju data — never invented.
+function analyzeWuxing(count) {
+  const entries = Object.entries(count || {});
+  if (!entries.length) return { strongestChar: null, weakestChar: null, sorted: [] };
+  const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+  const minN = sorted[sorted.length - 1][1];
+  const weakestChar = [...sorted].reverse().find(([, n]) => n === minN)[0];
+  return { strongestChar: sorted[0][0], weakestChar, sorted };
+}
+
+function deriveKeywords(sorted) {
+  const words = [];
+  for (const [elem] of sorted) {
+    for (const w of (WUXING_TRAITS[elem] || [])) {
+      if (!words.includes(w)) words.push(w);
+      if (words.length >= 3) return words;
+    }
+  }
+  return words;
+}
 
 // Real, deterministic derivations from the already-computed saju data — never invented.
 function analyzeWuxing(count) {
@@ -1458,12 +1668,11 @@ function renderRevealPage() {
     return `<div class="pillar"><div class="gz">${esc(p.ganzhi)}</div><div class="label">${label}</div><div class="sub">${esc(p.stage)}</div></div>`;
   }).join('');
 
-  const isLoveTopic = state.topic === '인연과 연애' || state.topic === '지나간 사람과의 재회';
-  const isMoneyTopic = state.topic === '돈과 일';
+  const bucket = topicBucket(state.topic);
 
   const page = el('<div class="rv-page"></div>');
 
-  // ---- A. 결과 도착 ----
+  // ---- 도착: 4주 카드 + opening (사주 계산/명식 표시는 그대로 유지) ----
   page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '05_월호명식첩_펼치기.png'), `
     <div class="rv-title">${esc(name)}의 명식이 열렸어</div>
     <div class="rv-sub">먼저, 네 사주에서 가장 선명하게 보이는 것부터 말해줄게.</div>
@@ -1472,27 +1681,42 @@ function renderRevealPage() {
     <div class="rv-scroll-hint">▾ 스크롤해서 계속 보기</div>
   `));
 
-  // ---- B. 무료 핵심 결과 (완전 공개, 블러 없음) ----
+  // ---- A. 내 고민 재확인 ----
+  const concernQuote = state.question || state.topic || '내 흐름이 궁금해서';
+  page.appendChild(buildRvSection(null, `
+    <div class="rv-title">네가 묻고 싶은 건 이거였지.</div>
+    <div class="rv-quote">“${esc(concernQuote)}”</div>
+  `));
+
+  // ---- B. 알아듣기 쉬운 개인화 무료 통찰 (완전 공개, 블러 없음, 전문용어는 근거 토글 안에만) ----
+  const ganTrait = GAN_TRAITS[saju.dayMaster] || '자기만의 리듬이 뚜렷한 편이야';
+  const centerSentence = `너는 ${ganTrait}.`;
   const ganInfo = GAN_INFO[saju.dayMaster] || null;
+  const centerEvidence = ganInfo ? `일간 ${ganInfo.name}(${ganInfo.element}, ${ganInfo.yinyang}) 기준의 해석이야.` : '';
+
   const { strongestChar, weakestChar, sorted } = analyzeWuxing(saju.wuxingCount);
   const keywords = deriveKeywords(sorted);
-  const centerSentence = ganInfo
-    ? `너의 일간은 ${ganInfo.name}, ${WUXING_NAME[ganInfo.element]}(${ganInfo.element})의 ${ganInfo.yinyang} 기운이야.`
-    : `너의 일간은 ${saju.dayMaster || ''}야.`;
+  const strongTrait = strongestChar ? (WUXING_TRAITS[strongestChar] || [])[0] : null;
+  const weakTrait = weakestChar ? (WUXING_TRAITS[weakestChar] || [])[0] : null;
+
+  const topicSection = bucket === 'money' ? secMoney : ((bucket === 'love' || bucket === 'reunion') ? secLove : (secLove || secMoney));
+  const patternSentences = splitSentences(secTemperament && secTemperament.body).slice(0, 2);
+  const stuckSentence = topicSection ? splitSentences(topicSection.body).slice(0, 1) : [];
   const concernLabel = state.question ? `“${state.question}”` : (state.topic || '지금 이 흐름');
-  const bridgeSentence = `${concernLabel} 앞에서도 그 기운은 그대로 드러나.`;
-  const personalParas = [...splitSentences(secTemperament && secTemperament.body).slice(0, 2), bridgeSentence].filter(Boolean);
+  const bridgeSentence = `${concernLabel} 앞에서도 이 패턴은 똑같이 드러나.`;
+  const personalParas = [...patternSentences, ...stuckSentence, bridgeSentence].filter(Boolean);
 
   page.appendChild(buildRvSection(opPath('현담_최종이미지_2부', '08_붓으로_사주읽기.png'), `
     <div class="rv-title">무료로 먼저 열어본 것</div>
     <div class="rv-card">
-      <div class="rv-card-title">내 사주의 중심 기운</div>
+      <div class="rv-card-title">반복되는 행동 패턴</div>
       <div class="rv-body"><p>${esc(centerSentence)}</p></div>
+      ${centerEvidence ? `<details class="rv-evidence"><summary>이 해석의 사주 근거 보기</summary><div class="rv-evidence-body">${esc(centerEvidence)}</div></details>` : ''}
     </div>
-    ${strongestChar ? `
+    ${strongTrait ? `
     <div class="rv-stat-row">
-      <div class="rv-stat"><div class="rv-stat-label">가장 강한 오행</div><div class="rv-stat-value">${esc(WUXING_NAME[strongestChar] || strongestChar)} (${saju.wuxingCount[strongestChar]})</div></div>
-      <div class="rv-stat"><div class="rv-stat-label">부족한 오행</div><div class="rv-stat-value">${esc(WUXING_NAME[weakestChar] || weakestChar)} (${saju.wuxingCount[weakestChar]})</div></div>
+      <div class="rv-stat"><div class="rv-stat-label">가장 강하게 쓰는 힘</div><div class="rv-stat-value">${esc(strongTrait)}</div></div>
+      <div class="rv-stat"><div class="rv-stat-label">지금 더 채우면 좋은 힘</div><div class="rv-stat-value">${esc(weakTrait || '')}</div></div>
     </div>` : ''}
     ${keywords.length ? `
     <div class="rv-card">
@@ -1500,88 +1724,105 @@ function renderRevealPage() {
       <div class="rv-keywords">${keywords.map((k) => `<span class="rv-keyword">${esc(k)}</span>`).join('')}</div>
     </div>` : ''}
     <div class="rv-body">${personalParas.map((p) => `<p>${esc(p)}</p>`).join('')}</div>
+    ${evidenceHtml(secTemperament)}
   `));
 
-  // ---- C. 고민 연결 (API sections 중 가장 관련 높은 것 1개, 정상 공개) ----
+  // ---- C. 지금 이 문제 앞에서 멈춘 이유 (실제 API 섹션 1개, 정상 공개) ----
   if (secQuestion && secQuestion.body) {
     const concernHeadline = state.question ? `“${esc(state.question)}”` : `네가 고른 주제, “${esc(state.topic || '')}”`;
     page.appendChild(buildRvSection(null, `
       <div class="rv-title">네가 지금 이 문제 앞에서 멈춘 이유</div>
       <div class="rv-sub">${concernHeadline}</div>
       <div class="rv-body">${paragraphsHtml(secQuestion.body, 2)}</div>
+      ${evidenceHtml(secQuestion)}
     `));
   }
 
-  // ---- D. 잠금 전환 (제목+앞 2문장 공개, 구체적 조언 부분만 부분 블러) ----
-  const nextSection = isMoneyTopic ? (secMoney || secLove) : (secLove || secMoney);
-  if (nextSection && nextSection.body) {
-    page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '02_손가락으로_사주읽기.png'), `
-      <div class="rv-body"><p>여기서부터는 조금 더 구체적이야.</p><p>흐름이 바뀌지는 시기와, 네가 피해야 할 선택까지 보여.</p></div>
-      <div class="rv-card">
-        <div class="rv-card-title">${esc(nextSection.title || '다음 이야기')}</div>
-        <div class="rv-body">${partialVeilHtml(nextSection.body, 2)}</div>
-      </div>
-    `));
-  }
-
-  // ---- E. 구체적 시기 미리보기 (실제 daYun 기반, 자리만 시각적으로 가림) ----
+  // ---- D. 결제 후 열리는 4가지 맞춤 답 (주제별) ----
+  // TODO(payment): this is a *visual* blur only (.rv-veil) — the underlying text is
+  // already present in the API response the browser received, so this is NOT secure
+  // payment gating. Before wiring up real payments, the server must withhold this
+  // content entirely (a separate authenticated/paid endpoint) so an unpaid client
+  // never receives the locked text at all.
   const daYun = saju.daYun || [];
   const nowYear = new Date().getFullYear();
   const activePeriod = daYun.find((d) => nowYear >= d.startYear && nowYear <= d.endYear) || daYun[0] || null;
-  if (activePeriod) {
-    const yearStr = String(activePeriod.startYear);
-    const maskedYear = yearStr.length === 4 ? `${yearStr.slice(0, 2)}○○년` : `${yearStr}년`;
-    const ageStr = String(activePeriod.startAge);
-    const maskedAge = ageStr.length >= 2 ? `${ageStr.slice(0, -1)}○세` : '○세';
+  const timingText = activePeriod ? `${activePeriod.startYear}년, 만 ${activePeriod.startAge}세 무렵부터 흐름이 크게 움직여.` : null;
+  const secMap = { temperament: secTemperament, wuxing: secWuxing, love: secLove, money: secMoney, question: secQuestion };
+  const lockedItems = (LOCKED_CONFIG[bucket] || LOCKED_CONFIG.flow).map((item) => {
+    if (item.kind === 'timing') {
+      return timingText ? { title: item.title, visible: '흐름이 한 번 크게 움직이는 때가 있어.', hidden: timingText } : null;
+    }
+    const slice = narrativeSlice(secMap[item.sec], item.part);
+    return slice ? { title: item.title, visible: slice.visible, hidden: slice.hidden } : null;
+  }).filter(Boolean);
+
+  if (lockedItems.length) {
+    page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '02_손가락으로_사주읽기.png'), `
+      <div class="rv-body"><p>여기서부터는 조금 더 구체적이야.</p><p>흐름이 바뀌는 시기와, 네가 피해야 할 선택까지 보여.</p></div>
+      ${lockedItems.map((it) => `
+        <div class="rv-locked-item">
+          <div class="rv-locked-title">${esc(it.title)}</div>
+          <div class="rv-body"><p>${esc(it.visible)}</p><p><span class="rv-veil">${esc(it.hidden)}</span><span class="rv-unlock-chip" data-rv-unlock>🔒 이어보기</span></p></div>
+        </div>
+      `).join('')}
+    `));
+  }
+
+  // ---- E. 현담의 차별화 선언 ----
+  page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '03_오드아이_발광_클로즈업.png'), `
+    <div class="rv-title">길다고, 더 깊은 건 아니야.</div>
+    <div class="rv-body">
+      <p>50장, 100장을 채우려고 같은 말을 반복하지 않아.</p>
+      <p>네가 지금 알아야 할 시기와 선택, 실제로 움직일 수 있는 답만 남겼어.</p>
+    </div>
+    <div class="rv-diff-list">
+      <div class="rv-diff-row"><span class="rv-diff-no">전문용어보다</span>→<span class="rv-diff-yes">내가 이해할 수 있는 말</span></div>
+      <div class="rv-diff-row"><span class="rv-diff-no">막연한 운세보다</span>→<span class="rv-diff-yes">구체적인 시기</span></div>
+      <div class="rv-diff-row"><span class="rv-diff-no">긴 설명보다</span>→<span class="rv-diff-yes">지금 해야 할 행동</span></div>
+    </div>
+    <div class="rv-sub">읽고 끝나는 풀이가 아니라, 선택할 수 있게 만드는 풀이.</div>
+  `));
+
+  // ---- F. 실제 결과 미리보기 (제목+앞부분 정상 공개, 나머지만 부분 블러) ----
+  if (secWuxing && secWuxing.body) {
     page.appendChild(buildRvSection(opPath('현담_최종이미지_1부', '06_월호명식첩_단독.png'), `
-      <div class="rv-title">네 흐름이 달라지는 시기</div>
+      <div class="rv-title">실제 결과 미리보기</div>
       <div class="rv-card">
-        <div class="rv-body"><p>대운이 <span class="rv-mask">${esc(maskedYear)}</span> 무렵, 만 <span class="rv-mask">${esc(maskedAge)}</span> 즈음부터 바뀌어.</p></div>
-        <div class="rv-scope-note">정확한 시기와 흐름의 방향은 전체 리포트에서 확인할 수 있어.</div>
+        <div class="rv-card-title">${esc(secWuxing.title || '오행이 말해주는 것')}</div>
+        <div class="rv-body">${partialVeilHtml(secWuxing.body, 2)}</div>
+        ${evidenceHtml(secWuxing)}
       </div>
     `));
   }
 
-  // ---- F. 전체 결과에서 제공할 내용 (8챕터 미리보기; 4/5/7장은 주제에 따라 문구 변화) ----
-  const relatePattern = isLoveTopic
-    ? '연애에서 반복해온 패턴을 십성으로 짚어.'
-    : (isMoneyTopic ? '일과 관계에서 반복되는 태도를 살펴봐.' : '네가 관계에서 반복해온 흐름을 짚어.');
-  const cautionPattern = isLoveTopic
-    ? '관계에서 조심할 선택과, 놓치면 아까운 기회를 짚어.'
-    : (isMoneyTopic ? '돈과 일에서 조심할 선택과, 놓치면 아까운 기회를 짚어.' : '지금 조심할 선택과, 놓치면 아까운 기회를 짚어.');
-  const concernReason = state.question
-    ? `"${state.question}"에 이르게 된 사주적 배경을 설명해.`
-    : `${state.topic || '지금 이 흐름'}에 마음이 쏠리게 된 사주적 배경을 설명해.`;
-  const CHAPTERS = [
-    { title: '내 사주의 중심과 일간', desc: `일간 ${ganInfo ? ganInfo.name : (saju.dayMaster || '')}을 축으로 타고난 기질의 뿌리를 짚어.` },
-    { title: '오행의 강약과 부족한 기운', desc: '다섯 기운의 균형과 결핍을 수치로 짚고 보완법을 제안해.' },
-    { title: '겉으로 보이는 나와 내면의 성향', desc: '겉모습과 실제 성향의 온도차를 십성으로 풀어줘.' },
-    { title: '반복되는 관계·감정 패턴', desc: relatePattern },
-    { title: '지금 고민이 생긴 이유', desc: concernReason },
-    { title: '올해 운의 변화와 중요한 시기', desc: '대운과 세운의 흐름에서 올해가 가지는 의미를 짚어.' },
-    { title: '조심해야 할 선택과 놓치지 말아야 할 기회', desc: cautionPattern },
-    { title: '현담이 정리한 현실적인 행동 방향', desc: '지금부터 할 수 있는 현실적인 다음 걸음을 정리해.' },
-  ];
+  // ---- G. 8개 맞춤 챕터 ----
+  const chapterTitles = CHAPTER_TITLES[bucket] || CHAPTER_TITLES.flow;
+  const descs = chapterDescs(bucket);
   page.appendChild(buildRvSection(null, `
     <div class="rv-title">현담이 끝까지 읽어주는 것</div>
     <div class="rv-chapters">
-      ${CHAPTERS.map((c, i) => `
+      ${chapterTitles.map((t, i) => `
         <div class="rv-chapter">
           <div class="rv-chapter-num">${String(i + 1).padStart(2, '0')}</div>
           <div>
-            <div class="rv-chapter-title">${esc(c.title)}</div>
-            <div class="rv-chapter-desc">${esc(c.desc)}</div>
+            <div class="rv-chapter-title">${esc(t)}</div>
+            <div class="rv-chapter-desc">${esc(descs[i] || '')}</div>
           </div>
         </div>
       `).join('')}
     </div>
-    <div class="rv-scope-note">총 8개 챕터・약 9,000~12,000자(A4 약 20~25페이지) 구성 기준. 실제 분량은 결제 후 생성 결과에 따라 달라질 수 있어.</div>
+    <div class="rv-quantity">
+      <div class="rv-quantity-line1">당신에게 필요한 8개의 핵심 해석</div>
+      <div class="rv-quantity-line2">약 10,000자 내외의 개인 맞춤 리포트</div>
+      <div class="rv-quantity-line3">불필요한 반복 없이, 중요한 흐름만 읽기 쉽게 정리합니다.</div>
+    </div>
   `));
 
-  // ---- G. 잠금 CTA (결제 미연동 — 클릭 시 준비 중 모달만 표시) ----
+  // ---- H. 최종 CTA (결제 미연동 — 클릭 시 준비 중 모달만 표시) ----
   const ctaSection = buildRvSection(opPath('현담_최종이미지_2부', '12_손을_내미는_초대.webp'), `
-    <div class="rv-title">여기서 멈출래, 끝까지 볼래?</div>
-    <button class="rv-cta-btn" type="button" id="rvUnlockBtn">내 명식 전체 열어보기</button>
+    <div class="rv-body"><p>네 운명이 정해져 있다는 말은 하지 않을게.</p><p>다만 지금 어느 쪽으로 움직여야 덜 흔들리는지는 보여줄 수 있어.</p></div>
+    <button class="rv-cta-btn" type="button" id="rvUnlockBtn">내 시기와 선택 확인하기</button>
     <div class="rv-cta-note">결제 기능은 준비 중이야. 곧 열릴 예정이야.</div>
   `);
   page.appendChild(ctaSection);
