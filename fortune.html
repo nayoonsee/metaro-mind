@@ -123,9 +123,22 @@
   .toggle-row { display: flex; gap: 8px; }
   .toggle-btn {
     flex: 1; padding: 10px; border-radius: 10px; text-align: center; cursor: pointer;
-    border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.35); font-size: 14px;
+    border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.35); font-size: 15px;
   }
   .toggle-btn.active { background: rgba(91,111,216,0.4); border-color: #8c9cf0; }
+
+  /* Compact 2-col chip choices (topic screen) */
+  .chip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .chip-btn {
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    min-height: 46px; padding: 6px 6px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.35);
+    color: #f2f4fb; font-size: 15px; line-height: 1.25; white-space: nowrap;
+    cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  .chip-btn:hover, .chip-btn.selected { background: rgba(91,111,216,0.35); border-color: #8c9cf0; }
+  .chip-hint { font-size: 12px; color: #97a0cf; margin: 2px 2px 0; }
+  .panel-compact { padding: 10px 12px; gap: 8px; }
 
   .cta-fixed {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
@@ -413,7 +426,7 @@
   .op-title2.op-show { opacity: 1; transform: translateY(0); }
   .op-sub2 {
     font-family: 'Gowun Batang', serif;
-    font-size: 15px; color: #e7e0d2;
+    font-size: 14px; color: #e7e0d2;
     opacity: 0; transform: translateY(6px);
     transition: opacity .5s ease, transform .5s ease;
   }
@@ -428,9 +441,12 @@
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 20px 20px 20px 4px;
     padding: 14px 18px; max-width: 88%;
-    font-size: 16.5px; line-height: 1.6;
+    font-size: 18px; line-height: 1.5;
     animation: fadeUp .45s ease both;
     box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  .hd-line.hd-line-compact {
+    padding: 10px 14px; font-size: 16.5px; line-height: 1.4;
   }
 
   /* ===== Reading/loading sequence ===== */
@@ -467,7 +483,7 @@ let stepIndex = 0;
 const state = {
   name: '', gender: '여성', calendar: 'solar',
   year: '', month: '', day: '', hour: '', minute: '',
-  topic: '', relSub: '', jobSub: '',
+  topic: '', relSub: '', jobSubs: [],
   relationshipStatus: '', jobStatus: '', question: '',
 };
 
@@ -857,32 +873,35 @@ function renderOpeningSequence() {
       trueCrossfadeTo(OP_IMG.gateOpen, 2600, { zoomTo: 1.07, zoomMs: 3800 });
     });
 
-    // open gate fully visible at 3650+2600=6250; hold 1.2s -> lead inward at 7450
-    // Title beat lives entirely inside this existing hold window (no added time).
+    // open gate fully visible at 3650+2600=6250.
+    // Title beat: eyebrow -> title -> subtitle stagger in fast (200ms apart), then the
+    // complete 3-line state holds for 2.2s before the leading crossfade starts. Net added
+    // time vs. the original 7450ms crossfade start is 1.9s (under the 2s budget).
     after(6250, () => {
       const eyebrow = el(`<div class="op-eyebrow">운명을 기록하는 안내자</div>`);
       opContent.appendChild(eyebrow);
       requestAnimationFrame(() => eyebrow.classList.add('op-show'));
     });
-    after(6550, () => {
+    after(6450, () => {
       const title2 = el(`<div class="op-title2">현담의 명식첩</div>`);
       opContent.appendChild(title2);
       requestAnimationFrame(() => title2.classList.add('op-show'));
     });
-    after(6850, () => {
+    after(6650, () => {
       const sub2 = el(`<div class="op-sub2">네 사주에 숨은 흐름을 읽다</div>`);
       opContent.appendChild(sub2);
       requestAnimationFrame(() => sub2.classList.add('op-show'));
     });
-    after(7350, () => { opContent.innerHTML = ''; });
+    // all three lines fully visible by 6650+500=7150; hold complete state for 2.2s -> 9350
 
     // leading scene keeps drifting inward the whole time it's held (feels like walking in together)
-    after(7450, () => {
+    after(9350, () => {
+      opContent.innerHTML = '';
       trueCrossfadeTo(OP_IMG.leading, 1400, { zoomTo: 1.05, zoomMs: 3400 });
     });
 
-    // leading scene fully visible at 7450+1400=8850; hold 2s (auto) / tap to skip
-    after(8850, () => {
+    // leading scene fully visible at 9350+1400=10750; hold 2s (auto) / tap to skip
+    after(10750, () => {
       const bubble = el(`<div class="op-bubble">따라와. 네 사주는 안쪽에서 보지.</div>`);
       opContent.appendChild(bubble);
       requestAnimationFrame(() => bubble.classList.add('op-show'));
@@ -902,66 +921,96 @@ function renderName(content, scene) {
   input.value = state.name;
   panel.appendChild(input);
   content.appendChild(panel);
-  scene.appendChild(buildCta('확인', () => {
+  scene.appendChild(buildCta('다음', () => {
     state.name = input.value.trim() || '손님';
     next();
   }));
   setTimeout(() => input.focus(), 50);
 }
 
-function renderTopic(content, scene) {
-  content.appendChild(el(`<div class="hd-line">좋아, ${state.name || '손님'}. 오늘 네가 알고 싶은 건 어느 쪽이지?</div>`));
+const JOB_OPTS = ['직장인', '사업·프리랜서', '취업·이직 준비', '학생', '말하고 싶지 않음'];
 
-  const panel = el('<div class="panel"></div>');
+function renderTopic(content, scene) {
+  const hdLine = el(`<div class="hd-line hd-line-compact">좋아, ${state.name || '손님'}. 오늘 네가 알고 싶은 건 어느 쪽이지?</div>`);
+  content.appendChild(hdLine);
+
+  const panel = el('<div class="panel panel-compact"></div>');
+  const chipGrid = el('<div class="chip-grid"></div>');
   const topics = ['인연과 연애', '지나간 사람과의 재회', '돈과 일', '관계와 선택', '앞으로의 전체 흐름'];
   topics.forEach((t) => {
-    const b = el(`<div class="choice-btn ${state.topic === t ? 'selected' : ''}">${t}</div>`);
+    const b = el(`<div class="chip-btn ${state.topic === t ? 'selected' : ''}">${t}</div>`);
     b.onclick = () => {
       state.topic = t;
       if (t !== '인연과 연애' && t !== '지나간 사람과의 재회') { state.relSub = ''; state.relationshipStatus = ''; }
-      if (t !== '돈과 일') { state.jobSub = ''; state.jobStatus = ''; }
+      if (t !== '돈과 일') { state.jobSubs = []; state.jobStatus = ''; }
       render();
     };
-    panel.appendChild(b);
+    chipGrid.appendChild(b);
   });
+  panel.appendChild(chipGrid);
   content.appendChild(panel);
 
   const isLove = state.topic === '인연과 연애' || state.topic === '지나간 사람과의 재회';
   const isMoney = state.topic === '돈과 일';
+  let subPanel = null;
 
   if (isLove) {
-    const subPanel = el('<div class="panel"></div>');
+    subPanel = el('<div class="panel panel-compact"></div>');
+    const grid = el('<div class="chip-grid"></div>');
     ['솔로', '썸 또는 애매한 관계', '연애 중', '이별 후', '말하고 싶지 않음'].forEach((o) => {
-      const b = el(`<div class="choice-btn ${state.relSub === o ? 'selected' : ''}">${o}</div>`);
+      const b = el(`<div class="chip-btn ${state.relSub === o ? 'selected' : ''}">${o}</div>`);
       b.onclick = () => {
         state.relSub = o;
         state.relationshipStatus = (o === '말하고 싶지 않음') ? '' : o;
         render();
       };
-      subPanel.appendChild(b);
+      grid.appendChild(b);
     });
+    subPanel.appendChild(grid);
     content.appendChild(subPanel);
   } else if (isMoney) {
-    const subPanel = el('<div class="panel"></div>');
-    ['직장인', '사업·프리랜서', '취업·이직 준비', '학생', '말하고 싶지 않음'].forEach((o) => {
-      const b = el(`<div class="choice-btn ${state.jobSub === o ? 'selected' : ''}">${o}</div>`);
+    subPanel = el('<div class="panel panel-compact"></div>');
+    subPanel.appendChild(el('<div class="chip-hint">복수 선택 가능</div>'));
+    const grid = el('<div class="chip-grid"></div>');
+    JOB_OPTS.forEach((o) => {
+      const selected = state.jobSubs.includes(o);
+      const b = el(`<div class="chip-btn ${selected ? 'selected' : ''}">${o}</div>`);
       b.onclick = () => {
-        state.jobSub = o;
-        state.jobStatus = (o === '말하고 싶지 않음') ? '' : o;
+        if (o === '말하고 싶지 않음') {
+          state.jobSubs = state.jobSubs.includes(o) ? [] : [o];
+        } else {
+          state.jobSubs = state.jobSubs.filter((x) => x !== '말하고 싶지 않음');
+          if (state.jobSubs.includes(o)) {
+            state.jobSubs = state.jobSubs.filter((x) => x !== o);
+          } else {
+            state.jobSubs.push(o);
+          }
+        }
+        state.jobStatus = state.jobSubs.join(' / ');
         render();
       };
-      subPanel.appendChild(b);
+      grid.appendChild(b);
     });
+    subPanel.appendChild(grid);
     content.appendChild(subPanel);
   }
 
   const needsSub = isLove || isMoney;
-  const subSelected = isLove ? !!state.relSub : (isMoney ? !!state.jobSub : true);
+  const subSelected = isLove ? !!state.relSub : (isMoney ? state.jobSubs.length > 0 : true);
   const canProceed = !!state.topic && (!needsSub || subSelected);
 
   const cta = buildCta('다음', next);
   if (!canProceed) cta.querySelector('#ctaBtn').disabled = true;
   scene.appendChild(cta);
+
+  if (subPanel) {
+    requestAnimationFrame(() => {
+      const rect = subPanel.getBoundingClientRect();
+      if (rect.bottom > window.innerHeight - 90 || rect.top < 0) {
+        subPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  }
 }
 
 function renderConcern(content, scene) {
@@ -1027,7 +1076,7 @@ function renderBirthtime(content, scene) {
   row.appendChild(h); row.appendChild(m);
   panel.appendChild(row);
   content.appendChild(panel);
-  scene.appendChild(buildCta('다음', () => {
+  scene.appendChild(buildCta('내 운명 읽기', () => {
     state.hour = h.value; state.minute = m.value;
     goTo('loading');
   }, {
@@ -1101,14 +1150,14 @@ function renderLoadingSequence() {
   loadImg.style.transition = 'opacity 450ms ease';
   requestAnimationFrame(() => { loadCaption.style.opacity = '1'; });
 
-  const MIN_MS = 5500;
-  const STAGE_MS = MIN_MS / LOADING_STAGES.length;
-  let stageIdx = 0;
+  const STAGE_MS = 1625; // each scene holds >=1.6s before the next crossfade begins
+  const FADE_OVERHEAD = 600; // showStage's internal 450ms image fade + 150ms caption delay
+  const MIN_MS = STAGE_MS * LOADING_STAGES.length; // ~6.5s total minimum
   let stopped = false;
-  let cycleTimer = null;
+  const cycleTimers = [];
 
   function showStage(i) {
-    const st = LOADING_STAGES[i % LOADING_STAGES.length];
+    const st = LOADING_STAGES[i];
     loadImg.style.opacity = '0';
     setTimeout(() => {
       if (stopped) return;
@@ -1125,19 +1174,21 @@ function renderLoadingSequence() {
     }, 450);
   }
 
-  function cycle() {
-    stageIdx++;
-    showStage(stageIdx);
-    cycleTimer = setTimeout(cycle, STAGE_MS);
+  // Schedule each transition to START `FADE_OVERHEAD` early, so the caption itself
+  // becomes visible exactly on the n*STAGE_MS mark (each scene then holds a clean
+  // STAGE_MS before the next). The 4th scene is never re-triggered — it just holds
+  // until minDelay/the API resolves (no looping back to scene 1).
+  for (let i = 1; i < LOADING_STAGES.length; i++) {
+    const triggerAt = Math.max(0, i * STAGE_MS - FADE_OVERHEAD);
+    cycleTimers.push(setTimeout(() => { if (!stopped) showStage(i); }, triggerAt));
   }
-  cycleTimer = setTimeout(cycle, STAGE_MS);
 
   const minDelay = new Promise((resolve) => setTimeout(resolve, MIN_MS));
   const fetchPromise = doFetch();
 
   Promise.all([fetchPromise, minDelay]).then(() => {
     stopped = true;
-    clearTimeout(cycleTimer);
+    cycleTimers.forEach(clearTimeout);
     document.body.style.overflow = '';
     document.documentElement.style.overflow = '';
     if (fetchError) {
@@ -1149,7 +1200,7 @@ function renderLoadingSequence() {
       loadCaption.textContent = '찾았다.';
       loadCaption.classList.add('load-found');
       requestAnimationFrame(() => { loadCaption.style.opacity = '1'; });
-      setTimeout(() => { goTo('reveal'); }, 700);
+      setTimeout(() => { goTo('reveal'); }, 800);
     }, 300);
   });
 }
