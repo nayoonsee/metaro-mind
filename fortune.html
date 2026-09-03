@@ -245,6 +245,18 @@
   }
   @keyframes opFogDrift { from { transform: translateX(-3%); } to { transform: translateX(3%); } }
 
+  .op-backlight {
+    position: absolute; z-index: 3; pointer-events: none;
+    left: 50%; top: 24%; width: 70%; height: 46%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(210,225,255,0.55), rgba(210,225,255,0.15) 45%, transparent 72%);
+    opacity: 0; transition: opacity 1s ease;
+    filter: blur(14px);
+  }
+  .op-backlight.op-show { opacity: 1; }
+  .op-backlight.op-pulse { animation: opBacklightPulse .8s ease; }
+  @keyframes opBacklightPulse { 0% { filter: blur(14px) brightness(1); } 45% { filter: blur(14px) brightness(1.6); } 100% { filter: blur(14px) brightness(1); } }
+
   .op-doorlight {
     position: absolute; z-index: 3; pointer-events: none;
     left: 50%; top: 46%; width: 55%; height: 42%;
@@ -530,6 +542,7 @@ function renderOpeningSequence() {
       <div class="op-fog" id="opFog"></div>
       <div class="op-eye-glow-a" id="opEyeA"></div>
       <div class="op-eye-glow-b" id="opEyeB"></div>
+      <div class="op-backlight" id="opBacklight"></div>
       <div class="op-doorlight" id="opDoorlight"></div>
       <div class="op-overlay"></div>
       <div class="op-content" id="opContent"></div>
@@ -544,6 +557,7 @@ function renderOpeningSequence() {
   const opBlackout = stage.querySelector('#opBlackout');
   const eyeA = stage.querySelector('#opEyeA');
   const eyeB = stage.querySelector('#opEyeB');
+  const opBacklight = stage.querySelector('#opBacklight');
   const opFog = stage.querySelector('#opFog');
   const opDoorlight = stage.querySelector('#opDoorlight');
   const muteBtn = stage.querySelector('#opMuteBtn');
@@ -710,16 +724,14 @@ function renderOpeningSequence() {
     requestAnimationFrame(() => sub.classList.add('op-show'));
   });
 
-  // ================= Slot 2: 눈빛 글로우 효과 그대로, 이미지만 moon =================
+  // ================= Slot 2: 인물 뒤에서 빛이 뿜어져 나오는 백라이트 효과, 이미지는 moon =================
   after(4200, () => {
     opContent.innerHTML = '';
     crossfadeTo(OP_IMG.moon, { fadeMs: 900 });
-    after(1200, () => { // (900ms swap + 300ms settle) glow builds gradually as image settles in
-      eyeA.classList.add('op-show');
-      eyeB.classList.add('op-show');
-      after(700, () => { // then intensifies once
-        eyeA.classList.add('op-pulse');
-        eyeB.classList.add('op-pulse');
+    after(1200, () => { // (900ms swap + 300ms settle) light builds gradually behind him
+      opBacklight.classList.add('op-show');
+      after(700, () => { // then flares once
+        opBacklight.classList.add('op-pulse');
       });
     });
   });
