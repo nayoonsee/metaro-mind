@@ -663,8 +663,7 @@ function renderOpeningSequence() {
   if (reduced) {
     // Reduced motion: minimal, fast, no shake/zoom/looping fog/audio-heavy cues
     opFog.style.display = 'none';
-    opImg.src = OP_IMG.moon;
-    opImg.classList.add('op-show');
+    opImg.classList.add('op-show'); // already src=eye from template
     opContent.innerHTML = `
       <div class="op-title op-show">네 <span class="accent">운명</span>, 내가<br/>가감 없이 읽어줄게</div>
       <div class="op-sub op-show">현담이야. 여기까지 왔다는 건 뭔가 걸리는 게 있다는 거겠지. 숨기지 말고 다 말해봐.</div>
@@ -696,32 +695,32 @@ function renderOpeningSequence() {
     return;
   }
 
-  // ================= Phase 1: eye impact FIRST (03_오드아이) =================
+  // ================= Slot 1: 4.2s, title + subcopy (문구/타이밍 그대로, 이미지만 eye) =================
   after(300, () => opBlackout.classList.add('op-hide'));
   after(350, () => opImg.classList.add('op-show')); // 1.4s opacity fade / 2.6s slow scale (opImg already src=eye)
-  after(1250, () => { // glow builds gradually as image settles in
-    eyeA.classList.add('op-show');
-    eyeB.classList.add('op-show');
-    after(700, () => { // then intensifies once
-      eyeA.classList.add('op-pulse');
-      eyeB.classList.add('op-pulse');
-    });
+
+  after(1100, () => {
+    const title = el(`<div class="op-title">네 <span class="accent">운명</span>, 내가<br/>가감 없이 읽어줄게</div>`);
+    opContent.appendChild(title);
+    requestAnimationFrame(() => title.classList.add('op-show'));
+  });
+  after(1500, () => {
+    const sub = el(`<div class="op-sub">현담이야. 여기까지 왔다는 건 뭔가 걸리는 게 있다는 거겠지. 숨기지 말고 다 말해봐.</div>`);
+    opContent.appendChild(sub);
+    requestAnimationFrame(() => sub.classList.add('op-show'));
   });
 
-  // ================= Phase 2: moonlit reveal (13_보름달_전신, title + subcopy) =================
+  // ================= Slot 2: 눈빛 글로우 효과 그대로, 이미지만 moon =================
   after(4200, () => {
-    eyeA.classList.remove('op-show', 'op-pulse');
-    eyeB.classList.remove('op-show', 'op-pulse');
+    opContent.innerHTML = '';
     crossfadeTo(OP_IMG.moon, { fadeMs: 900 });
-    after(500, () => {
-      const title = el(`<div class="op-title">네 <span class="accent">운명</span>, 내가<br/>가감 없이 읽어줄게</div>`);
-      opContent.appendChild(title);
-      requestAnimationFrame(() => title.classList.add('op-show'));
-    });
-    after(900, () => {
-      const sub = el(`<div class="op-sub">현담이야. 여기까지 왔다는 건 뭔가 걸리는 게 있다는 거겠지. 숨기지 말고 다 말해봐.</div>`);
-      opContent.appendChild(sub);
-      requestAnimationFrame(() => sub.classList.add('op-show'));
+    after(1200, () => { // (900ms swap + 300ms settle) glow builds gradually as image settles in
+      eyeA.classList.add('op-show');
+      eyeB.classList.add('op-show');
+      after(700, () => { // then intensifies once
+        eyeA.classList.add('op-pulse');
+        eyeB.classList.add('op-pulse');
+      });
     });
   });
 
