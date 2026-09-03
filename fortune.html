@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>메타로마인드 - 현담의 사주</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Song+Myung&display=swap" rel="stylesheet">
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -30,13 +33,8 @@
   }
   .scene-bg {
     position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; z-index: 0;
+    object-fit: cover; object-position: center 20%; z-index: 0;
     animation: kenburns 8s ease-out forwards;
-    transition: filter .4s ease;
-  }
-  .scene-bg.blur-bg {
-    filter: blur(16px) brightness(0.75);
-    transform: scale(1.12);
   }
   @keyframes kenburns { from { transform: scale(1.06); } to { transform: scale(1); } }
 
@@ -51,7 +49,10 @@
   @media (max-width: 480px) { .back-btn { transform: none; left: 14px; } }
   .scene-overlay {
     position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background: linear-gradient(180deg, rgba(5,7,15,0.15) 0%, rgba(5,7,15,0.25) 35%, rgba(5,7,15,0.75) 68%, rgba(5,7,15,0.97) 100%);
+    background: linear-gradient(180deg, rgba(5,7,15,0.1) 0%, rgba(5,7,15,0.15) 30%, rgba(5,7,15,0.72) 62%, rgba(5,7,15,0.97) 100%);
+  }
+  .scene-overlay.deep {
+    background: linear-gradient(180deg, rgba(5,7,15,0.08) 0%, rgba(5,7,15,0.1) 22%, rgba(5,7,15,0.55) 45%, rgba(5,7,15,0.9) 66%, rgba(5,7,15,0.99) 100%);
   }
   .scene-content {
     position: relative; z-index: 2;
@@ -60,7 +61,9 @@
   }
 
   .impact {
-    text-align: center; font-size: 26px; font-weight: 800; line-height: 1.35;
+    font-family: 'Song Myung', serif;
+    text-align: center; font-size: 30px; font-weight: 400; line-height: 1.4;
+    letter-spacing: 0.5px;
     text-shadow: 0 2px 18px rgba(0,0,0,0.8);
     margin: 8px 0 4px;
     animation: fadeUp .5s ease both;
@@ -79,7 +82,11 @@
   }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  .prompt { font-size: 20px; font-weight: 700; margin: 4px 0 4px; text-shadow: 0 2px 14px rgba(0,0,0,0.7); }
+  .prompt {
+    font-family: 'Song Myung', serif;
+    font-size: 22px; font-weight: 400; margin: 4px 0 4px;
+    text-shadow: 0 2px 14px rgba(0,0,0,0.7);
+  }
 
   .panel {
     background: rgba(10,13,26,0.6); backdrop-filter: blur(8px);
@@ -170,7 +177,8 @@
   }
   .reveal-section.in-view .r-content { opacity: 1; transform: translateY(0); }
   .r-title {
-    font-size: 22px; font-weight: 800; text-shadow: 0 2px 14px rgba(0,0,0,0.8);
+    font-family: 'Song Myung', serif;
+    font-size: 24px; font-weight: 400; text-shadow: 0 2px 14px rgba(0,0,0,0.8);
   }
   .r-body {
     font-size: 15.5px; line-height: 1.7; text-shadow: 0 1px 10px rgba(0,0,0,0.7);
@@ -206,7 +214,7 @@
 
 <script>
 const STEPS = ['intro','question','name','profile','birthdate','birthtime','relationship','job','loading','reveal'];
-const BLUR_STEPS = new Set(['question','name','profile','birthdate','birthtime','relationship','job']);
+const INPUT_STEPS = new Set(['question','name','profile','birthdate','birthtime','relationship','job']);
 const NO_BACK_STEPS = new Set(['intro','loading']);
 let stepIndex = 0;
 const state = {
@@ -255,11 +263,11 @@ function el(html) {
 }
 
 function buildScene(step) {
-  const blurClass = BLUR_STEPS.has(step) ? ' blur-bg' : '';
+  const overlayClass = INPUT_STEPS.has(step) ? ' deep' : '';
   const scene = el(`
     <div class="scene">
-      <img class="scene-bg${blurClass}" src="/characters/${SCENE_IMAGE[step]}" alt="" />
-      <div class="scene-overlay"></div>
+      <img class="scene-bg" src="/characters/${SCENE_IMAGE[step]}" alt="" />
+      <div class="scene-overlay${overlayClass}"></div>
       <div class="scene-content" id="content"></div>
     </div>
   `);
