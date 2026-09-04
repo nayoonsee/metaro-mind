@@ -15,9 +15,14 @@
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
     background: #05070f;
     color: #f2f4fb;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
-  body { display: flex; justify-content: center; overflow-x: hidden; }
-  .app { width: 100%; max-width: 480px; position: relative; padding-bottom: 84px; }
+  body { display: flex; justify-content: center; overflow-x: hidden; max-width: 100vw; }
+  .app { width: 100%; max-width: 480px; position: relative; padding-bottom: 84px; overflow-x: hidden; }
+  .cover-title, .cover-dialogue, .chapter-title, .chapter-hook, .chapter-hero-overlay .chapter-title, .chapter-hero-overlay .chapter-hook {
+    word-break: keep-all; overflow-wrap: break-word;
+  }
 
   /* ---- progress bar ---- */
   .progress {
@@ -194,17 +199,77 @@
   .daeyun-block .daeyun-hanja { font-family: 'Song Myung', serif; font-size: 15px; color: #f3ead5; margin-top: 3px; }
   .daeyun-block .daeyun-reading { font-family: 'Pretendard', sans-serif; font-size: 9.5px; color: #cbb98a; margin-top: 2px; }
 
-  /* ---- wolun timeline ---- */
-  .wolun-list { display: flex; flex-direction: column; gap: 8px; }
+  /* ---- wolun timeline (모바일 타임라인 카드) ---- */
+  .wolun-list { display: flex; flex-direction: column; gap: 10px; }
   .wolun-item {
-    display: flex; gap: 10px; align-items: center;
     background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 10px; padding: 10px 12px;
+    border-radius: 12px; padding: 12px 14px;
   }
-  .wolun-item .wolun-hanja { font-family: 'Song Myung', serif; font-size: 16px; color: #d7c48a; min-width: 46px; }
-  .wolun-item .wolun-text { flex: 1; }
-  .wolun-item .wolun-range { font-family: 'Pretendard', sans-serif; font-size: 11.5px; color: #b7bfe8; }
-  .wolun-item .wolun-detail { font-family: 'Pretendard', sans-serif; font-size: 11px; color: #d7dcf8; margin-top: 2px; }
+  .wolun-item-head { display: flex; gap: 10px; align-items: baseline; }
+  .wolun-item .wolun-hanja { font-family: 'Song Myung', serif; font-size: 16px; color: #d7c48a; }
+  .wolun-item .wolun-reading { font-family: 'Pretendard', sans-serif; font-size: 10.5px; color: #b7bfe8; }
+  .wolun-item .wolun-tengod {
+    font-family: 'Pretendard', sans-serif; font-size: 10.5px; color: #f0dfae;
+    background: rgba(205,176,105,0.15); border-radius: 999px; padding: 2px 8px; margin-left: auto;
+  }
+  .wolun-item .wolun-range { font-family: 'Pretendard', sans-serif; font-size: 11px; color: #b7bfe8; margin-top: 4px; }
+  .wolun-item .wolun-q {
+    font-family: 'Gowun Batang', serif; font-size: 13px; color: #f2f4fb; line-height: 1.55; margin-top: 8px;
+    word-break: keep-all;
+  }
+  .wolun-item .wolun-q::before { content: 'Q. '; color: #d7c48a; font-weight: 700; }
+  .wolun-item .wolun-exp {
+    font-family: 'Pretendard', sans-serif; font-size: 12px; color: #b7dcc8; line-height: 1.5; margin-top: 5px;
+    word-break: keep-all;
+  }
+  .wolun-item .wolun-exp::before { content: '▸ '; color: #8fd9a8; }
+
+  /* ---- emphasis card (핵심 문장 강조) ---- */
+  .emphasis-card {
+    font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 15.5px; line-height: 1.7;
+    color: #fff9ec; background: linear-gradient(135deg, rgba(205,176,105,0.16), rgba(91,111,216,0.12));
+    border: 1px solid rgba(205,176,105,0.45); border-radius: 10px;
+    padding: 13px 15px; margin: 4px 0 18px;
+    word-break: keep-all; overflow-wrap: break-word;
+  }
+
+  /* ---- axis table (2-column comparison table) ---- */
+  .axis-table { width: 100%; border-collapse: collapse; font-family: 'Pretendard', sans-serif; font-size: 12.5px; }
+  .axis-table th, .axis-table td {
+    border: 1px solid rgba(255,255,255,0.12); padding: 8px 8px; text-align: left;
+    word-break: keep-all; overflow-wrap: break-word;
+  }
+  .axis-table th { color: #d7c48a; font-weight: 700; background: rgba(255,255,255,0.03); }
+  .axis-table td { color: #e6e9fc; }
+  .axis-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ---- criteria list (조건 카드) ---- */
+  .criteria-list { display: flex; flex-direction: column; gap: 8px; }
+  .criteria-item {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 11px 13px;
+  }
+  .criteria-item .criteria-label {
+    font-family: 'Pretendard', sans-serif; font-weight: 700; font-size: 13px; color: #f0dfae;
+    word-break: keep-all;
+  }
+  .criteria-item .criteria-desc {
+    font-family: 'Pretendard', sans-serif; font-size: 12.5px; color: #d7dcf8; margin-top: 4px; line-height: 1.55;
+  }
+
+  /* ---- plan list (유지·시험·확인·멈춤·재판단) ---- */
+  .plan-list { display: flex; flex-direction: column; gap: 8px; }
+  .plan-item {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 11px 13px; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .plan-item .plan-tag {
+    font-family: 'Pretendard', sans-serif; font-weight: 700; font-size: 12px; color: #05070f;
+    background: #d7c48a; border-radius: 6px; padding: 3px 8px; flex: 0 0 auto; white-space: nowrap;
+  }
+  .plan-item .plan-desc {
+    font-family: 'Pretendard', sans-serif; font-size: 12.5px; color: #e6e9fc; line-height: 1.55;
+  }
 
   /* ---- action line ---- */
   .action-line {
@@ -263,7 +328,7 @@
 </div>
 <div class="bottom-nav">
   <button class="nav-btn" id="prevBtn" type="button">◂ 이전</button>
-  <div class="nav-current"><span id="navNum">1 / 16</span><span class="nav-current-title" id="navTitle"></span></div>
+  <div class="nav-current"><span id="navNum">1 / 17</span><span class="nav-current-title" id="navTitle"></span></div>
   <button class="nav-btn" id="nextBtn" type="button">다음 ▸</button>
 </div>
 
@@ -300,11 +365,37 @@ function daeyunVisual(chart) {
 function wolunVisual(chart) {
   return `<div class="visual wolun-list">${chart.wolun.map((w) => `
     <div class="wolun-item">
-      <div class="wolun-hanja">${esc(w.ganzhi)}<br><span style="font-size:9.5px;color:#b7bfe8;font-family:'Pretendard',sans-serif;">${esc(w.reading)}</span></div>
-      <div class="wolun-text">
-        <div class="wolun-range">${esc(w.label)}</div>
-        <div class="wolun-detail">${esc(w.rangeNote)}</div>
+      <div class="wolun-item-head">
+        <span class="wolun-hanja">${esc(w.label)}(${esc(w.ganzhi)})</span>
+        <span class="wolun-reading">${esc(w.reading)}</span>
+        <span class="wolun-tengod">${esc(w.ganTenGod)}</span>
       </div>
+      <div class="wolun-range">${esc(w.rangeNote)}</div>
+      ${w.question ? `<div class="wolun-q">${esc(w.question)}</div>` : ''}
+      ${w.experiment ? `<div class="wolun-exp">${esc(w.experiment)}</div>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+function axisTableVisual(v) {
+  return `<div class="visual axis-table-wrap"><table class="axis-table">
+    <thead><tr><th>${esc(v.axisLabel || '')}</th><th>${esc(v.leftHeader)}</th><th>${esc(v.rightHeader)}</th></tr></thead>
+    <tbody>${v.rows.map((r) => `<tr><td>${esc(r.axis)}</td><td>${esc(r.left)}</td><td>${esc(r.right)}</td></tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function criteriaListVisual(v) {
+  return `<div class="visual criteria-list">${v.items.map((it) => `
+    <div class="criteria-item">
+      <div class="criteria-label">${esc(it.label)}</div>
+      <div class="criteria-desc">${esc(it.desc)}</div>
+    </div>`).join('')}</div>`;
+}
+
+function planListVisual(v) {
+  return `<div class="visual plan-list">${v.items.map((it) => `
+    <div class="plan-item">
+      <span class="plan-tag">${esc(it.tag)}</span>
+      <span class="plan-desc">${esc(it.desc)}</span>
     </div>`).join('')}</div>`;
 }
 
@@ -341,6 +432,9 @@ function renderVisual(v, chart) {
   if (v.type === 'action-list') {
     return `<div class="visual action-list">${v.items.map((t) => `<div class="action-list-item">${esc(t)}</div>`).join('')}</div>`;
   }
+  if (v.type === 'axis-table') return axisTableVisual(v);
+  if (v.type === 'criteria-list') return criteriaListVisual(v);
+  if (v.type === 'plan-list') return planListVisual(v);
   return '';
 }
 
@@ -353,6 +447,7 @@ function renderChapter(ch, chart, total) {
 
   const restHtml = `
     <div class="chapter-body">${paragraphsHtml(ch.paragraphs)}</div>
+    ${ch.emphasis ? `<div class="emphasis-card">${esc(ch.emphasis)}</div>` : ''}
     ${ch.joke ? `<div class="chapter-joke">${esc(ch.joke)}</div>` : ''}
     ${renderVisual(ch.visual, chart)}
     ${ch.action ? `<div class="action-line">${esc(ch.action)}</div>` : ''}
