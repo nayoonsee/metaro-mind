@@ -366,8 +366,7 @@ function wolunVisual(chart) {
   return `<div class="visual wolun-list">${chart.wolun.map((w) => `
     <div class="wolun-item">
       <div class="wolun-item-head">
-        <span class="wolun-hanja">${esc(w.label)}(${esc(w.ganzhi)})</span>
-        <span class="wolun-reading">${esc(w.reading)}</span>
+        <span class="wolun-hanja">${esc(w.ganzhi)}(${esc(w.reading)})월</span>
         <span class="wolun-tengod">${esc(w.ganTenGod)}</span>
       </div>
       <div class="wolun-range">${esc(w.rangeNote)}</div>
