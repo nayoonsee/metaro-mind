@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,viewport-fit=cover"/>
+<meta name="theme-color" content="#05070f"/>
+<title>나윤의 명식 리포트 — 현담</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=Gugi&family=Song+Myung&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+    background: #05070f;
+    color: #f2f4fb;
+  }
+  body { display: flex; justify-content: center; overflow-x: hidden; }
+  .app { width: 100%; max-width: 480px; position: relative; padding-bottom: 84px; }
+
+  /* ---- progress bar ---- */
+  .progress {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+    height: 3px; background: rgba(255,255,255,0.15);
+    max-width: 480px; margin: 0 auto;
+  }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg,#5b6fd8,#dfe4fa); transition: width .2s; }
+
+  /* ---- masthead ---- */
+  .masthead {
+    padding: 34px 20px 14px; text-align: center;
+  }
+  .masthead-eyebrow {
+    font-family: 'Pretendard', sans-serif; font-size: 12px; letter-spacing: 1.5px;
+    color: #97a0cf; opacity: .85;
+  }
+  .masthead-title {
+    font-family: 'Song Myung', serif; font-size: 21px; color: #f3ead5; margin-top: 6px;
+  }
+  .masthead-title .accent { color: #d7c48a; }
+
+  /* ---- chapter section ---- */
+  .chapter {
+    padding: 26px 20px 30px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    opacity: 0; transform: translateY(18px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .chapter.in-view { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    .chapter { transition: none; transform: none; opacity: 1; }
+  }
+
+  .chapter-hero {
+    position: relative; width: 100%; aspect-ratio: 4 / 3; border-radius: 14px;
+    overflow: hidden; margin-bottom: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  }
+  .chapter-hero img {
+    width: 100%; height: 100%; object-fit: cover; object-position: center 22%;
+    display: block;
+  }
+  .chapter-hero::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(5,7,15,0) 55%, rgba(5,7,15,0.75) 100%);
+  }
+
+  .chapter-num {
+    font-family: 'Song Myung', serif; font-size: 13px; color: #d7c48a;
+    letter-spacing: 1px;
+  }
+  .chapter-title {
+    font-family: 'Song Myung', serif; font-size: 20px; line-height: 1.4;
+    color: #f3ead5; margin: 6px 0 14px;
+  }
+  .chapter-hook {
+    font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 16px;
+    line-height: 1.55; color: #fbf3df; margin: 0 0 12px;
+  }
+  .chapter-body p {
+    font-family: 'Gowun Batang', serif; font-size: 14.5px; line-height: 1.7;
+    color: #d6dafc; margin: 0 0 12px;
+  }
+  .chapter-joke {
+    font-family: 'Pretendard', sans-serif; font-size: 13px; color: #e8caa0;
+    background: rgba(205,176,105,0.1); border: 1px solid rgba(205,176,105,0.3);
+    border-radius: 10px; padding: 10px 12px; margin: 4px 0 16px;
+  }
+  .chapter-joke::before { content: '🔔 '; }
+
+  /* ---- visual cards ---- */
+  .visual { margin: 6px 0 18px; }
+  .stat-card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .stat-card .stat-label { font-family: 'Pretendard', sans-serif; font-size: 11px; color: #97a0cf; }
+  .stat-card .stat-value { font-family: 'Song Myung', serif; font-size: 18px; color: #f3ead5; margin-top: 4px; }
+  .stat-card .stat-sub { font-family: 'Pretendard', sans-serif; font-size: 12px; color: #97a0cf; margin-top: 3px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-family: 'Pretendard', sans-serif; font-size: 12.5px; color: #f3ead5;
+    background: rgba(205,176,105,0.12); border: 1px solid rgba(205,176,105,0.4);
+    border-radius: 999px; padding: 6px 12px;
+  }
+
+  .compare { display: flex; gap: 10px; }
+  .compare-col {
+    flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px; padding: 12px 12px;
+  }
+  .compare-col .compare-title { font-family: 'Pretendard', sans-serif; font-weight: 700; font-size: 13px; color: #f3ead5; }
+  .compare-col .compare-desc { font-family: 'Pretendard', sans-serif; font-size: 12px; color: #c7cde8; margin-top: 5px; line-height: 1.5; }
+
+  .motif-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .motif-item {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px; padding: 10px; text-align: center;
+  }
+  .motif-item .motif-symbol { font-family: 'Song Myung', serif; font-size: 22px; color: #d7c48a; }
+  .motif-item .motif-reading { font-family: 'Pretendard', sans-serif; font-size: 10.5px; color: #97a0cf; }
+  .motif-item .motif-label { font-family: 'Pretendard', sans-serif; font-size: 12px; color: #f2f4fb; margin-top: 3px; }
+  .motif-item .motif-state { font-family: 'Pretendard', sans-serif; font-size: 10.5px; color: #8c9cf0; margin-top: 2px; }
+
+  .action-list { display: flex; flex-direction: column; gap: 8px; }
+  .action-list-item {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-family: 'Pretendard', sans-serif; font-size: 13.5px; color: #f2f4fb;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .action-list-item::before { content: '✓'; color: #8fd9a8; font-weight: 700; }
+
+  /* ---- pillars (four-pillar chart) ---- */
+  .pillars-table { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .pillar-col {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 8px 4px; text-align: center;
+  }
+  .pillar-col .pillar-role { font-family: 'Pretendard', sans-serif; font-size: 10px; color: #97a0cf; }
+  .pillar-col .pillar-hanja { font-family: 'Song Myung', serif; font-size: 18px; color: #f3ead5; margin-top: 4px; }
+  .pillar-col .pillar-reading { font-family: 'Pretendard', sans-serif; font-size: 10px; color: #cbb98a; margin-top: 2px; }
+  .pillar-col .pillar-tengod { font-family: 'Pretendard', sans-serif; font-size: 10px; color: #a9b3e0; margin-top: 4px; }
+
+  /* ---- daeyun timeline ---- */
+  .daeyun-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; -webkit-overflow-scrolling: touch; }
+  .daeyun-block {
+    flex: 0 0 auto; min-width: 74px; text-align: center;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 10px 6px;
+  }
+  .daeyun-block.active {
+    background: rgba(205,176,105,0.16); border-color: rgba(205,176,105,0.7);
+  }
+  .daeyun-block .daeyun-years { font-family: 'Pretendard', sans-serif; font-size: 10.5px; color: #97a0cf; }
+  .daeyun-block .daeyun-hanja { font-family: 'Song Myung', serif; font-size: 15px; color: #f3ead5; margin-top: 3px; }
+  .daeyun-block .daeyun-reading { font-family: 'Pretendard', sans-serif; font-size: 9.5px; color: #cbb98a; margin-top: 2px; }
+
+  /* ---- wolun timeline ---- */
+  .wolun-list { display: flex; flex-direction: column; gap: 8px; }
+  .wolun-item {
+    display: flex; gap: 10px; align-items: center;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .wolun-item .wolun-hanja { font-family: 'Song Myung', serif; font-size: 16px; color: #d7c48a; min-width: 46px; }
+  .wolun-item .wolun-text { flex: 1; }
+  .wolun-item .wolun-range { font-family: 'Pretendard', sans-serif; font-size: 11.5px; color: #97a0cf; }
+  .wolun-item .wolun-detail { font-family: 'Pretendard', sans-serif; font-size: 11px; color: #c7cde8; margin-top: 2px; }
+
+  /* ---- action line ---- */
+  .action-line {
+    font-family: 'Pretendard', sans-serif; font-weight: 600; font-size: 14px; color: #f3ead5;
+    background: rgba(91,111,216,0.16); border: 1px solid rgba(140,156,240,0.5);
+    border-radius: 10px; padding: 12px 14px; margin: 4px 0 12px;
+  }
+  .action-line::before { content: '▸ 지금 해볼 것  '; color: #8c9cf0; font-weight: 700; }
+
+  /* ---- evidence toggle ---- */
+  .evidence { margin-top: 4px; }
+  .evidence summary {
+    font-family: 'Pretendard', sans-serif; font-size: 12.5px; color: #97a0cf;
+    cursor: pointer; list-style: none;
+  }
+  .evidence summary::-webkit-details-marker { display: none; }
+  .evidence summary::before { content: '▸ '; }
+  .evidence[open] summary::before { content: '▾ '; }
+  .evidence-body {
+    font-family: 'Pretendard', sans-serif; font-size: 12px; color: #a9b3e0;
+    line-height: 1.6; margin-top: 8px; padding: 10px 12px;
+    background: rgba(0,0,0,0.25); border-radius: 8px;
+  }
+
+  /* ---- bottom nav ---- */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+    max-width: 480px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(5,7,15,0.88); backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .nav-btn {
+    font-family: 'Pretendard', sans-serif; font-size: 13px; color: #f2f4fb;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px; padding: 9px 14px; cursor: pointer;
+  }
+  .nav-btn:disabled { opacity: .35; }
+  .nav-current {
+    font-family: 'Pretendard', sans-serif; font-size: 12px; color: #cbb98a; text-align: center; flex: 1;
+  }
+  .nav-current .nav-current-title { display: block; font-size: 11px; color: #97a0cf; margin-top: 1px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .footer-note {
+    text-align: center; font-family: 'Pretendard', sans-serif; font-size: 11px; color: #5c6390;
+    padding: 22px 20px 10px;
+  }
+</style>
+</head>
+<body>
+<div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+<div class="app" id="app">
+  <div class="masthead">
+    <div class="masthead-eyebrow">현담의 명식 리포트</div>
+    <div class="masthead-title">나윤, 돈과 일 <span class="accent">집중판</span></div>
+  </div>
+  <div id="chapters"></div>
+  <div class="footer-note">이 리포트는 샘플 데이터로 만든 모바일 MVP입니다. 결제·이메일·PDF 발송 기능은 아직 연결되어 있지 않습니다.</div>
+</div>
+<div class="bottom-nav">
+  <button class="nav-btn" id="prevBtn" type="button">◂ 이전</button>
+  <div class="nav-current"><span id="navNum">1 / 16</span><span class="nav-current-title" id="navTitle"></span></div>
+  <button class="nav-btn" id="nextBtn" type="button">다음 ▸</button>
+</div>
+
+<script>
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function paragraphsHtml(paras) {
+  return (paras || []).map((p) => `<p>${esc(p)}</p>`).join('');
+}
+
+function pillarsVisual(chart) {
+  const roles = [['year','년주'], ['month','월주'], ['day','일주'], ['time','시주']];
+  return `<div class="visual pillars-table">${roles.map(([key, role]) => {
+    const p = chart.pillars[key];
+    return `<div class="pillar-col">
+      <div class="pillar-role">${esc(role)}</div>
+      <div class="pillar-hanja">${esc(p.ganzhi)}</div>
+      <div class="pillar-reading">${esc(p.reading)}</div>
+      <div class="pillar-tengod">${esc(p.tenGod)}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function daeyunVisual(chart) {
+  return `<div class="visual daeyun-scroll">${chart.daYun.blocks.map((b) => `
+    <div class="daeyun-block${b.active ? ' active' : ''}">
+      <div class="daeyun-years">${b.startYear}–${b.endYear}</div>
+      <div class="daeyun-hanja">${esc(b.ganzhi)}</div>
+      <div class="daeyun-reading">${esc(b.reading)}</div>
+    </div>`).join('')}</div>`;
+}
+
+function wolunVisual(chart) {
+  return `<div class="visual wolun-list">${chart.wolun.map((w) => `
+    <div class="wolun-item">
+      <div class="wolun-hanja">${esc(w.ganzhi)}<br><span style="font-size:9.5px;color:#97a0cf;font-family:'Pretendard',sans-serif;">${esc(w.reading)}</span></div>
+      <div class="wolun-text">
+        <div class="wolun-range">${esc(w.label)}</div>
+        <div class="wolun-detail">${esc(w.rangeNote)}</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function renderVisual(v, chart) {
+  if (!v) return '';
+  if (v.type === 'pillars') return pillarsVisual(chart);
+  if (v.type === 'daeyun-timeline') return daeyunVisual(chart);
+  if (v.type === 'wolun-timeline') return wolunVisual(chart);
+  if (v.type === 'stat') {
+    return `<div class="visual stat-card">
+      <div class="stat-label">${esc(v.label)}</div>
+      <div class="stat-value">${esc(v.value)}</div>
+      ${v.sub ? `<div class="stat-sub">${esc(v.sub)}</div>` : ''}
+    </div>`;
+  }
+  if (v.type === 'chips') {
+    return `<div class="visual chips">${v.items.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</div>`;
+  }
+  if (v.type === 'compare') {
+    return `<div class="visual compare">
+      <div class="compare-col"><div class="compare-title">${esc(v.left.title)}</div><div class="compare-desc">${esc(v.left.desc)}</div></div>
+      <div class="compare-col"><div class="compare-title">${esc(v.right.title)}</div><div class="compare-desc">${esc(v.right.desc)}</div></div>
+    </div>`;
+  }
+  if (v.type === 'motif-grid') {
+    return `<div class="visual motif-grid">${v.items.map((m) => `
+      <div class="motif-item">
+        <div class="motif-symbol">${esc(m.symbol)}</div>
+        <div class="motif-reading">${esc(m.reading)}</div>
+        <div class="motif-label">${esc(m.label)}</div>
+        <div class="motif-state">${esc(m.state)}</div>
+      </div>`).join('')}</div>`;
+  }
+  if (v.type === 'action-list') {
+    return `<div class="visual action-list">${v.items.map((t) => `<div class="action-list-item">${esc(t)}</div>`).join('')}</div>`;
+  }
+  return '';
+}
+
+function renderChapter(ch, chart) {
+  const el = document.createElement('section');
+  el.className = 'chapter';
+  el.id = `ch-${ch.num}`;
+  el.dataset.num = ch.num;
+  el.dataset.title = ch.title;
+
+  const heroHtml = ch.hero
+    ? `<div class="chapter-hero"><img src="${esc(ch.hero.image)}" alt="${esc(ch.hero.alt || '')}" loading="lazy"/></div>`
+    : '';
+
+  el.innerHTML = `
+    ${heroHtml}
+    <div class="chapter-num">${String(ch.num).padStart(2, '0')} / 16</div>
+    <div class="chapter-title">${esc(ch.title)}</div>
+    <div class="chapter-hook">${esc(ch.hook)}</div>
+    <div class="chapter-body">${paragraphsHtml(ch.paragraphs)}</div>
+    ${ch.joke ? `<div class="chapter-joke">${esc(ch.joke)}</div>` : ''}
+    ${renderVisual(ch.visual, chart)}
+    ${ch.action ? `<div class="action-line">${esc(ch.action)}</div>` : ''}
+    ${ch.evidence ? `<details class="evidence"><summary>왜 이렇게 봤냐면?</summary><div class="evidence-body">${esc(ch.evidence)}</div></details>` : ''}
+  `;
+  return el;
+}
+
+async function render() {
+  const res = await fetch('/data/nayoon-sample-report.json');
+  const data = await res.json();
+  const container = document.getElementById('chapters');
+  const chapters = data.chapters;
+
+  chapters.forEach((ch) => container.appendChild(renderChapter(ch, data.chart)));
+
+  const sections = Array.from(container.querySelectorAll('.chapter'));
+  const total = sections.length;
+
+  if (reducedMotion) {
+    sections.forEach((s) => s.classList.add('in-view'));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('in-view');
+      });
+    }, { threshold: 0.15 });
+    sections.forEach((s) => io.observe(s));
+  }
+
+  // ---- progress bar + bottom nav current-chapter tracking ----
+  const progressFill = document.getElementById('progressFill');
+  const navNum = document.getElementById('navNum');
+  const navTitle = document.getElementById('navTitle');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  let currentIndex = 0;
+
+  function updateNav() {
+    navNum.textContent = `${currentIndex + 1} / ${total}`;
+    navTitle.textContent = sections[currentIndex].dataset.title;
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex === total - 1;
+  }
+  updateNav();
+
+  function scrollToIndex(i) {
+    if (i < 0 || i >= total) return;
+    sections[i].scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+  }
+  prevBtn.onclick = () => scrollToIndex(currentIndex - 1);
+  nextBtn.onclick = () => scrollToIndex(currentIndex + 1);
+
+  const trackIo = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const idx = sections.indexOf(entry.target);
+        if (idx !== -1) { currentIndex = idx; updateNav(); }
+      }
+    });
+  }, { threshold: 0.5 });
+  sections.forEach((s) => trackIo.observe(s));
+
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = docHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / docHeight) * 100)) : 0;
+    progressFill.style.width = pct + '%';
+  }, { passive: true });
+}
+
+render();
+</script>
+</body>
+</html>
