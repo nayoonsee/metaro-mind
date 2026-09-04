@@ -27,43 +27,77 @@
   }
   .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg,#5b6fd8,#dfe4fa); transition: width .2s; }
 
-  /* ---- masthead ---- */
-  .masthead {
-    padding: 34px 20px 14px; text-align: center;
-  }
-  .masthead-eyebrow {
-    font-family: 'Pretendard', sans-serif; font-size: 12px; letter-spacing: 1.5px;
-    color: #97a0cf; opacity: .85;
-  }
-  .masthead-title {
-    font-family: 'Song Myung', serif; font-size: 21px; color: #f3ead5; margin-top: 6px;
-  }
-  .masthead-title .accent { color: #d7c48a; }
-
   /* ---- chapter section ---- */
   .chapter {
-    padding: 26px 20px 30px;
+    padding: 30px 20px 34px;
     border-top: 1px solid rgba(255,255,255,0.07);
     opacity: 0; transform: translateY(18px);
     transition: opacity .55s ease, transform .55s ease;
   }
+  .chapter:first-of-type { border-top: none; padding-top: 0; }
   .chapter.in-view { opacity: 1; transform: translateY(0); }
   @media (prefers-reduced-motion: reduce) {
     .chapter { transition: none; transform: none; opacity: 1; }
   }
 
+  /* ---- cover (chapter 1): full-bleed hero, no dead space ---- */
+  .cover-hero {
+    position: relative; width: 100%; min-height: 82dvh;
+    display: flex; align-items: flex-end; overflow: hidden;
+  }
+  .cover-hero img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: center 16%; display: block;
+  }
+  .cover-hero::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(5,7,15,0.05) 0%, rgba(5,7,15,0.15) 42%, rgba(5,7,15,0.92) 78%, #05070f 100%);
+  }
+  .cover-overlay { position: relative; z-index: 2; padding: 0 22px 30px; width: 100%; }
+  .cover-kicker {
+    font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 2px;
+    color: #e8caa0; text-transform: uppercase;
+  }
+  .cover-title {
+    font-family: 'Song Myung', serif; font-size: 27px; line-height: 1.35;
+    color: #fff9ec; margin: 10px 0 4px; text-shadow: 0 2px 14px rgba(0,0,0,0.6);
+  }
+  .cover-name {
+    font-family: 'Song Myung', serif; font-size: 15px; color: #d7c48a; margin-bottom: 18px;
+  }
+  .cover-dialogue {
+    font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 19px; line-height: 1.6;
+    color: #fff; background: rgba(20,15,10,0.55); border-left: 3px solid #d7c48a;
+    padding: 14px 16px; border-radius: 4px; backdrop-filter: blur(3px);
+  }
+  .cover-below { padding: 26px 20px 4px; }
+  .cover-scrollhint {
+    text-align: center; font-family: 'Pretendard', sans-serif; font-size: 12px; color: #8892c9;
+    padding-bottom: 6px;
+  }
+
+  /* ---- hero chapters (title/hook overlaid on the character image) ---- */
   .chapter-hero {
-    position: relative; width: 100%; aspect-ratio: 4 / 3; border-radius: 14px;
-    overflow: hidden; margin-bottom: 18px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    position: relative; width: 100%; min-height: 58vh; border-radius: 16px;
+    overflow: hidden; margin-bottom: 20px;
+    box-shadow: 0 12px 34px rgba(0,0,0,0.5);
+    display: flex; align-items: flex-end;
   }
   .chapter-hero img {
-    width: 100%; height: 100%; object-fit: cover; object-position: center 22%;
-    display: block;
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: center 20%; display: block;
   }
   .chapter-hero::after {
     content: ''; position: absolute; inset: 0;
-    background: linear-gradient(180deg, rgba(5,7,15,0) 55%, rgba(5,7,15,0.75) 100%);
+    background: linear-gradient(180deg, rgba(5,7,15,0) 38%, rgba(5,7,15,0.55) 68%, rgba(5,7,15,0.94) 100%);
+  }
+  .chapter-hero-overlay { position: relative; z-index: 2; padding: 18px 18px 22px; width: 100%; }
+  .chapter-hero-overlay .chapter-num { color: #f0dfae; }
+  .chapter-hero-overlay .chapter-title {
+    color: #fff9ec; text-shadow: 0 2px 12px rgba(0,0,0,0.65); margin-bottom: 10px;
+  }
+  .chapter-hero-overlay .chapter-hook {
+    color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.7); margin: 0;
   }
 
   .chapter-num {
@@ -71,21 +105,23 @@
     letter-spacing: 1px;
   }
   .chapter-title {
-    font-family: 'Song Myung', serif; font-size: 20px; line-height: 1.4;
-    color: #f3ead5; margin: 6px 0 14px;
+    font-family: 'Song Myung', serif; font-size: 24px; line-height: 1.4;
+    color: #f3ead5; margin: 8px 0 16px; font-weight: 700;
   }
   .chapter-hook {
-    font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 16px;
-    line-height: 1.55; color: #fbf3df; margin: 0 0 12px;
+    font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 19px;
+    line-height: 1.6; color: #fff9ec; margin: 0 0 18px;
+    background: rgba(215,196,138,0.1); border-left: 3px solid #d7c48a;
+    padding: 12px 14px; border-radius: 4px;
   }
   .chapter-body p {
-    font-family: 'Gowun Batang', serif; font-size: 14.5px; line-height: 1.7;
-    color: #d6dafc; margin: 0 0 12px;
+    font-family: 'Gowun Batang', serif; font-size: 16.5px; line-height: 1.85;
+    color: #e6e9fc; margin: 0 0 15px;
   }
   .chapter-joke {
-    font-family: 'Pretendard', sans-serif; font-size: 13px; color: #e8caa0;
-    background: rgba(205,176,105,0.1); border: 1px solid rgba(205,176,105,0.3);
-    border-radius: 10px; padding: 10px 12px; margin: 4px 0 16px;
+    font-family: 'Pretendard', sans-serif; font-size: 13.5px; color: #f0d9ae;
+    background: rgba(205,176,105,0.13); border: 1px solid rgba(205,176,105,0.35);
+    border-radius: 10px; padding: 11px 13px; margin: 6px 0 18px;
   }
   .chapter-joke::before { content: '🔔 '; }
 
@@ -95,9 +131,9 @@
     background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
     border-radius: 12px; padding: 14px 16px;
   }
-  .stat-card .stat-label { font-family: 'Pretendard', sans-serif; font-size: 11px; color: #97a0cf; }
+  .stat-card .stat-label { font-family: 'Pretendard', sans-serif; font-size: 11px; color: #b7bfe8; }
   .stat-card .stat-value { font-family: 'Song Myung', serif; font-size: 18px; color: #f3ead5; margin-top: 4px; }
-  .stat-card .stat-sub { font-family: 'Pretendard', sans-serif; font-size: 12px; color: #97a0cf; margin-top: 3px; }
+  .stat-card .stat-sub { font-family: 'Pretendard', sans-serif; font-size: 12px; color: #b7bfe8; margin-top: 3px; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
@@ -112,7 +148,7 @@
     border-radius: 12px; padding: 12px 12px;
   }
   .compare-col .compare-title { font-family: 'Pretendard', sans-serif; font-weight: 700; font-size: 13px; color: #f3ead5; }
-  .compare-col .compare-desc { font-family: 'Pretendard', sans-serif; font-size: 12px; color: #c7cde8; margin-top: 5px; line-height: 1.5; }
+  .compare-col .compare-desc { font-family: 'Pretendard', sans-serif; font-size: 12px; color: #d7dcf8; margin-top: 5px; line-height: 1.5; }
 
   .motif-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .motif-item {
@@ -120,7 +156,7 @@
     border-radius: 12px; padding: 10px; text-align: center;
   }
   .motif-item .motif-symbol { font-family: 'Song Myung', serif; font-size: 22px; color: #d7c48a; }
-  .motif-item .motif-reading { font-family: 'Pretendard', sans-serif; font-size: 10.5px; color: #97a0cf; }
+  .motif-item .motif-reading { font-family: 'Pretendard', sans-serif; font-size: 10.5px; color: #b7bfe8; }
   .motif-item .motif-label { font-family: 'Pretendard', sans-serif; font-size: 12px; color: #f2f4fb; margin-top: 3px; }
   .motif-item .motif-state { font-family: 'Pretendard', sans-serif; font-size: 10.5px; color: #8c9cf0; margin-top: 2px; }
 
@@ -139,10 +175,10 @@
     background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
     border-radius: 10px; padding: 8px 4px; text-align: center;
   }
-  .pillar-col .pillar-role { font-family: 'Pretendard', sans-serif; font-size: 10px; color: #97a0cf; }
+  .pillar-col .pillar-role { font-family: 'Pretendard', sans-serif; font-size: 10px; color: #b7bfe8; }
   .pillar-col .pillar-hanja { font-family: 'Song Myung', serif; font-size: 18px; color: #f3ead5; margin-top: 4px; }
   .pillar-col .pillar-reading { font-family: 'Pretendard', sans-serif; font-size: 10px; color: #cbb98a; margin-top: 2px; }
-  .pillar-col .pillar-tengod { font-family: 'Pretendard', sans-serif; font-size: 10px; color: #a9b3e0; margin-top: 4px; }
+  .pillar-col .pillar-tengod { font-family: 'Pretendard', sans-serif; font-size: 10px; color: #c3caf0; margin-top: 4px; }
 
   /* ---- daeyun timeline ---- */
   .daeyun-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; -webkit-overflow-scrolling: touch; }
@@ -154,7 +190,7 @@
   .daeyun-block.active {
     background: rgba(205,176,105,0.16); border-color: rgba(205,176,105,0.7);
   }
-  .daeyun-block .daeyun-years { font-family: 'Pretendard', sans-serif; font-size: 10.5px; color: #97a0cf; }
+  .daeyun-block .daeyun-years { font-family: 'Pretendard', sans-serif; font-size: 10.5px; color: #b7bfe8; }
   .daeyun-block .daeyun-hanja { font-family: 'Song Myung', serif; font-size: 15px; color: #f3ead5; margin-top: 3px; }
   .daeyun-block .daeyun-reading { font-family: 'Pretendard', sans-serif; font-size: 9.5px; color: #cbb98a; margin-top: 2px; }
 
@@ -167,8 +203,8 @@
   }
   .wolun-item .wolun-hanja { font-family: 'Song Myung', serif; font-size: 16px; color: #d7c48a; min-width: 46px; }
   .wolun-item .wolun-text { flex: 1; }
-  .wolun-item .wolun-range { font-family: 'Pretendard', sans-serif; font-size: 11.5px; color: #97a0cf; }
-  .wolun-item .wolun-detail { font-family: 'Pretendard', sans-serif; font-size: 11px; color: #c7cde8; margin-top: 2px; }
+  .wolun-item .wolun-range { font-family: 'Pretendard', sans-serif; font-size: 11.5px; color: #b7bfe8; }
+  .wolun-item .wolun-detail { font-family: 'Pretendard', sans-serif; font-size: 11px; color: #d7dcf8; margin-top: 2px; }
 
   /* ---- action line ---- */
   .action-line {
@@ -181,14 +217,14 @@
   /* ---- evidence toggle ---- */
   .evidence { margin-top: 4px; }
   .evidence summary {
-    font-family: 'Pretendard', sans-serif; font-size: 12.5px; color: #97a0cf;
+    font-family: 'Pretendard', sans-serif; font-size: 12.5px; color: #b7bfe8;
     cursor: pointer; list-style: none;
   }
   .evidence summary::-webkit-details-marker { display: none; }
   .evidence summary::before { content: '▸ '; }
   .evidence[open] summary::before { content: '▾ '; }
   .evidence-body {
-    font-family: 'Pretendard', sans-serif; font-size: 12px; color: #a9b3e0;
+    font-family: 'Pretendard', sans-serif; font-size: 12px; color: #c3caf0;
     line-height: 1.6; margin-top: 8px; padding: 10px 12px;
     background: rgba(0,0,0,0.25); border-radius: 8px;
   }
@@ -211,23 +247,19 @@
   .nav-current {
     font-family: 'Pretendard', sans-serif; font-size: 12px; color: #cbb98a; text-align: center; flex: 1;
   }
-  .nav-current .nav-current-title { display: block; font-size: 11px; color: #97a0cf; margin-top: 1px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-current .nav-current-title { display: block; font-size: 11px; color: #b7bfe8; margin-top: 1px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  .footer-note {
-    text-align: center; font-family: 'Pretendard', sans-serif; font-size: 11px; color: #5c6390;
-    padding: 22px 20px 10px;
+  .report-end {
+    text-align: center; font-family: 'Song Myung', serif; font-size: 13px; color: #d7c48a;
+    padding: 30px 20px 6px; opacity: .85;
   }
 </style>
 </head>
 <body>
 <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
 <div class="app" id="app">
-  <div class="masthead">
-    <div class="masthead-eyebrow">현담의 명식 리포트</div>
-    <div class="masthead-title">나윤, 돈과 일 <span class="accent">집중판</span></div>
-  </div>
   <div id="chapters"></div>
-  <div class="footer-note">이 리포트는 샘플 데이터로 만든 모바일 MVP입니다. 결제·이메일·PDF 발송 기능은 아직 연결되어 있지 않습니다.</div>
+  <div class="report-end">— 현담의 리포트는 여기까지야 —</div>
 </div>
 <div class="bottom-nav">
   <button class="nav-btn" id="prevBtn" type="button">◂ 이전</button>
@@ -268,7 +300,7 @@ function daeyunVisual(chart) {
 function wolunVisual(chart) {
   return `<div class="visual wolun-list">${chart.wolun.map((w) => `
     <div class="wolun-item">
-      <div class="wolun-hanja">${esc(w.ganzhi)}<br><span style="font-size:9.5px;color:#97a0cf;font-family:'Pretendard',sans-serif;">${esc(w.reading)}</span></div>
+      <div class="wolun-hanja">${esc(w.ganzhi)}<br><span style="font-size:9.5px;color:#b7bfe8;font-family:'Pretendard',sans-serif;">${esc(w.reading)}</span></div>
       <div class="wolun-text">
         <div class="wolun-range">${esc(w.label)}</div>
         <div class="wolun-detail">${esc(w.rangeNote)}</div>
@@ -312,27 +344,61 @@ function renderVisual(v, chart) {
   return '';
 }
 
-function renderChapter(ch, chart) {
+function renderChapter(ch, chart, total) {
   const el = document.createElement('section');
   el.className = 'chapter';
   el.id = `ch-${ch.num}`;
   el.dataset.num = ch.num;
   el.dataset.title = ch.title;
 
-  const heroHtml = ch.hero
-    ? `<div class="chapter-hero"><img src="${esc(ch.hero.image)}" alt="${esc(ch.hero.alt || '')}" loading="lazy"/></div>`
-    : '';
-
-  el.innerHTML = `
-    ${heroHtml}
-    <div class="chapter-num">${String(ch.num).padStart(2, '0')} / 16</div>
-    <div class="chapter-title">${esc(ch.title)}</div>
-    <div class="chapter-hook">${esc(ch.hook)}</div>
+  const restHtml = `
     <div class="chapter-body">${paragraphsHtml(ch.paragraphs)}</div>
     ${ch.joke ? `<div class="chapter-joke">${esc(ch.joke)}</div>` : ''}
     ${renderVisual(ch.visual, chart)}
     ${ch.action ? `<div class="action-line">${esc(ch.action)}</div>` : ''}
     ${ch.evidence ? `<details class="evidence"><summary>왜 이렇게 봤냐면?</summary><div class="evidence-body">${esc(ch.evidence)}</div></details>` : ''}
+  `;
+
+  // Cover (chapter 1): full-bleed hero, product title + name + dialogue overlaid directly on the image.
+  if (ch.id === 'cover' && ch.hero) {
+    el.innerHTML = `
+      <div class="cover-hero">
+        <img src="${esc(ch.hero.image)}" alt="${esc(ch.hero.alt || '')}"/>
+        <div class="cover-overlay">
+          <div class="cover-kicker">${esc(ch.kicker || '')}</div>
+          <div class="cover-title">${esc(ch.title)}</div>
+          ${ch.customerName ? `<div class="cover-name">${esc(ch.customerName)}님을 위한 리포트</div>` : ''}
+          <div class="cover-dialogue">${esc(ch.hook)}</div>
+        </div>
+      </div>
+      <div class="cover-scrollhint">▾ 스크롤해서 계속 보기</div>
+      <div class="cover-below">${restHtml}</div>
+    `;
+    return el;
+  }
+
+  // Chapters with a hero image: title + hook overlaid on the gradient, body below.
+  if (ch.hero) {
+    el.innerHTML = `
+      <div class="chapter-hero">
+        <img src="${esc(ch.hero.image)}" alt="${esc(ch.hero.alt || '')}" loading="lazy"/>
+        <div class="chapter-hero-overlay">
+          <div class="chapter-num">${String(ch.num).padStart(2, '0')} / ${total}</div>
+          <div class="chapter-title">${esc(ch.title)}</div>
+          <div class="chapter-hook">${esc(ch.hook)}</div>
+        </div>
+      </div>
+      ${restHtml}
+    `;
+    return el;
+  }
+
+  // Plain chapters: normal top-aligned title, hook rendered as a strong dialogue callout.
+  el.innerHTML = `
+    <div class="chapter-num">${String(ch.num).padStart(2, '0')} / ${total}</div>
+    <div class="chapter-title">${esc(ch.title)}</div>
+    <div class="chapter-hook">${esc(ch.hook)}</div>
+    ${restHtml}
   `;
   return el;
 }
@@ -343,7 +409,7 @@ async function render() {
   const container = document.getElementById('chapters');
   const chapters = data.chapters;
 
-  chapters.forEach((ch) => container.appendChild(renderChapter(ch, data.chart)));
+  chapters.forEach((ch) => container.appendChild(renderChapter(ch, data.chart, chapters.length)));
 
   const sections = Array.from(container.querySelectorAll('.chapter'));
   const total = sections.length;
