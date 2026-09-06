@@ -8,10 +8,18 @@
 //   PROTOTYPE_ENDPOINT_URL   e.g. https://metaro-mind-ucje-git-claude-report-ge-325c0b-nayoon-s-projects1.vercel.app
 //   PROTOTYPE_TEST_SECRET    the same value configured in Vercel's PROTOTYPE_TEST_SECRET
 //
-// Example:
+// Example (all 3, as before):
 //   PROTOTYPE_ENDPOINT_URL="https://your-preview-url.vercel.app" \
 //   PROTOTYPE_TEST_SECRET="$(cat ~/.secrets/prototype-test-secret.txt)" \
 //   node prototype/run-live-tests.js
+//
+// Cost-saving option: pass ONE customer.id as the first CLI argument to run only that
+// one (no other CLI args are read). Omit it to run all 3, unchanged from before:
+//   node prototype/run-live-tests.js minjun
+//   node prototype/run-live-tests.js seoyeon
+//   node prototype/run-live-tests.js doyoon
+// An unrecognized name prints the valid choices and exits BEFORE any network/Anthropic
+// call is made.
 //
 // The secret is read from your own shell environment (or a local file you control) —
 // it is never hardcoded here and never printed by this script.
@@ -27,11 +35,24 @@ if (!endpointUrl || !secret) {
   process.exit(1);
 }
 
+const requestedId = process.argv[2];
+let casesToRun = TEST_CASES;
+if (requestedId) {
+  const match = TEST_CASES.find((tc) => tc.customer.id === requestedId);
+  if (!match) {
+    console.error(`알 수 없는 고객 이름: "${requestedId}"`);
+    console.error('사용 가능한 이름:', TEST_CASES.map((tc) => tc.customer.id).join(', '));
+    console.error('예: node prototype/run-live-tests.js minjun');
+    process.exit(1);
+  }
+  casesToRun = [match];
+}
+
 fs.mkdirSync('prototype/output-live', { recursive: true });
 
 const runLog = [];
 
-for (const tc of TEST_CASES) {
+for (const tc of casesToRun) {
   console.log(`\n=== ${tc.customer.id} 실제 AI 생성 시작 ===`);
   let result;
   try {
