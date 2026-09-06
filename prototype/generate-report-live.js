@@ -15,6 +15,7 @@ import { checkContradiction, buildCompanyJudgment, buildBusinessJudgment, buildM
 import * as N from './narrative-mock.js';
 import { isRuleUsable } from './interpretation-rules.js';
 import { validateReport, isHanjaTokenAnnotated, HANJA_GLOSSARY } from './validators.js';
+import { fixNicknameJosa } from './korean-josa.js';
 
 const MIN_SCREENS = 15;
 const MIN_BODY_CHARS = 7000;
@@ -77,6 +78,18 @@ export function ensureHanjaReadings(chapters) {
     ch.title = fixField(ch.title);
     ch.hook = fixField(ch.hook);
     ch.paragraphs = (ch.paragraphs || []).map(fixField);
+  }
+}
+
+// MVP safety net for item 5 (조사 결합 오류, e.g. "민준가"): the prompt already asks the
+// model to pick 이/가, 은/는 correctly, but a live call can still get it wrong. Reuses
+// the same narrow, nickname-scoped fix narrative-mock.js's renderCover() uses — never a
+// general Korean grammar pass over arbitrary text.
+export function ensureNicknameJosa(chapters, nickname) {
+  for (const ch of chapters) {
+    ch.title = fixNicknameJosa(ch.title, nickname);
+    ch.hook = fixNicknameJosa(ch.hook, nickname);
+    ch.paragraphs = (ch.paragraphs || []).map((p) => fixNicknameJosa(p, nickname));
   }
 }
 
@@ -321,6 +334,7 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
   chapters.sort((a, b) => a.num - b.num);
   chapters.forEach((c, i) => { c.num = i + 1; });
   ensureHanjaReadings(chapters);
+  ensureNicknameJosa(chapters, customer.nickname);
 
   let validation = validateReport(chapters, chart, customerId, { minBodyChars: MIN_BODY_CHARS });
   let regenerationCount = 0;
@@ -349,6 +363,7 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
     if (regenerated) {
       regenerationCount = 1;
       ensureHanjaReadings(chapters);
+      ensureNicknameJosa(chapters, customer.nickname);
       validation = validateReport(chapters, chart, customerId, { minBodyChars: MIN_BODY_CHARS });
     }
   }
@@ -383,6 +398,7 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
     }
     if (lengthFallbackRounds > 0) {
       ensureHanjaReadings(chapters);
+      ensureNicknameJosa(chapters, customer.nickname);
       validation = validateReport(chapters, chart, customerId, { minBodyChars: MIN_BODY_CHARS });
     }
   }

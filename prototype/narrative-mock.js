@@ -11,6 +11,7 @@
 // other file in this prototype needs to change.
 
 import { isRuleUsable } from './interpretation-rules.js';
+import { fixNicknameJosa } from './korean-josa.js';
 
 const TIER = { CALCULATED: 'calculated', TRADITIONAL_SYMBOL: 'traditional_symbol', REALITY_CHECK: 'client_reality_check' };
 
@@ -29,7 +30,7 @@ export function renderCover(num, customer, hourKnown) {
     num, title: `${customer.nickname}아, 왔구나`,
     hook: '몇 월에 대박 난다는 말부터 듣고 싶었어? 미안한데, 난 빈말로 사람 들뜨게 하는 재주는 없어.',
     paragraphs: [
-      `${customer.nickname}가 지금 고민하는 건 "${customer.coreQuestionText}"였지. 그거 확인하러 온 거잖아. 좋아, 그럼 제대로 보자.`,
+      fixNicknameJosa(`${customer.nickname}가 지금 고민하는 건 "${customer.coreQuestionText}"였지. 그거 확인하러 온 거잖아. 좋아, 그럼 제대로 보자.`, customer.nickname),
       `너에 대한 계산은 다 끝냈어.${timeNote} 지금 네가 고민하는 그 질문에 대한 답, 그리고 네가 원래 어떤 사람인지에 대한 배경, 순서대로 갈 테니까 끝까지 따라와.`,
     ],
     visual: null, action: '각오는 해둬. 듣기 좋은 말만 하진 않을 거야.',
@@ -209,37 +210,93 @@ export function renderWolun(num, chart, customerId) {
   };
 }
 
+// 정보 밀도 개선(2026-09 라운드): 사주 설명을 늘리지 않고, buildCompanyJudgment가 이미
+// 계산해둔 keepIncome/burnoutHigh 두 플래그만으로 "지금 판단 / 근거 / 재판단 조건 /
+// 실행"을 채운다. branch-rules.js의 판단 로직·반환 필드는 건드리지 않았다.
 export function renderCompanyJudgment(num, judgment) {
   if (!judgment) return null;
+  const { keepIncome, burnoutHigh } = judgment;
+  const paragraphs = [];
+  if (keepIncome && burnoutHigh) {
+    paragraphs.push('유지 필요도는 높은데 소진 신호도 같이 높게 나왔어. 이건 그만두라는 신호가 아니라 소진 쪽을 손보라는 신호야.');
+    paragraphs.push('지금 이 일을 접는 건 답이 아니야 — 필요도 자체가 낮아진 게 아니니까.');
+    paragraphs.push('소진이 지금보다 더 심해지거나, 반대로 유지 필요도 자체가 낮아지는 시점이 오면 그때 다시 판단해.');
+    paragraphs.push('이번 주엔 일 자체를 줄이기보다, 소진을 만드는 요인 하나만 콕 집어서 손봐.');
+  } else if (keepIncome && !burnoutHigh) {
+    paragraphs.push('유지 필요도는 높고 소진은 아직 낮은 편이야. 지금 구조를 굳이 흔들 이유가 없어.');
+    paragraphs.push('불안해서 뭔가 바꾸고 싶어질 수 있는데, 지금 나온 답은 "유지"야.');
+    paragraphs.push('소진 신호가 올라오기 시작하면 그때부터 이 판단을 다시 봐야 해.');
+    paragraphs.push('당장 할 일은 없어. 오히려 아무것도 안 바꾸는 게 이번 실행 조언이야.');
+  } else if (!keepIncome && burnoutHigh) {
+    paragraphs.push('유지 필요도는 낮은데 소진은 높아. 이 조합이면 비중을 줄이는 쪽을 검토해볼 만해.');
+    paragraphs.push('붙잡고 있을 이유(필요도)는 약한데 붙잡느라 드는 비용(소진)은 크다는 뜻이야.');
+    paragraphs.push('유지 필요도가 다시 올라오는 상황이 되면, 이 방향은 다시 접어야 해.');
+    paragraphs.push('비중을 얼마나, 어떤 순서로 줄일지 이번 주 안에 구체적인 계획 하나만 세워봐.');
+  } else {
+    paragraphs.push('유지 필요도도 낮고 소진도 낮아. 지금은 여유가 있는 쪽에 가까워.');
+    paragraphs.push('급하게 뭔가를 결정해야 하는 구간은 아니라는 뜻이야.');
+    paragraphs.push('둘 중 하나라도 방향이 바뀌면(필요도가 오르거나 소진이 심해지면) 그때 다시 판단해.');
+    paragraphs.push('여유가 있는 지금, 그 시간을 다른 실험 쪽에 배분해보는 것도 방법이야.');
+  }
   return {
     num, title: '지금 놓으면 안 되는 것',
     hook: judgment.summary,
-    paragraphs: [judgment.summary],
+    paragraphs,
     visual: null, action: null,
-    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객 입력값을 그대로 정리했습니다.',
+    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객 입력값(유지 필요도·소진도)만으로 구성했습니다.',
     sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
   };
 }
 
 export function renderBusinessJudgment(num, judgment) {
   if (!judgment) return null;
-  const bottleneckLine = judgment.bottleneck === 'time' ? '수요보다 시간이 병목이야.' : (judgment.bottleneck === 'recovery' ? '회복 여력이 낮아 크게 걸면 안 돼.' : '지금은 검증을 계속 쌓아가는 단계야.');
+  const { experimentStage, bottleneck } = judgment;
+  const paragraphs = [`지금 단계는 "${experimentStage}"이야.`];
+  if (experimentStage === '아직 시작 전') {
+    paragraphs.push('아직 결제로 이어진 증거 자체가 없다는 뜻이야 — 이 단계에서 확장을 논하는 건 이르지.');
+    paragraphs.push('먼저 필요한 건 결제까지 가본 경험 한 번이야. 규모를 키우는 건 그다음 문제야.');
+    paragraphs.push('실제로 결제나 반복 구매가 한 번이라도 발생하면, 그때부터 판단 기준이 달라져.');
+  } else if (experimentStage === '확장 중') {
+    const bottleneckLine = bottleneck === 'time'
+      ? '다만 수요보다 시간이 부족한 게 지금의 병목이야.'
+      : (bottleneck === 'recovery' ? '다만 회복 여력이 낮은 편이라 크게 거는 건 아직 위험해.' : '지금은 특별한 병목 없이 계속 검증이 쌓이고 있는 단계야.');
+    paragraphs.push('반복 증거가 이미 확인된 단계라, 확대를 검토할 근거는 충분해.');
+    paragraphs.push(bottleneckLine);
+    paragraphs.push(bottleneck ? '이 병목이 풀리기 전까지는 규모보다 효율을 먼저 다듬는 게 순서야.' : '지금 속도를 유지하면서 다음 단계 조건만 미리 정해둬.');
+  } else {
+    paragraphs.push('반복 증거는 아직 약하거나 판단하기엔 이른 상태야.');
+    paragraphs.push('한두 번의 결제로 전체를 판단하지 마 — 지금은 계속 실험을 쌓아야 하는 구간이야.');
+    paragraphs.push('같은 조건에서 반복 결제나 재구매가 나오는지가 다음 판단의 기준이 될 거야.');
+  }
   return {
     num, title: '자기 일이 커질 준비가 됐는지 보는 증거',
-    hook: `지금 단계는 ${judgment.experimentStage}이야.`,
-    paragraphs: [bottleneckLine],
+    hook: `지금 단계는 ${experimentStage}이야.`,
+    paragraphs,
     visual: null, action: null,
-    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객 입력값을 그대로 정리했습니다.',
+    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객 입력값(결제 단계·반복 증거·가용 시간·회복 여력)만으로 구성했습니다.',
     sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
   };
 }
 
 export function renderMidConclusion(num, mid) {
   if (!mid) return null;
+  const paragraphs = [];
+  paragraphs.push(mid.isDecidable
+    ? '지금까지 나온 답을 합치면, 확대를 검토해볼 수 있는 단계야.'
+    : '지금까지 나온 답을 합치면, 아직 뭔가를 확정할 단계는 아니야.');
+  if (mid.company) {
+    paragraphs.push(`회사 쪽은 ${mid.company.keepIncome ? '유지' : '비중 조정 검토'} 쪽으로, 자기 일 쪽은 "${mid.business ? mid.business.experimentStage : '판단 보류'}" 단계로 각각 결이 달라.`);
+  }
+  paragraphs.push(mid.urgentDeadline
+    ? '결정 시한이 촉박한 편이라, 지금 확보된 정보 안에서 우선순위만 먼저 정해두자.'
+    : '시한에 쫓기는 상황은 아니니, 뒤에서 원국의 배경까지 마저 보고 판단해도 늦지 않아.');
+  paragraphs.push(mid.isDecidable
+    ? '다만 지금 방향이 뒤집히는 조건(반복 증거가 꺾이거나 회복 여력이 바닥나는 경우)은 계속 지켜봐야 해.'
+    : '아직 판단을 미루는 이유는 게을러서가 아니라, 확정하기엔 근거가 한쪽으로 안 모였기 때문이야.');
   return {
     num, title: '그래서 지금 어디에 무게를 둬야 하냐면',
     hook: mid.isDecidable ? '지금 확대를 검토해볼 수 있는 단계야.' : '지금은 확정할 단계가 아니야.',
-    paragraphs: [mid.urgentDeadline ? '결정 시한이 촉박한 만큼, 지금 확보된 정보 안에서 우선순위만 정하자.' : '뒤에서 원국의 기본 결까지 마저 보고 판단하자.'],
+    paragraphs,
     visual: null, action: null,
     evidence: '4·5번의 입력 답변과 6·7번의 계산 배경을 종합한 중간 결론입니다.',
     sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
@@ -262,10 +319,19 @@ export function renderWeaponPoison(num, strengthChapters) {
 
 export function renderActionPlan(num, plan) {
   if (!plan) return null;
+  const tagOrder = ['유지', '시험', '확인', '멈춤', '재판단'];
+  const byTag = Object.fromEntries(plan.items.map((i) => [i.tag, i]));
+  const paragraphs = [];
+  for (const tag of tagOrder) {
+    const item = byTag[tag];
+    if (!item) continue;
+    paragraphs.push(`[${tag}] ${item.desc}`);
+  }
+  paragraphs.push(plan.deadlineNote || '지금 이 순서대로만 따라가도 재판단할 시점을 스스로 알 수 있어.');
   return {
     num, title: '유지할 것·시험할 것·멈출 것',
     hook: '여기까지 본 걸 실행 계획으로 묶을게.',
-    paragraphs: [plan.deadlineNote].filter(Boolean),
+    paragraphs,
     visual: { type: 'plan-list', items: plan.items },
     action: '이번 주엔 이 중 딱 하나만 골라서 해봐.',
     evidence: '이 화면은 새로운 계산 근거를 추가하지 않고 앞선 화면의 결론을 실행 계획으로 종합했습니다.',
