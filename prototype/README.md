@@ -11,6 +11,37 @@ API 키는 채팅·코드 어디에도 제공하지 않는다는 원칙에 따�
 검증은 이번 라운드에 포함하지 않으며, 이후 Vercel 서버 환경변수 `ANTHROPIC_API_KEY`를
 사용하는 서버사이드 테스트로 별도 진행한다.
 
+## `daymaster-season-v1` 규칙 감사 결과
+
+원래 `forbiddenExtensions`가 "성격 단정/직업 적성 단정/대인관계 결론"만 막고 있었는데,
+계절에서 행동 속도·선호·대처방식을 파생하는 문장(예: "겨울생이라 신중하게 움직인다")은
+"성격 단정"이라는 이름표를 안 붙이면 통과할 수 있는 구멍이 있었다. `evidenceLevel`도
+`calculated`였는데, 일간·월지 자체는 계산사실이지만 거기서 "이미지/배경"을 서술하는
+순간 이미 전통 상징 해석이므로 `traditional_symbol`이 맞다. `interpretation-rules.js`의
+해당 규칙에 금지 목록 3개(계절→행동 속도·태도, 계절→선호·취향, 계절→대처방식·의사결정
+패턴)를 추가하고 등급을 `traditional_symbol`로 정정했다. `validators.js`에는
+`rule.evidenceLevel !== chapter.interpretationLevel`이면 `needs_review`로 거부하는
+검사를 새로 추가해, 규칙이 승인한 등급보다 화면이 임의로 등급을 올려 쓰는 것을
+구조적으로 막았다. `narrative-mock.js`의 기존 출력은 원래도 성향 파생 문장이 없어
+규칙 위반 사례는 없었지만(감사 전 규칙이 느슨했을 뿐), 등급 정정에 맞춰
+`interpretationLevel`을 `traditional_symbol`로 함께 고쳤다.
+
+## 실제 AI 테스트용 서버사이드 엔드포인트
+
+`prototype/api/generate-chapter.js` — Vercel Node 함수 형태(`export default async
+function handler(req, res)`)로 작성했으나 **`vercel.json`의 builds/routes에는 등록하지
+않았다** — 그래서 배포하기 전까지 프로덕션 결제·리포트·이메일 경로에는 전혀 영향이
+없다. 이 엔드포인트는: (1) 요청 바디에 생년월일시·이메일·출생지 등 PII 필드가 있으면
+400으로 즉시 거부, (2) `ai-narrative.js`의 `callClaudeForChapter()`를 그대로 호출(키는
+`api/_saju-core.js`의 `callClaude()`가 서버 환경변수에서만 읽음, 요청/응답/로그 어디에도
+키를 출력하지 않음), (3) 실패 시 1회까지만 재시도, (4) 에러 응답은 안전한 메시지만
+반환(`e.data` 등 Anthropic 응답 원문은 재노출하지 않음). `prototype/test-server-endpoint.js`로
+로컬에서 mock req/res로 직접 실행해 PII 거부와 정상 payload 도달까지 검증했다 — 다만
+이 샌드박스에도 `ANTHROPIC_API_KEY`가 없어 마지막 단계(실제 Claude 응답 수신)는 여기서
+재현되지 않는다(`API key not configured` 그대로 재현, 코드 경로는 정상). 이 엔드포인트를
+실제로 살아있는 키로 검증하려면 Vercel에 배포하고 그쪽 환경변수로 호출해야 한다 — 이
+세션에는 Vercel 배포 권한/토큰이 없어 그 마지막 단계는 이 세션에서 수행할 수 없다.
+
 ## 중요: 이 실행에서 AI는 실제로 호출되지 않았다
 
 이 샌드박스에는 `ANTHROPIC_API_KEY`가 설정돼 있지 않다. `ai-narrative.js`는 실제
@@ -52,6 +83,10 @@ API 키는 채팅·코드 어디에도 제공하지 않는다는 원칙에 따�
 - `preview.html` — 동결된 `report.html`을 그대로 복사해 `?data=` 쿼리로 임의 JSON을
   불러오게만 바꾼 프로토타입 전용 렌더 페이지(운영 `report.html`과 무관).
 - `output/*.json` — 3건의 생성 결과(합성 데이터).
+- `api/generate-chapter.js` — 실제 AI 테스트용 서버사이드 엔드포인트(프로토타입
+  범위에만 존재, `vercel.json`에는 미등록). PII 필드 거부 + `callClaudeForChapter()`
+  호출 + 안전한 에러 응답.
+- `test-server-endpoint.js` — 위 엔드포인트를 mock req/res로 로컬 실행하는 테스트.
 
 ## 실행 방법
 
@@ -59,4 +94,5 @@ API 키는 채팅·코드 어디에도 제공하지 않는다는 원칙에 따�
 node prototype/run-tests.js                    # 3건 생성 + 검증
 node prototype/test-validator-rejections.js    # 검증기 거부 사례 2건
 node prototype/test-real-ai-call.js            # 실제 AI 호출 시도(키 없으면 실패 확인용)
+node prototype/test-server-endpoint.js         # 서버사이드 엔드포인트 PII 거부 + 호출 경로 테스트
 ```

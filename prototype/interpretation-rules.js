@@ -13,11 +13,24 @@
 export const RULES = [
   // ---- Always-safe, single-fact, no combination ----
   {
+    // AUDITED: 원래 forbiddenExtensions가 "성격 단정/직업 적성 단정/대인관계 결론"만
+    // 막아, 계절에서 행동 속도·선호·태도를 파생하는 문장("겨울생이라 신중하게
+    // 움직인다" 류)은 "성격 단정"이라는 이름표를 안 붙이면 통과할 수 있는 구멍이
+    // 있었다. evidenceLevel도 'calculated'였는데, 일간·월지는 계산사실이지만 그
+    // 조합에서 "이미지/배경"을 서술하는 순간 이미 전통 상징 해석이므로
+    // 'traditional_symbol'이 맞다. 아래로 명시 금지 목록을 확장하고 등급을
+    // 정정했다 — narrative-mock.js의 renderTemperament 기본 분기(daymaster-season-v1
+    // 사용 시)는 이미 일간 한자·월지 소개만 하고 성향 파생 문장이 없어 규칙 위반
+    // 사례는 없었지만, 규칙 자체의 허용 범위가 느슨했던 것을 수정한다.
     ruleId: 'daymaster-season-v1',
     requiredFacts: ['dayMaster', 'monthZhi'],
     allowedTopics: ['temperament'],
-    allowedClaims: ['일간 오행의 전통적 이미지(대지/큰 산 등) 소개', '태어난 계절의 배경 서술'],
-    forbiddenExtensions: ['성격 단정', '직업 적성 단정', '대인관계 결론'],
+    allowedClaims: ['일간 오행의 전통적 이미지(대지/큰 산 등) 소개', '태어난 계절이라는 계산사실 자체의 서술(예: 몇 월인지)'],
+    forbiddenExtensions: [
+      '성격 단정', '직업 적성 단정', '대인관계 결론',
+      '계절에서 파생한 행동 속도·태도 결론(예: 신중함/급함/느긋함)',
+      '계절에서 파생한 선호·취향 결론', '계절에서 파생한 대처 방식·의사결정 패턴 결론',
+    ],
     evidenceLevel: 'traditional_symbol',
     approved: true,
     approvedScope: 'all_customers',

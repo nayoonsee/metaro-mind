@@ -94,11 +94,13 @@ export function renderTemperament(num, chart, groups, customerId) {
   return {
     num, title: `네 중심을 이루는 ${chart.dayMaster.han}(${chart.dayMaster.reading})`,
     hook: `네 일간, 그러니까 "너 자신"에 해당하는 글자는 ${chart.dayMaster.han}(${chart.dayMaster.reading})야.`,
-    paragraphs: [`태어난 달은 ${chart.pillars.month.zhi}(${chart.pillars.month.zhiReading})월이야. 계절적 배경이 이 위에 함께 얹혀 있어.`],
+    // 계절에서 속도·선호·대처방식 등 행동 결론을 파생하지 않는다(daymaster-season-v1
+    // 감사 이후 명시 금지). 몇 월인지, 그 오행의 전통적 이미지가 무엇인지만 소개한다.
+    paragraphs: [`태어난 달은 ${chart.pillars.month.zhi}(${chart.pillars.month.zhiReading})월이야. 이 계절이라는 것 자체가 계산사실이고, 여기서 성향이나 속도, 선호를 끌어내진 않을게.`],
     visual: null, action: null,
-    evidence: `일간 ${chart.dayMaster.han}과 월지 ${chart.pillars.month.zhi}는 계산사실입니다. 오행·계절의 전통적 상징만 서술했고 성격을 단정하지 않았습니다.`,
+    evidence: `일간 ${chart.dayMaster.han}과 월지 ${chart.pillars.month.zhi}는 계산사실입니다. 오행의 전통적 이미지만 소개했고, 계절에서 성격·행동 속도·선호를 파생하지 않았습니다.`,
     sourceFacts: [factGan('day', chart.dayMaster.han)],
-    interpretationLevel: TIER.CALCULATED, ruleId: rule ? rule.ruleId : null,
+    interpretationLevel: TIER.TRADITIONAL_SYMBOL, ruleId: rule ? rule.ruleId : null,
   };
 }
 

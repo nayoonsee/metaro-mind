@@ -100,6 +100,9 @@ export function verifyInterpretationRule(chapter, customerId) {
   if (rule.approvedScope !== 'all_customers' && rule.approvedScope !== `customer:${customerId}`) {
     return { status: 'needs_review', reason: `규칙 ${chapter.ruleId}의 승인 범위(${rule.approvedScope})가 이 고객(${customerId})을 포함하지 않습니다 — 다른 고객 1회 한정 규칙의 재사용` };
   }
+  if (rule.evidenceLevel !== chapter.interpretationLevel) {
+    return { status: 'needs_review', reason: `규칙 ${chapter.ruleId}의 승인된 등급(${rule.evidenceLevel})과 화면의 interpretationLevel(${chapter.interpretationLevel})이 다릅니다 — 등급을 임의로 올려 쓸 수 없습니다` };
+  }
   return { status: 'ok', rule };
 }
 
