@@ -405,11 +405,19 @@ export function renderRealityJudgmentSummary(num, realityInputs) {
   };
 }
 
+// coreQuestionText is customer-typed free text and usually ends in its own punctuation
+// (e.g. "...궁금해."). Concatenating ", 그 답" straight after that produced "궁금해., 그
+// 답" — a real double-punctuation bug, not a stale-code artifact. Strip a trailing
+// terminal mark before joining so the combined sentence reads naturally either way.
+function stripTrailingPunctuation(text) {
+  return (text || '').replace(/[.!?~…]+\s*$/, '');
+}
+
 export function renderClosing(num, customer) {
   return {
     num, title: '현담의 마지막 말',
     hook: '네 인생을 대신 살아줄 생각은 없어.',
-    paragraphs: [`${customer.coreQuestionText}, 그 답 오늘 안에 안 나와도 돼. 오늘은 뭘 유지하고 뭘 작게 시험할지 그거 하나만 정하고 가.`],
+    paragraphs: [`${stripTrailingPunctuation(customer.coreQuestionText)}, 그 답 오늘 안에 안 나와도 돼. 오늘은 뭘 유지하고 뭘 작게 시험할지 그거 하나만 정하고 가.`],
     visual: null, action: '수고했어. 이 정도면 충분히 잘 왔어.',
     evidence: null, sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
   };
