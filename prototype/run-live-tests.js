@@ -16,7 +16,7 @@
 // The secret is read from your own shell environment (or a local file you control) —
 // it is never hardcoded here and never printed by this script.
 import fs from 'fs';
-import { planAndGenerateLive } from './generate-report-live.js';
+import { planAndGenerateLive, InsufficientCreditError } from './generate-report-live.js';
 import { TEST_CASES } from './test-cases.js';
 
 const endpointUrl = process.env.PROTOTYPE_ENDPOINT_URL;
@@ -33,13 +33,27 @@ const runLog = [];
 
 for (const tc of TEST_CASES) {
   console.log(`\n=== ${tc.customer.id} 실제 AI 생성 시작 ===`);
-  const result = await planAndGenerateLive({
-    birthInput: tc.birthInput,
-    realityInputs: tc.realityInputs,
-    customer: tc.customer,
-    endpointUrl,
-    secret,
-  });
+  let result;
+  try {
+    result = await planAndGenerateLive({
+      birthInput: tc.birthInput,
+      realityInputs: tc.realityInputs,
+      customer: tc.customer,
+      endpointUrl,
+      secret,
+    });
+  } catch (e) {
+    if (e instanceof InsufficientCreditError) {
+      // Fatal for the WHOLE run, not just this customer — every remaining call would
+      // fail identically. Stop immediately rather than burning more calls/time.
+      console.error(`\n[FATAL] insufficient_credit — Anthropic API credit balance 부족으로 전체 live test를 즉시 중단합니다.`);
+      console.error(`(${tc.customer.id} 처리 중 발생) 메시지:`, e.message);
+      runLog.push({ customerId: tc.customer.id, blocked: true, fatal: true, terminationReason: 'insufficient_credit', message: e.message });
+      fs.writeFileSync('prototype/run-log-live.json', JSON.stringify(runLog, null, 2));
+      process.exit(1);
+    }
+    throw e; // any other error is unexpected — surface it, don't swallow it
+  }
 
   if (result.blocked) {
     console.log('모순 감지로 차단:', result.reason);

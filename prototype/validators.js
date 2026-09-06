@@ -108,6 +108,24 @@ export function verifyFactsExist(chapter, chart) {
   return missing;
 }
 
+// Deterministic glossary for compound myeongli (명리) terms that already have one fixed,
+// standard Korean name — "年支" is always "연지", never anything else, unlike a bare
+// gan/zhi character where per-character reading (GAN_READING/ZHI_READING in
+// calc-engine.js) is the right unit. Shared by generate-report-live.js's
+// ensureHanjaReadings() (which uses it to AUTO-INSERT the correct reading for a token
+// that appears with no annotation at all) so the validator and the post-processor can
+// never disagree about what these specific compound words mean. Recognizing an
+// already-annotated occurrence (in either order) does not need this table — that is
+// purely structural and handled by isHanjaTokenAnnotated() below — this table exists
+// only for the "safe to fill in ourselves" question.
+export const HANJA_GLOSSARY = {
+  '年支': '연지', '月支': '월지', '日支': '일지', '時支': '시지',
+  '年干': '연간', '月干': '월간', '日干': '일간', '時干': '시간',
+  '藏干': '지장간', '五行': '오행',
+  '大運': '대운', '歲運': '세운', '月運': '월운',
+  '木': '목', '火': '화', '土': '토', '金': '금', '水': '수',
+};
+
 // Contiguous-Hanja-TOKEN reading check — e.g. "五行", "歲運", "日干" are each checked as
 // ONE unit, never character-by-character (a single compound word like 오행(五行) must
 // never be flagged just because 五 and 行 aren't individually followed by their own

@@ -14,7 +14,7 @@ import { collectNatalTenGodOccurrences, groupPresence } from './ten-god-groups.j
 import { checkContradiction, buildCompanyJudgment, buildBusinessJudgment, buildMidConclusion, buildActionPlan } from './branch-rules.js';
 import * as N from './narrative-mock.js';
 import { isRuleUsable } from './interpretation-rules.js';
-import { validateReport, isHanjaTokenAnnotated } from './validators.js';
+import { validateReport, isHanjaTokenAnnotated, HANJA_GLOSSARY } from './validators.js';
 
 const MIN_SCREENS = 15;
 const MIN_BODY_CHARS = 7000;
@@ -60,7 +60,11 @@ function ensureHanjaReadings(chapters) {
         continue;
       }
       seen.add(token);
-      if ([...token].every((c) => HANJA_READING[c])) {
+      if (HANJA_GLOSSARY[token]) {
+        // A known compound myeongli term (연지/年支, 지장간/藏干, 화/火, ...) has exactly
+        // one standard reading — use it as a whole word, never per-character.
+        out += `${token}(${HANJA_GLOSSARY[token]})`;
+      } else if ([...token].every((c) => HANJA_READING[c])) {
         out += [...token].map((c) => `${c}(${HANJA_READING[c]})`).join('');
       } else {
         out += token; // unknown compound word — left for the prompt-level instruction
@@ -100,6 +104,19 @@ function isTransientNetworkError(e) {
   if (e.name === 'AbortError') return true;
   const msg = (e.message || '').toLowerCase();
   return ['fetch failed', 'aborted', 'econnreset', 'etimedout', 'network', 'socket hang up', 'und_err'].some((s) => msg.includes(s));
+}
+
+// An empty Anthropic account/workspace credit balance is not a per-screen content
+// problem and not a transient network blip — retrying (network retry, per-chapter
+// regeneration, length fallback) is guaranteed to fail identically every time and just
+// burns calls. This is deliberately its own error type so it can propagate straight out
+// of planAndGenerateLive() uncaught by any of those retry mechanisms, and run-live-
+// tests.js can stop the ENTIRE run (not just the current customer) with a clear reason.
+export class InsufficientCreditError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'InsufficientCreditError';
+  }
 }
 
 // A hideGan fact (지장간, the hidden stems tucked inside a branch) and a gan fact (천간,
@@ -151,11 +168,15 @@ function makeLiveClient({ endpointUrl, secret, timeoutMs = 30000 }) {
           signal: controller.signal,
         });
         const data = await res.json().catch(() => ({}));
-        log.push({ topic: spec.topic, slotName: spec.slotName, httpStatus: res.status, attempts: data.attempts ?? null, model: data.model ?? null, error: data.error ?? null, networkAttempt });
+        log.push({ topic: spec.topic, slotName: spec.slotName, httpStatus: res.status, attempts: data.attempts ?? null, model: data.model ?? null, error: data.error ?? null, reason: data.reason ?? null, networkAttempt });
+        if (data.reason === 'insufficient_credit') {
+          throw new InsufficientCreditError(data.error || 'Anthropic API credit balance is too low');
+        }
         // A real HTTP response came back (success or a content/server error) — that is
         // never a transient network problem, so it is never retried here.
         return (!res.ok || !data.chapter) ? null : data.chapter;
       } catch (e) {
+        if (e instanceof InsufficientCreditError) throw e; // never treated as transient, never retried
         const transient = isTransientNetworkError(e);
         const willRetry = transient && networkAttempt < MAX_NETWORK_RETRIES;
         log.push({ topic: spec.topic, slotName: spec.slotName, httpStatus: null, attempts: null, model: null, error: e.message, networkAttempt, transientNetworkError: transient, retried: willRetry });

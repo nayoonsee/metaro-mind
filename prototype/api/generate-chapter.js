@@ -57,9 +57,19 @@ export default async function handler(req, res) {
     } catch (e) {
       lastError = e;
       console.error('[prototype/generate-chapter] attempt failed:', { attempt, message: e.message });
+      // An empty Anthropic account/workspace credit balance is not a transient failure —
+      // retrying (here, or upstream by the client) burns nothing but time and is
+      // guaranteed to fail identically every time until someone tops up the account.
+      // Stop immediately rather than spending the remaining retry attempt on it.
+      if (isInsufficientCreditError(e)) break;
     }
   }
   // Never echoes e.data (may embed request-adjacent detail from the Anthropic response) —
   // only a safe message and status.
-  res.status(lastError?.status || 500).json({ error: lastError?.message || 'AI 호출 실패', attempts: MAX_ATTEMPTS });
+  const reason = isInsufficientCreditError(lastError) ? 'insufficient_credit' : undefined;
+  res.status(lastError?.status || 500).json({ error: lastError?.message || 'AI 호출 실패', attempts: MAX_ATTEMPTS, reason });
+}
+
+function isInsufficientCreditError(e) {
+  return !!e && e.status === 400 && (e.message || '').toLowerCase().includes('credit balance is too low');
 }
