@@ -11,14 +11,43 @@ const BANNED_PATTERNS = [
   { name: '미구현 개념어(용신/격국/조후/신강/신약)', re: /(용신|희신|기신|격국|조후|신강신약)/ },
   { name: '노출=자동/지장간=숨은능력 공식', re: /(노출.{0,6}(자동|저절로).{0,6}(작동|발현)|지장간.{0,10}(숨은\s*능력|의식적으로\s*꺼내))/ },
   { name: '12운성-성격 연결', re: /(십이운성|장생|목욕|관대|건록|제왕|쇠|병|사|묘|절|태|양).{0,15}(성격|첫인상)/ },
-  { name: '월별 서열화', re: /(가장\s*좋은\s*달|가장\s*나쁜\s*달|다른\s*달보다\s*(유리|좋아)|이\s*달이\s*제일)/ },
+  // negationAware: this ONE entry only. "가장 좋은 달이라고 서열을 매기는 것도 규칙에서
+  // 벗어납니다" is the report explicitly WARNING AGAINST ranking months — not an instance
+  // of ranking them. Flagging that sentence was a false positive; the fix is scoped to
+  // this single pattern (see hasNegatedContext below), not a general loosening of the
+  // validator.
+  { name: '월별 서열화', re: /(가장\s*좋은\s*달|가장\s*나쁜\s*달|다른\s*달보다\s*(유리|좋아)|이\s*달이\s*제일)/, negationAware: true },
   { name: '결과 확정형 예언(들어온다/터진다)', re: /(돈이\s*들어온다|성과가\s*터진다|정산.{0,6}발생한다)/ },
 ];
 
+// Negation/warning markers that, near a banned-phrase TRIGGER, mean the sentence is
+// explicitly denying or warning against doing the banned thing rather than doing it.
+// Deliberately conservative: only used where a pattern opts in via `negationAware`.
+const NEGATION_MARKERS_RE = /(아니|안\s*(됩니다|돼요|된다|돼)|볼\s*수\s*없|매기(?:면|지)\s*(?:안|않)|보장하지\s*않|벗어납니다|벗어나|하지\s*않|아닙니다)/;
+
+function hasNegatedContext(text, matchIndex, matchLength, window = 40) {
+  const start = Math.max(0, matchIndex - window);
+  const end = Math.min(text.length, matchIndex + matchLength + window);
+  return NEGATION_MARKERS_RE.test(text.slice(start, end));
+}
+
 export function checkBannedPhrases(text) {
   const hits = [];
-  for (const { name, re } of BANNED_PATTERNS) {
-    if (re.test(text)) hits.push(name);
+  for (const { name, re, negationAware } of BANNED_PATTERNS) {
+    if (!negationAware) {
+      if (re.test(text)) hits.push(name);
+      continue;
+    }
+    // Check every occurrence individually — a chapter that both correctly WARNS against
+    // ranking months (negated) and separately actually ranks one (not negated) must
+    // still fail on the real violation.
+    const globalRe = new RegExp(re.source, 'g');
+    let m;
+    let violated = false;
+    while ((m = globalRe.exec(text))) {
+      if (!hasNegatedContext(text, m.index, m[0].length)) { violated = true; break; }
+    }
+    if (violated) hits.push(name);
   }
   return hits;
 }
@@ -122,6 +151,35 @@ export function checkHanjaReadings(chapters) {
   return errors;
 }
 
+// A hideGan fact (지장간 — a character hidden inside a branch) is never the same thing as
+// that pillar's own exposed gan (천간; 일간/월간/연간/시간). A live model call once wrote
+// "일간 壬(임)은..." for a fact that was actually {kind:'hideGan', pillar:'day', gan:'壬'}
+// — the character itself was real (so verifyFactsExist() correctly passed it), but the
+// ROLE the text assigned it was wrong. This catches that specific meaning error: for
+// every hideGan-kind sourceFact, its character must never be described in the chapter
+// text as "일간/월간/연간/시간" (the gan-only role words) nearby.
+const GAN_ROLE_WORDS = ['일간', '월간', '연간', '시간'];
+function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+export function checkHideGanRoleNaming(chapter) {
+  const errors = [];
+  const hideGanChars = [...new Set((chapter.sourceFacts || []).filter((f) => f.kind === 'hideGan').map((f) => f.gan))];
+  if (hideGanChars.length === 0) return errors;
+  const fullText = [chapter.title, chapter.hook, ...(chapter.paragraphs || []), chapter.evidence || ''].join(' ');
+  for (const gan of hideGanChars) {
+    const re = new RegExp(escapeRegExp(gan), 'g');
+    let m;
+    while ((m = re.exec(fullText))) {
+      const window = fullText.slice(Math.max(0, m.index - 10), m.index + 10);
+      if (GAN_ROLE_WORDS.some((w) => window.includes(w))) {
+        errors.push(`화면 ${chapter.num ?? '?'}: 지장간(hideGan) 글자 '${gan}'를 일간/월간/연간/시간(천간)으로 서술함 — 지장간과 천간은 다른 의미입니다`);
+        break;
+      }
+    }
+  }
+  return errors;
+}
+
 // The core ask of this pass: confirm that whenever a chapter draws an actual saju
 // CONCLUSION (interpretationLevel is 'calculated' or 'traditional_symbol'), it cites a
 // ruleId that (a) exists, (b) is approved, (c) covers this exact customer's scope, and
@@ -163,6 +221,8 @@ export function validateReport(chapters, chart, customerId, { minBodyChars = 0 }
 
     const ruleCheck = verifyInterpretationRule(ch, customerId);
     if (ruleCheck.status !== 'ok') errors.push(`화면 ${ch.num} [needs_review]: ${ruleCheck.reason}`);
+
+    checkHideGanRoleNaming(ch).forEach((e) => errors.push(e));
   }
   checkHanjaReadings(chapters).forEach((e) => errors.push(e));
 

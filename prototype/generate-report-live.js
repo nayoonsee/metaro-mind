@@ -81,7 +81,10 @@ const GOVERNANCE_RULES = {
     '노출=자동 작동', '지장간=숨은 능력/의식적으로 꺼내야 함', '같은 십성 두 번=힘이 강함',
     '두 십성 존재=반드시 충돌하거나 지연됨', '납음 비유=실제 성격/적성', '오행 개수=성격/용신/신강신약',
   ],
-  bannedContent: ['금액 확정', '합격/계약/이별/퇴사/매출 확정 예언', '월별 서열화(가장 좋은/나쁜 달)'],
+  bannedContent: [
+    '금액 확정', '합격/계약/이별/퇴사/매출 확정 예언', '월별 서열화(가장 좋은/나쁜 달)',
+    '지장간(hideGan)을 일간/월간/연간/시간(천간)이라고 서술 — calculatedFacts의 roleLabel을 그대로 따를 것',
+  ],
   requiredJsonFields: ['num', 'title', 'hook', 'paragraphs', 'visual', 'action', 'evidence', 'sourceFacts', 'interpretationLevel'],
 };
 
@@ -99,6 +102,27 @@ function isTransientNetworkError(e) {
   return ['fetch failed', 'aborted', 'econnreset', 'etimedout', 'network', 'socket hang up', 'und_err'].some((s) => msg.includes(s));
 }
 
+// A hideGan fact (지장간, the hidden stems tucked inside a branch) and a gan fact (천간,
+// the pillar's own exposed stem — 일간 when pillar is 'day') are NEVER the same thing,
+// even when pillar and kind get confused. A live model call once wrote "서연님의 일간
+// 壬(임)은..." for a fact that was actually {kind:'hideGan', pillar:'day', gan:'壬'} — the
+// character was real, but its role was misnamed (일지 지장간, not 일간). Attaching an
+// explicit, unambiguous Korean role label to every fact the model receives is the fix —
+// the model no longer has to infer the role from `kind`+`pillar` itself.
+const PILLAR_LABEL = { year: '연', month: '월', day: '일', time: '시' };
+function labelFact(f) {
+  if (f.kind === 'gan') {
+    return { ...f, roleLabel: `${PILLAR_LABEL[f.pillar]}간(천간)${f.pillar === 'day' ? ' — 이것이 일간, 본인 자신에 해당하는 글자입니다' : ''}` };
+  }
+  if (f.kind === 'hideGan') {
+    return { ...f, roleLabel: `${PILLAR_LABEL[f.pillar]}지 지장간 — ${PILLAR_LABEL[f.pillar]}간(천간)이 아니라 ${PILLAR_LABEL[f.pillar]}지 속에 숨어있는 글자입니다. 절대 '${PILLAR_LABEL[f.pillar]}간'이라고 부르지 마세요` };
+  }
+  if (f.kind === 'daYun') return { ...f, roleLabel: '대운(10년 단위 배경)' };
+  if (f.kind === 'seUn') return { ...f, roleLabel: '세운(올해 배경)' };
+  if (f.kind === 'wolun') return { ...f, roleLabel: '월운(절기 구간 배경)' };
+  return f;
+}
+
 function makeLiveClient({ endpointUrl, secret, timeoutMs = 30000 }) {
   const log = [];
   let callCount = 0;
@@ -109,7 +133,7 @@ function makeLiveClient({ endpointUrl, secret, timeoutMs = 30000 }) {
       nickname: spec.customer.nickname,
       coreQuestionText: spec.customer.coreQuestionText,
       questionType: spec.customer.questionType,
-      calculatedFacts: spec.facts,
+      calculatedFacts: spec.facts.map(labelFact),
       realityInputs: spec.usesRealityInputs ? spec.realityInputs : undefined,
       approvedRule: spec.rule ? { allowedClaims: spec.rule.allowedClaims, forbiddenExtensions: spec.rule.forbiddenExtensions } : null,
       governanceRules: GOVERNANCE_RULES,
