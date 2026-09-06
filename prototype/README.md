@@ -4,6 +4,13 @@
 생성되는지 검증한다. 결제·저장소·이메일은 다루지 않는다. `data/nayoon-sample-report.json`,
 `report.html`, `fortune.html`은 이 프로토타입에서 전혀 수정하지 않았다.
 
+## 이번 라운드 범위 확정 (사용자 승인)
+
+API 키는 채팅·코드 어디에도 제공하지 않는다는 원칙에 따라, 이번 라운드는 구조·판정
+규칙·검증기 테스트까지만 mock(`narrative-mock.js`) 기반으로 완료한다. 실제 AI 호출
+검증은 이번 라운드에 포함하지 않으며, 이후 Vercel 서버 환경변수 `ANTHROPIC_API_KEY`를
+사용하는 서버사이드 테스트로 별도 진행한다.
+
 ## 중요: 이 실행에서 AI는 실제로 호출되지 않았다
 
 이 샌드박스에는 `ANTHROPIC_API_KEY`가 설정돼 있지 않다. `ai-narrative.js`는 실제
