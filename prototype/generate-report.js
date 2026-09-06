@@ -4,9 +4,16 @@ import { checkContradiction, buildCompanyJudgment, buildBusinessJudgment, buildM
 import * as N from './narrative-mock.js';
 import { validateReport } from './validators.js';
 
+const MIN_SCREENS = 15;
+
 // Decides which of the 13 logical slots have real support for THIS chart/customer, and
-// in what order — never forces a topic slot the chart has no evidence for.
+// in what order — never forces a topic slot the chart has no evidence for. If the result
+// would drop below MIN_SCREENS, tops up with safe, no-personality-claim filler screens
+// (item 4 of the follow-up request) rather than inventing a character-based topic.
 export function planAndGenerate({ birthInput, realityInputs, customer }) {
+  const customerId = customer.id;
+  if (!customerId) throw new Error('customer.id is required (used as the interpretation-rule scope key)');
+
   const contradiction = checkContradiction(realityInputs);
   if (contradiction) {
     return { blocked: true, reason: contradiction };
@@ -18,52 +25,65 @@ export function planAndGenerate({ birthInput, realityInputs, customer }) {
 
     const chapters = [];
     let num = 1;
-    chapters.push(N.renderCover(num++, customer, chart.hourKnown));
-    chapters.push(N.renderQuestionReframe(num++, customer));
-    chapters.push(N.renderTemperament(num++, chart, groups));
+    const push = (ch, topic) => { if (!ch) return; chapters.push({ ...ch, num: num++, topic }); };
+
+    push(N.renderCover(0, customer, chart.hourKnown), null);
+    push(N.renderQuestionReframe(0, customer), null);
+    push(N.renderTemperament(0, chart, groups, customerId), 'temperament');
 
     const companyJudgment = buildCompanyJudgment(realityInputs);
-    const c4 = N.renderCompanyJudgment(num, companyJudgment);
-    if (c4) chapters.push({ ...c4, num: num++ });
+    push(N.renderCompanyJudgment(0, companyJudgment), null);
 
     const businessJudgment = buildBusinessJudgment(realityInputs);
-    const c5 = N.renderBusinessJudgment(num, businessJudgment);
-    if (c5) chapters.push({ ...c5, num: num++ });
+    push(N.renderBusinessJudgment(0, businessJudgment), null);
 
-    const c6 = N.renderDaeYun(num, chart);
-    if (c6) chapters.push({ ...c6, num: num++ });
-
-    chapters.push({ ...N.renderWolun(num, chart), num: num++ });
+    push(N.renderDaeYun(0, chart, customerId), 'daeyun');
+    push(N.renderWolun(0, chart, customerId), 'wolun');
 
     const mid = buildMidConclusion(realityInputs, customer.decisionDeadline);
-    const c8 = N.renderMidConclusion(num, mid);
-    if (c8) chapters.push({ ...c8, num: num++ });
+    push(N.renderMidConclusion(0, mid), null);
 
-    // Strength slots (인성/식신) — up to 2, each only if evidence exists.
+    // Strength slots — bigyeop/insung/siksang, each single-symbol only, up to 2 kept as
+    // "강점" screens (weapon/poison synthesis reads best off exactly two).
     const strengthSlots = [];
-    for (const g of ['insung', 'siksang']) {
-      const s = N.renderStrengthSlot(num, g, groups);
-      if (s) { chapters.push({ ...s, num: num++ }); strengthSlots.push(s); }
+    for (const g of ['bigyeop', 'insung', 'siksang']) {
+      const s = N.renderStrengthSlot(0, g, groups, customerId);
+      if (s && strengthSlots.length < 2) {
+        const tagged = { ...s, num: num++, topic: 'strength' };
+        chapters.push(tagged);
+        strengthSlots.push(tagged);
+      }
     }
 
-    const moneySlot = N.renderMoneySlot(num, groups);
-    if (moneySlot) chapters.push({ ...moneySlot, num: num++ });
+    push(N.renderMoneySlot(0, groups, customerId), 'money');
+    push(N.renderRelationshipSlot(0, groups, customerId), 'relationship');
+    push(N.renderSeUn(0, chart, customerId), 'seun');
 
-    const relSlot = N.renderRelationshipSlot(num, groups);
-    if (relSlot) chapters.push({ ...relSlot, num: num++ });
-
-    chapters.push({ ...N.renderSeUn(num, chart), num: num++ });
-
-    const wp = N.renderWeaponPoison(num, strengthSlots);
-    if (wp) chapters.push({ ...wp, num: num++ });
+    const wp = N.renderWeaponPoison(0, strengthSlots);
+    push(wp, null);
 
     const plan = buildActionPlan(realityInputs, customer.decisionDeadline);
-    const c16 = N.renderActionPlan(num, plan);
-    if (c16) chapters.push({ ...c16, num: num++ });
+    push(N.renderActionPlan(0, plan), null);
 
-    chapters.push({ ...N.renderClosing(num, customer), num: num++ });
+    // ---- Safe filler top-up (never a personality claim) ----
+    const fillerQueue = [
+      { make: () => N.renderTimeUnknownNotice(0, chart), topic: null },
+      { make: () => N.renderChartReadingGuide(0, chart, customerId), topic: 'guide' },
+      { make: () => N.renderTimeframeExplainer(0), topic: null },
+      { make: () => N.renderRealityJudgmentSummary(0, realityInputs), topic: null },
+    ];
+    for (const { make, topic } of fillerQueue) {
+      if (chapters.length >= MIN_SCREENS - 1) break; // -1 to leave room for closing
+      const f = make();
+      if (f) push(f, topic);
+    }
 
-    const validation = validateReport(chapters, chart);
+    push(N.renderClosing(0, customer), null);
+
+    // Re-number sequentially now that filler insertion order is final.
+    chapters.forEach((c, i) => { c.num = i + 1; });
+
+    const validation = validateReport(chapters, chart, customerId);
 
     return {
       blocked: false,

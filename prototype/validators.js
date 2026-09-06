@@ -2,6 +2,8 @@
 // BEFORE a report is allowed to be shown. A chapter that fails must be discarded/retried
 // or the report generation must fail loudly — never silently publish a failing chapter.
 
+import { findRule } from './interpretation-rules.js';
+
 const BANNED_PATTERNS = [
   { name: '금액/재산 확정', re: /(\d+\s*(만원|억|천만원)|구체적인?\s*(재산|금액|연봉))/ },
   { name: '합격/계약/이별/퇴사/매출 확정 예언', re: /(반드시\s*(합격|계약|매출|성공)|퇴사(해야|하는\s*게\s*맞아)(?!.*아니)|이별하게\s*될|계약이\s*(성사|체결)될\s*거야)/ },
@@ -21,7 +23,7 @@ export function checkBannedPhrases(text) {
   return hits;
 }
 
-const REQUIRED_FIELDS = ['num', 'title', 'hook', 'paragraphs', 'visual', 'action', 'evidence', 'sourceFacts', 'interpretationLevel'];
+const REQUIRED_FIELDS = ['num', 'title', 'hook', 'paragraphs', 'visual', 'action', 'evidence', 'sourceFacts', 'interpretationLevel', 'ruleId'];
 
 export function checkRequiredFields(chapter) {
   return REQUIRED_FIELDS.filter((f) => !(f in chapter));
@@ -81,7 +83,27 @@ export function checkHanjaReadings(chapters) {
   return errors;
 }
 
-export function validateReport(chapters, chart) {
+// The core ask of this pass: confirm that whenever a chapter draws an actual saju
+// CONCLUSION (interpretationLevel is 'calculated' or 'traditional_symbol'), it cites a
+// ruleId that (a) exists, (b) is approved, (c) covers this exact customer's scope, and
+// (d) is allowed for this chapter's topic. Anything else comes back as 'needs_review' —
+// never published, and never silently "fixed" by inventing a new rule on the fly.
+export function verifyInterpretationRule(chapter, customerId) {
+  if (chapter.interpretationLevel === 'client_reality_check') return { status: 'ok' };
+  if (!chapter.ruleId) return { status: 'needs_review', reason: 'ruleId 없음 — 해석 문장에는 반드시 승인된 규칙이 있어야 합니다.' };
+  const rule = findRule(chapter.ruleId);
+  if (!rule) return { status: 'needs_review', reason: `알 수 없는 ruleId: ${chapter.ruleId}` };
+  if (!rule.approved) return { status: 'needs_review', reason: `승인되지 않은 규칙: ${chapter.ruleId}` };
+  if (chapter.topic && !rule.allowedTopics.includes(chapter.topic)) {
+    return { status: 'needs_review', reason: `규칙 ${chapter.ruleId}은 '${chapter.topic}' 화면에 사용할 수 없습니다(allowedTopics: ${rule.allowedTopics.join(',')})` };
+  }
+  if (rule.approvedScope !== 'all_customers' && rule.approvedScope !== `customer:${customerId}`) {
+    return { status: 'needs_review', reason: `규칙 ${chapter.ruleId}의 승인 범위(${rule.approvedScope})가 이 고객(${customerId})을 포함하지 않습니다 — 다른 고객 1회 한정 규칙의 재사용` };
+  }
+  return { status: 'ok', rule };
+}
+
+export function validateReport(chapters, chart, customerId) {
   const errors = [];
   for (const ch of chapters) {
     const missingFields = checkRequiredFields(ch);
@@ -93,6 +115,9 @@ export function validateReport(chapters, chart) {
 
     const missingFacts = verifyFactsExist(ch, chart);
     missingFacts.forEach((f) => errors.push(`화면 ${ch.num}: 계산 데이터에 없는 근거 인용 — ${JSON.stringify(f)}`));
+
+    const ruleCheck = verifyInterpretationRule(ch, customerId);
+    if (ruleCheck.status !== 'ok') errors.push(`화면 ${ch.num} [needs_review]: ${ruleCheck.reason}`);
   }
   checkHanjaReadings(chapters).forEach((e) => errors.push(e));
   return { valid: errors.length === 0, errors };

@@ -31,6 +31,8 @@ async function main() {
     console.log('세운:', chart.seUn.ganzhi);
     console.log('십성 그룹 존재 여부:', Object.fromEntries(Object.entries(groupPresence).map(([k, v]) => [k, v.hasAny])));
     console.log('화면 수:', screenCount, '(화면 번호:', chapters.map((c) => c.num).join(','), ')');
+    console.log('화면별 제목/주제/ruleId:');
+    chapters.forEach((c) => console.log(`  ${c.num}. [${c.topic || '-'}] ${c.title}  <- ruleId: ${c.ruleId || '(없음, reality-check)'}`));
     console.log('검증 결과:', validation.valid ? 'PASS' : 'FAIL');
     if (!validation.valid) validation.errors.forEach((e) => console.log('  -', e));
 

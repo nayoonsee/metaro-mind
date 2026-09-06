@@ -1,0 +1,104 @@
+--- 모순 검증 가드 단독 테스트 ---
+결과: 결제 경험이 없다고 답했는데 반복 증거는 있다고 답했어
+
+=== A. 민준 — 일간이 다른 사람, 출생시간 앎 ===
+일간: 壬 (임)
+hourKnown: true
+사주: 庚午 丙戌 壬申 甲辰 
+대운: 庚寅 { startYear: 2022, endYear: 2031, startAge: 33, endAge: 42 }
+세운: 丙午
+십성 그룹 존재 여부: {
+  bigyeop: true,
+  insung: true,
+  siksang: true,
+  jaeseong: true,
+  gwanseong: true
+}
+화면 수: 16 (화면 번호: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 )
+화면별 제목/주제/ruleId:
+  1. [-] 민준아, 왔구나  <- ruleId: (없음, reality-check)
+  2. [-] 자기 일을 시작할지, 질문부터 다시 보자  <- ruleId: (없음, reality-check)
+  3. [temperament] 네 중심을 이루는 壬(임)  <- ruleId: daymaster-season-v1
+  4. [-] 지금 놓으면 안 되는 것  <- ruleId: (없음, reality-check)
+  5. [-] 자기 일이 커질 준비가 됐는지 보는 증거  <- ruleId: (없음, reality-check)
+  6. [daeyun] 지금 10년의 배경  <- ruleId: daeyun-fact-v1
+  7. [wolun] 9월부터 연말까지, 절기로 나뉜 장면들  <- ruleId: wolun-fact-v1
+  8. [-] 그래서 지금 어디에 무게를 둬야 하냐면  <- ruleId: (없음, reality-check)
+  9. [strength] 스스로 해내려는 힘  <- ruleId: single-symbol-bigyeop-v1
+  10. [strength] 배운 것을 받아들이는 방식  <- ruleId: single-symbol-insung-v1
+  11. [money] 돈을 대하는 방식  <- ruleId: single-symbol-jaeseong-v1
+  12. [relationship] 관계·조직에서 기준을 대하는 방식  <- ruleId: single-symbol-gwanseong-v1
+  13. [seun] 2026년의 배경  <- ruleId: seun-fact-v1
+  14. [-] 네 강점이 무기가 될 때와 독이 될 때  <- ruleId: (없음, reality-check)
+  15. [-] 유지할 것·시험할 것·멈출 것  <- ruleId: (없음, reality-check)
+  16. [-] 현담의 마지막 말  <- ruleId: (없음, reality-check)
+검증 결과: PASS
+저장: prototype/output/case-a-minjun.json
+
+=== B. 서연 — 출생시간 모름, 십성 구성이 나윤과 크게 다름 ===
+일간: 己 (기)
+hourKnown: false
+사주: 戊辰 甲寅 己亥 庚午 (시주는 계산 내부용, 리포트에는 미노출)
+대운: 庚戌 { startYear: 2021, endYear: 2030, startAge: 34, endAge: 43 }
+세운: 丙午
+십성 그룹 존재 여부: {
+  bigyeop: true,
+  insung: true,
+  siksang: false,
+  jaeseong: true,
+  gwanseong: true
+}
+화면 수: 16 (화면 번호: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 )
+화면별 제목/주제/ruleId:
+  1. [-] 서연아, 왔구나  <- ruleId: (없음, reality-check)
+  2. [-] 회사와 자기 일의 비중, 질문부터 다시 보자  <- ruleId: (없음, reality-check)
+  3. [temperament] 네 중심을 이루는 己(기)  <- ruleId: daymaster-season-v1
+  4. [-] 지금 놓으면 안 되는 것  <- ruleId: (없음, reality-check)
+  5. [-] 자기 일이 커질 준비가 됐는지 보는 증거  <- ruleId: (없음, reality-check)
+  6. [daeyun] 지금 10년의 배경  <- ruleId: daeyun-fact-v1
+  7. [wolun] 9월부터 연말까지, 절기로 나뉜 장면들  <- ruleId: wolun-fact-v1
+  8. [-] 그래서 지금 어디에 무게를 둬야 하냐면  <- ruleId: (없음, reality-check)
+  9. [strength] 스스로 해내려는 힘  <- ruleId: single-symbol-bigyeop-v1
+  10. [strength] 배운 것을 받아들이는 방식  <- ruleId: single-symbol-insung-v1
+  11. [money] 돈을 대하는 방식  <- ruleId: single-symbol-jaeseong-v1
+  12. [relationship] 관계·조직에서 기준을 대하는 방식  <- ruleId: single-symbol-gwanseong-v1
+  13. [seun] 2026년의 배경  <- ruleId: seun-fact-v1
+  14. [-] 네 강점이 무기가 될 때와 독이 될 때  <- ruleId: (없음, reality-check)
+  15. [-] 유지할 것·시험할 것·멈출 것  <- ruleId: (없음, reality-check)
+  16. [-] 현담의 마지막 말  <- ruleId: (없음, reality-check)
+검증 결과: PASS
+저장: prototype/output/case-b-seoyeon.json
+
+=== C. 도윤 — 출생시간 앎, 현실 입력 일부 미응답(질문 유형도 다름) ===
+일간: 甲 (갑)
+hourKnown: true
+사주: 辛巳 甲午 甲子 乙亥 
+대운: 壬辰 { startYear: 2019, endYear: 2028, startAge: 19, endAge: 28 }
+세운: 丙午
+십성 그룹 존재 여부: {
+  bigyeop: true,
+  insung: true,
+  siksang: true,
+  jaeseong: true,
+  gwanseong: true
+}
+화면 수: 15 (화면 번호: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 )
+화면별 제목/주제/ruleId:
+  1. [-] 도윤아, 왔구나  <- ruleId: (없음, reality-check)
+  2. [-] 수입을 늘리는 방법, 질문부터 다시 보자  <- ruleId: (없음, reality-check)
+  3. [temperament] 네 중심을 이루는 甲(갑)  <- ruleId: daymaster-season-v1
+  4. [-] 지금 놓으면 안 되는 것  <- ruleId: (없음, reality-check)
+  5. [daeyun] 지금 10년의 배경  <- ruleId: daeyun-fact-v1
+  6. [wolun] 9월부터 연말까지, 절기로 나뉜 장면들  <- ruleId: wolun-fact-v1
+  7. [-] 그래서 지금 어디에 무게를 둬야 하냐면  <- ruleId: (없음, reality-check)
+  8. [strength] 스스로 해내려는 힘  <- ruleId: single-symbol-bigyeop-v1
+  9. [strength] 배운 것을 받아들이는 방식  <- ruleId: single-symbol-insung-v1
+  10. [money] 돈을 대하는 방식  <- ruleId: single-symbol-jaeseong-v1
+  11. [relationship] 관계·조직에서 기준을 대하는 방식  <- ruleId: single-symbol-gwanseong-v1
+  12. [seun] 2026년의 배경  <- ruleId: seun-fact-v1
+  13. [-] 네 강점이 무기가 될 때와 독이 될 때  <- ruleId: (없음, reality-check)
+  14. [-] 유지할 것·시험할 것·멈출 것  <- ruleId: (없음, reality-check)
+  15. [-] 현담의 마지막 말  <- ruleId: (없음, reality-check)
+검증 결과: PASS
+저장: prototype/output/case-c-doyoon.json
+

@@ -397,7 +397,9 @@
       "action": "각오는 해둬. 듣기 좋은 말만 하진 않을 거야.",
       "evidence": "리포트 전체 안내: 계산으로 확인된 사실과 전통적으로 널리 쓰이는 상징을 기반으로 하며, 미래의 특정 사건·금액을 확정해 예언하지 않습니다.",
       "sourceFacts": [],
-      "interpretationLevel": "client_reality_check"
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
     },
     {
       "num": 2,
@@ -410,32 +412,30 @@
       "action": null,
       "evidence": null,
       "sourceFacts": [],
-      "interpretationLevel": "client_reality_check"
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
     },
     {
       "num": 3,
-      "title": "쉽게 무너지지 않는데, 혼자 짊어지기 쉬운 이유",
-      "hook": "또 혼자 다 하려고? 그거 습관이야.",
+      "title": "네 중심을 이루는 壬(임)",
+      "hook": "네 일간, 그러니까 \"너 자신\"에 해당하는 글자는 壬(임)야.",
       "paragraphs": [
-        "지장간에 壬(임) 비견, 지장간에 辛(신) 정인이 함께 있어. 전통적으로 이 조합은 스스로 해내려는 힘과 연결짓는 상징이야.",
-        "그래서 어지간한 일로는 잘 무너지지 않지만, 동시에 도와달라는 말이 잘 안 나오는 성향도 같은 자리에서 나와."
+        "태어난 달은 戌(술)월이야. 계절적 배경이 이 위에 함께 얹혀 있어."
       ],
       "visual": null,
-      "action": "가끔은 일부러 남한테 맡겨봐.",
-      "evidence": "壬(비견), 辛(정인)는 계산사실입니다. 이 조합을 \"스스로 해내려는 힘\"으로 보는 것은 전통적 상징입니다.",
+      "action": null,
+      "evidence": "일간 壬과 월지 戌는 계산사실입니다. 오행·계절의 전통적 상징만 서술했고 성격을 단정하지 않았습니다.",
       "sourceFacts": [
         {
-          "kind": "hideGan",
+          "kind": "gan",
           "pillar": "day",
           "gan": "壬"
-        },
-        {
-          "kind": "hideGan",
-          "pillar": "month",
-          "gan": "辛"
         }
       ],
-      "interpretationLevel": "traditional_symbol"
+      "interpretationLevel": "calculated",
+      "ruleId": "daymaster-season-v1",
+      "topic": "temperament"
     },
     {
       "num": 4,
@@ -448,7 +448,9 @@
       "action": null,
       "evidence": "이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객 입력값을 그대로 정리했습니다.",
       "sourceFacts": [],
-      "interpretationLevel": "client_reality_check"
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
     },
     {
       "num": 5,
@@ -461,7 +463,9 @@
       "action": null,
       "evidence": "이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객 입력값을 그대로 정리했습니다.",
       "sourceFacts": [],
-      "interpretationLevel": "client_reality_check"
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
     },
     {
       "num": 6,
@@ -485,7 +489,9 @@
           "ganzhi": "庚寅"
         }
       ],
-      "interpretationLevel": "calculated"
+      "interpretationLevel": "calculated",
+      "ruleId": "daeyun-fact-v1",
+      "topic": "daeyun"
     },
     {
       "num": 7,
@@ -530,7 +536,9 @@
           "ganzhi": "庚子"
         }
       ],
-      "interpretationLevel": "calculated"
+      "interpretationLevel": "calculated",
+      "ruleId": "wolun-fact-v1",
+      "topic": "wolun"
     },
     {
       "num": 8,
@@ -543,10 +551,34 @@
       "action": null,
       "evidence": "4·5번의 입력 답변과 6·7번의 계산 배경을 종합한 중간 결론입니다.",
       "sourceFacts": [],
-      "interpretationLevel": "client_reality_check"
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
     },
     {
       "num": 9,
+      "title": "스스로 해내려는 힘",
+      "hook": "壬(임), 비견이 네 원국에 있어.",
+      "paragraphs": [
+        "이건 계산으로 확인된 사실이야. 비견은 전통적으로 스스로 해내려는 태도으로 보는 상징이야.",
+        "강점으로 작동할 때와 과해질 때가 갈리니, 조건을 스스로 확인해봐."
+      ],
+      "visual": null,
+      "action": null,
+      "evidence": "壬(비견)는 계산사실입니다. 스스로 해내려는 태도으로 보는 건 십성의 전통적 상징입니다.",
+      "sourceFacts": [
+        {
+          "kind": "hideGan",
+          "pillar": "day",
+          "gan": "壬"
+        }
+      ],
+      "interpretationLevel": "traditional_symbol",
+      "ruleId": "single-symbol-bigyeop-v1",
+      "topic": "strength"
+    },
+    {
+      "num": 10,
       "title": "배운 것을 받아들이는 방식",
       "hook": "辛(신), 정인이 네 원국에 있어.",
       "paragraphs": [
@@ -563,27 +595,9 @@
           "gan": "辛"
         }
       ],
-      "interpretationLevel": "traditional_symbol"
-    },
-    {
-      "num": 10,
-      "title": "생각을 결과물로 바꾸는 힘",
-      "hook": "甲(갑), 식신이 네 원국에 있어.",
-      "paragraphs": [
-        "이건 계산으로 확인된 사실이야. 식신은 전통적으로 결과물을 만들어내는 힘으로 보는 상징이야.",
-        "강점으로 작동할 때와 과해질 때가 갈리니, 조건을 스스로 확인해봐."
-      ],
-      "visual": null,
-      "action": null,
-      "evidence": "甲(식신)는 계산사실입니다. 결과물을 만들어내는 힘으로 보는 건 십성의 전통적 상징입니다.",
-      "sourceFacts": [
-        {
-          "kind": "gan",
-          "pillar": "time",
-          "gan": "甲"
-        }
-      ],
-      "interpretationLevel": "traditional_symbol"
+      "interpretationLevel": "traditional_symbol",
+      "ruleId": "single-symbol-insung-v1",
+      "topic": "strength"
     },
     {
       "num": 11,
@@ -602,7 +616,9 @@
           "gan": "丁"
         }
       ],
-      "interpretationLevel": "traditional_symbol"
+      "interpretationLevel": "traditional_symbol",
+      "ruleId": "single-symbol-jaeseong-v1",
+      "topic": "money"
     },
     {
       "num": 12,
@@ -621,7 +637,9 @@
           "gan": "己"
         }
       ],
-      "interpretationLevel": "traditional_symbol"
+      "interpretationLevel": "traditional_symbol",
+      "ruleId": "single-symbol-gwanseong-v1",
+      "topic": "relationship"
     },
     {
       "num": 13,
@@ -644,25 +662,27 @@
           "ganzhi": "丙午"
         }
       ],
-      "interpretationLevel": "calculated"
+      "interpretationLevel": "calculated",
+      "ruleId": "seun-fact-v1",
+      "topic": "seun"
     },
     {
       "num": 14,
       "title": "네 강점이 무기가 될 때와 독이 될 때",
       "hook": "같은 힘이라도 조건에 따라 무기도 되고 독도 돼.",
       "paragraphs": [
-        "배운 것을 받아들이는 방식 — 목표와 완료 기준이 있으면 무기가 되고, 기준 없이 붙잡고 있으면 독이 돼.",
-        "생각을 결과물로 바꾸는 힘 — 목표와 완료 기준이 있으면 무기가 되고, 기준 없이 붙잡고 있으면 독이 돼."
+        "스스로 해내려는 힘 — 목표와 완료 기준이 있으면 무기가 되고, 기준 없이 붙잡고 있으면 독이 돼.",
+        "배운 것을 받아들이는 방식 — 목표와 완료 기준이 있으면 무기가 되고, 기준 없이 붙잡고 있으면 독이 돼."
       ],
       "visual": {
         "type": "criteria-list",
         "items": [
           {
-            "label": "배운 것을 받아들이는 방식",
+            "label": "스스로 해내려는 힘",
             "desc": "목표·범위·공개 시점을 스스로 정해뒀는지 확인해봐."
           },
           {
-            "label": "생각을 결과물로 바꾸는 힘",
+            "label": "배운 것을 받아들이는 방식",
             "desc": "목표·범위·공개 시점을 스스로 정해뒀는지 확인해봐."
           }
         ]
@@ -670,7 +690,9 @@
       "action": null,
       "evidence": "이 화면은 새로운 계산 근거를 추가하지 않고 앞서 확인한 특성을 조건별로 재구성했습니다.",
       "sourceFacts": [],
-      "interpretationLevel": "client_reality_check"
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
     },
     {
       "num": 15,
@@ -701,7 +723,9 @@
       "action": "이번 주엔 이 중 딱 하나만 골라서 해봐.",
       "evidence": "이 화면은 새로운 계산 근거를 추가하지 않고 앞선 화면의 결론을 실행 계획으로 종합했습니다.",
       "sourceFacts": [],
-      "interpretationLevel": "client_reality_check"
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
     },
     {
       "num": 16,
@@ -714,7 +738,9 @@
       "action": "수고했어. 이 정도면 충분히 잘 왔어.",
       "evidence": null,
       "sourceFacts": [],
-      "interpretationLevel": "client_reality_check"
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
     }
   ]
 }
