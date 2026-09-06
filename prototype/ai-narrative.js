@@ -46,9 +46,12 @@ export async function callClaudeForChapter(payload) {
     'paragraphs는 이 화면 주제에 대해 구체적이고 근거에 기반한 문단 2~4개로 작성한다.',
     '분량을 채우기 위한 반복, 같은 결론의 다른 표현 재진술, 근거 없이 지어낸 생활 장면(예: "어느 날 회의실에서...")은 금지한다.',
     '모든 문장은 calculatedFacts 또는 governanceRules가 허용하는 전통 상징 서술 범위 안에서만 작성한다.',
+    'paragraphs는 다음 다섯 요소를 각각 최소 1문단 이상 포함해 총 4~6개 문단으로 작성한다: (1) 이 화면의 근거가 되는 계산 사실 제시 (2) 그 사실에 대한 전통적 해석 (3) 고객의 현실에서 나타날 수 있는 구체적 예시 (4) 이 특성이 과도해지거나 오용될 때의 주의점 (5) 지금 시도해볼 수 있는 실행 조언.',
+    '다섯 요소 모두 근거에 기반한 새로운 정보를 담아야 하며, 같은 내용을 다른 말로 반복하거나 분량만 채우는 문장은 금지한다.',
+    '한자는 화면 안에서 처음 등장할 때 반드시 "한글독음(漢字)" 형식으로 독음을 함께 적는다(예: "壬(임)"). 일간·오행·천간·지지·대운·세운·월운 관련 한자 모두 포함한다.',
   ].join('\n');
   const messages = [{ role: 'user', content: JSON.stringify(payload) }];
-  const data = await callClaude({ system, messages, maxTokens: 1500 });
+  const data = await callClaude({ system, messages, maxTokens: 2600 });
   const text = data?.content?.[0]?.text || '';
   return JSON.parse(text);
 }

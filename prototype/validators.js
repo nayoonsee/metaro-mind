@@ -34,26 +34,46 @@ export function checkRequiredFields(chapter) {
 //   { pillar: 'time', kind: 'hideGan', gan: '丙' }
 //   { pillar: 'day', kind: 'gan', gan: '戊' }
 //   { kind: 'daYun', ganzhi: '癸亥' } / { kind: 'seUn' } / { kind: 'wolun', index: 2 }
+// Server-resolved fact objects (from generate-report.js / generate-report-live.js) are
+// always built with these exact kind strings. This map exists ONLY to tolerate harmless
+// spelling/casing variants a caller might pass through (e.g. an echoed AI field before
+// it gets overwritten) — it never invents a new kind or loosens what counts as "exists".
+const FACT_KIND_ALIASES = {
+  gan: 'gan', stem: 'gan', heavenlystem: 'gan', cheongan: 'gan',
+  hidegan: 'hideGan', hiddenstem: 'hideGan', hidden_gan: 'hideGan', jijanggan: 'hideGan',
+  dayun: 'daYun', daeyun: 'daYun',
+  seun: 'seUn',
+  wolun: 'wolun', woleun: 'wolun',
+  realityinput: 'realityInput',
+};
+
+function normalizeFactKind(kind) {
+  if (!kind) return kind;
+  if (['gan', 'hideGan', 'daYun', 'seUn', 'wolun', 'realityInput'].includes(kind)) return kind;
+  return FACT_KIND_ALIASES[String(kind).toLowerCase()] || kind;
+}
+
 export function verifyFactsExist(chapter, chart) {
   const missing = [];
-  for (const fact of chapter.sourceFacts || []) {
+  for (const rawFact of chapter.sourceFacts || []) {
+    const fact = { ...rawFact, kind: normalizeFactKind(rawFact.kind) };
     if (fact.kind === 'gan') {
       const p = chart.pillars[fact.pillar];
-      if (!p || p.gan !== fact.gan) missing.push(fact);
+      if (!p || p.gan !== fact.gan) missing.push(rawFact);
     } else if (fact.kind === 'hideGan') {
       const list = chart.hideGan[fact.pillar] || [];
-      if (!list.some((h) => h.gan === fact.gan)) missing.push(fact);
+      if (!list.some((h) => h.gan === fact.gan)) missing.push(rawFact);
     } else if (fact.kind === 'daYun') {
-      if (!chart.daYun.activeGanzhi || chart.daYun.activeGanzhi !== fact.ganzhi) missing.push(fact);
+      if (!chart.daYun.activeGanzhi || chart.daYun.activeGanzhi !== fact.ganzhi) missing.push(rawFact);
     } else if (fact.kind === 'seUn') {
-      if (!chart.seUn || chart.seUn.ganzhi !== fact.ganzhi) missing.push(fact);
+      if (!chart.seUn || chart.seUn.ganzhi !== fact.ganzhi) missing.push(rawFact);
     } else if (fact.kind === 'wolun') {
-      if (!chart.wolun[fact.index] || chart.wolun[fact.index].ganzhi !== fact.ganzhi) missing.push(fact);
+      if (!chart.wolun[fact.index] || chart.wolun[fact.index].ganzhi !== fact.ganzhi) missing.push(rawFact);
     } else if (fact.kind === 'realityInput') {
       // realityInput facts are checked against the input bundle by the caller (branch-rules
       // already enforces this at generation time); nothing to verify against the chart itself.
     } else {
-      missing.push({ ...fact, reason: 'unrecognized fact kind' });
+      missing.push({ ...rawFact, reason: 'unrecognized fact kind' });
     }
   }
   return missing;
@@ -106,7 +126,10 @@ export function verifyInterpretationRule(chapter, customerId) {
   return { status: 'ok', rule };
 }
 
-export function validateReport(chapters, chart, customerId) {
+// `minBodyChars` defaults to 0 (no enforcement) so the existing mock suite — which was
+// never meant to produce full-length prose — keeps passing unchanged. The live
+// generation path (generate-report-live.js) opts in explicitly with 7000.
+export function validateReport(chapters, chart, customerId, { minBodyChars = 0 } = {}) {
   const errors = [];
   for (const ch of chapters) {
     const missingFields = checkRequiredFields(ch);
@@ -123,5 +146,13 @@ export function validateReport(chapters, chart, customerId) {
     if (ruleCheck.status !== 'ok') errors.push(`화면 ${ch.num} [needs_review]: ${ruleCheck.reason}`);
   }
   checkHanjaReadings(chapters).forEach((e) => errors.push(e));
+
+  if (minBodyChars > 0) {
+    const bodyChars = chapters.reduce((sum, c) => sum + (c.paragraphs || []).join('').length, 0);
+    if (bodyChars < minBodyChars) {
+      errors.push(`전체 본문(paragraphs) 글자 수 부족: ${bodyChars}자 (최소 ${minBodyChars}자 필요)`);
+    }
+  }
+
   return { valid: errors.length === 0, errors };
 }

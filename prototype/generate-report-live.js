@@ -9,7 +9,7 @@
 // The server (api/prototype-generate-chapter.js -> prototype/api/generate-chapter.js)
 // never receives raw birthdate/email/birthplace; this file additionally never sends more
 // than one screen's worth of calculatedFacts per request.
-import { buildFullChart } from './calc-engine.js';
+import { buildFullChart, GAN_READING, ZHI_READING } from './calc-engine.js';
 import { collectNatalTenGodOccurrences, groupPresence } from './ten-god-groups.js';
 import { checkContradiction, buildCompanyJudgment, buildBusinessJudgment, buildMidConclusion, buildActionPlan } from './branch-rules.js';
 import * as N from './narrative-mock.js';
@@ -17,13 +17,48 @@ import { isRuleUsable } from './interpretation-rules.js';
 import { validateReport } from './validators.js';
 
 const MIN_SCREENS = 15;
+const MIN_BODY_CHARS = 7000;
 const AI_TOPICS = new Set(['temperament', 'daeyun', 'wolun', 'strength', 'money', 'relationship', 'seun']);
+const HANJA_READING = { ...GAN_READING, ...ZHI_READING };
 
 function factGan(pillar, gan) { return { kind: 'gan', pillar, gan }; }
 function factHide(pillar, gan) { return { kind: 'hideGan', pillar, gan }; }
 function factOfMember(member) {
   const [pillar] = member.location.split('-');
   return member.location.endsWith('gan') ? factGan(pillar, member.gan) : factHide(pillar, member.gan);
+}
+
+// Deterministic safety net for item 3 (한자 첫 등장 독음): the system prompt already asks
+// the model to annotate every first hanja occurrence with "한글독음(漢字)", but a live
+// model call can still forget. This walks the WHOLE report in the same title->hook->
+// paragraphs, chapter-number order that validators.js's checkHanjaReadings() checks, and
+// inserts "(reading)" right after any first occurrence that's missing one. It never
+// changes an already-annotated occurrence, never touches evidence/action (which
+// checkHanjaReadings doesn't scan either), and only ever ADDS characters — never
+// rewrites or removes the model's own sentences.
+function ensureHanjaReadings(chapters) {
+  const seen = new Set();
+  const hanjaRe = /[一-鿿]/;
+  const fixField = (text) => {
+    if (!text) return text;
+    let out = '';
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      out += ch;
+      if (!hanjaRe.test(ch) || seen.has(ch)) continue;
+      seen.add(ch);
+      const window = text.slice(i, i + 8);
+      if (/\([가-힣]/.test(window)) continue; // already annotated
+      const reading = HANJA_READING[ch];
+      if (reading) out += `(${reading})`;
+    }
+    return out;
+  };
+  for (const ch of chapters) {
+    ch.title = fixField(ch.title);
+    ch.hook = fixField(ch.hook);
+    ch.paragraphs = (ch.paragraphs || []).map(fixField);
+  }
 }
 
 const GOVERNANCE_RULES = {
@@ -75,14 +110,19 @@ function makeLiveClient({ endpointUrl, secret, timeoutMs = 30000 }) {
   async function requestChapter(spec) {
     const raw = await callOnce(spec);
     if (!raw) return null;
-    // Never trust the model's own ruleId/interpretationLevel claim — both are forced
-    // from the server-resolved rule (or null/reality-check facts if no rule applies).
+    // Never trust the model's own ruleId/interpretationLevel/sourceFacts claim — all
+    // three are forced from what the server already resolved and sent as
+    // `calculatedFacts` (spec.facts). The model only ever narrates; it never gets to
+    // invent evidence or pick which fact it "used" — this is also what keeps
+    // verifyFactsExist() from seeing an AI-invented or mislabeled fact-kind string,
+    // since spec.facts is already in the exact canonical shape the validator expects.
     return {
       ...raw,
       num: spec.num,
       topic: spec.topic,
       ruleId: spec.rule ? spec.rule.ruleId : null,
       interpretationLevel: spec.rule ? spec.rule.evidenceLevel : raw.interpretationLevel,
+      sourceFacts: spec.facts,
     };
   }
 
@@ -198,8 +238,9 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
 
   chapters.sort((a, b) => a.num - b.num);
   chapters.forEach((c, i) => { c.num = i + 1; });
+  ensureHanjaReadings(chapters);
 
-  let validation = validateReport(chapters, chart, customerId);
+  let validation = validateReport(chapters, chart, customerId, { minBodyChars: MIN_BODY_CHARS });
   let regenerationCount = 0;
 
   // One regeneration pass: only for AI-topic screens the validator specifically flagged,
@@ -225,7 +266,8 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
     }
     if (regenerated) {
       regenerationCount = 1;
-      validation = validateReport(chapters, chart, customerId);
+      ensureHanjaReadings(chapters);
+      validation = validateReport(chapters, chart, customerId, { minBodyChars: MIN_BODY_CHARS });
     }
   }
 
