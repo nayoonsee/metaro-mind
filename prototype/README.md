@@ -26,6 +26,26 @@ API 키는 채팅·코드 어디에도 제공하지 않는다는 원칙에 따�
 규칙 위반 사례는 없었지만(감사 전 규칙이 느슨했을 뿐), 등급 정정에 맞춰
 `interpretationLevel`을 `traditional_symbol`로 함께 고쳤다.
 
+## 실제 AI 검증 — Vercel 프리뷰 배포로 진행
+
+`api/prototype-generate-chapter.js`(래퍼, `PROTOTYPE_TEST_SECRET` 헤더 검증) + Vercel
+프리뷰 환경변수(`ANTHROPIC_API_KEY`, `PROTOTYPE_TEST_SECRET`)가 준비된 뒤, 이 세션의
+샌드박스 자체는 egress 정책상 `*.vercel.app` 호스트에 접근할 수 없어(agent-proxy가
+CONNECT를 403으로 거부, 조직 정책) 실제 호출은 사용자 로컬 환경에서 실행해야 한다.
+
+- `prototype/generate-report-live.js` — `generate-report.js`와 같은 슬롯 계획을 쓰되,
+  주제별 해석 화면(temperament/daeyun/wolun/strength/money/relationship/seun)만 실제
+  엔드포인트에 화면 1개당 1회 HTTP 요청으로 생성한다. 사실 인용이 없는 순수 분기/서식
+  화면(표지·현실판단·실행계획 등)은 그대로 결정론적으로 유지한다. 매 요청은 그 화면에
+  필요한 최소 계산 사실만 담고, 전체 고객 입력을 한 번에 보내지 않는다.
+  `ruleId`/`interpretationLevel`은 AI 응답을 신뢰하지 않고 서버가 사전에 `isRuleUsable()`로
+  확정한 값으로 강제 덮어쓴다. 검증 실패 시 그 실패로 지목된 AI 화면만 정확히 1회
+  재생성한다.
+- `prototype/run-live-tests.js` — 사용자 로컬에서
+  `PROTOTYPE_ENDPOINT_URL`, `PROTOTYPE_TEST_SECRET` 환경변수로 실행하는 3건 실제 생성
+  스크립트. 결과는 `prototype/output-live/*.json`, 로그는
+  `prototype/run-log-live.json`(모델명·호출횟수·재생성여부·검증결과만, 개인정보 없음).
+
 ## 실제 AI 테스트용 서버사이드 엔드포인트
 
 `prototype/api/generate-chapter.js` — Vercel Node 함수 형태(`export default async
