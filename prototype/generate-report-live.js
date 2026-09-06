@@ -41,7 +41,7 @@ function factOfMember(member) {
 // a descriptive word the model wrote on its own) is left untouched rather than guessed
 // at, relying on the prompt instruction for those. It never rewrites or removes text,
 // only ever inserts a missing reading.
-function ensureHanjaReadings(chapters) {
+export function ensureHanjaReadings(chapters) {
   const seen = new Set();
   const hanjaRunRe = /[一-鿿]+/g;
   const fixField = (text) => {

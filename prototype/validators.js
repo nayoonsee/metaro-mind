@@ -3,6 +3,7 @@
 // or the report generation must fail loudly — never silently publish a failing chapter.
 
 import { findRule } from './interpretation-rules.js';
+import { GAN_READING } from './calc-engine.js';
 
 const BANNED_PATTERNS = [
   { name: '금액/재산 확정', re: /(\d+\s*(만원|억|천만원)|구체적인?\s*(재산|금액|연봉))/ },
@@ -125,6 +126,18 @@ export const HANJA_GLOSSARY = {
   '大運': '대운', '歲運': '세운', '月運': '월운',
   '木': '목', '火': '화', '土': '토', '金': '금', '水': '수',
 };
+
+// 천간+오행 결합 표현 (e.g. "戊土", "甲木") — 일간의 오행 성질을 가리킬 때 흔히 쓰는
+// 표현으로, 각 천간은 정확히 하나의 오행에 고정돼 있어(甲乙→木, 丙丁→火, 戊己→土,
+// 庚辛→金, 壬癸→水) 유효한 조합이 10개뿐인 완전히 열거 가능한 집합이다. 처음 발견된
+// "戊土" 한 건만 하드코딩하지 않고 10개 조합 전부를 여기서 생성해, 같은 종류의 누락이
+// 다른 천간+오행 조합에서 재발하지 않게 한다. "무토(戊土)"처럼 하나의 자연스러운
+// 결합어로 등록하며, "戊(무)土(토)"처럼 글자별로 쪼개 넣지 않는다.
+const GAN_ELEMENT = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
+const WUXING_READING = { 木: '목', 火: '화', 土: '토', 金: '금', 水: '수' };
+for (const [gan, element] of Object.entries(GAN_ELEMENT)) {
+  HANJA_GLOSSARY[gan + element] = GAN_READING[gan] + WUXING_READING[element];
+}
 
 // Contiguous-Hanja-TOKEN reading check — e.g. "五行", "歲運", "日干" are each checked as
 // ONE unit, never character-by-character (a single compound word like 오행(五行) must
