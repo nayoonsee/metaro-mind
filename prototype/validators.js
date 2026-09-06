@@ -23,7 +23,7 @@ const BANNED_PATTERNS = [
 // Negation/warning markers that, near a banned-phrase TRIGGER, mean the sentence is
 // explicitly denying or warning against doing the banned thing rather than doing it.
 // Deliberately conservative: only used where a pattern opts in via `negationAware`.
-const NEGATION_MARKERS_RE = /(아니|안\s*(됩니다|돼요|된다|돼)|볼\s*수\s*없|매기(?:면|지)\s*(?:안|않)|보장하지\s*않|벗어납니다|벗어나|하지\s*않|아닙니다)/;
+const NEGATION_MARKERS_RE = /(아니|안\s*(됩니다|돼요|된다|돼)|볼\s*수\s*없|매기(?:면|지)\s*(?:안|않)|보장하지\s*않|벗어납니다|벗어나|[가-힣]+지\s*않|아닙니다)/;
 
 function hasNegatedContext(text, matchIndex, matchLength, window = 40) {
   const start = Math.max(0, matchIndex - window);
@@ -188,11 +188,16 @@ export function checkHideGanRoleNaming(chapter) {
     const re = new RegExp(escapeRegExp(gan), 'g');
     let m;
     while ((m = re.exec(fullText))) {
-      const window = fullText.slice(Math.max(0, m.index - 10), m.index + 10);
-      if (GAN_ROLE_WORDS.some((w) => window.includes(w))) {
-        errors.push(`화면 ${chapter.num ?? '?'}: 지장간(hideGan) 글자 '${gan}'를 일간/월간/연간/시간(천간)으로 서술함 — 지장간과 천간은 다른 의미입니다`);
-        break;
-      }
+      const window = fullText.slice(Math.max(0, m.index - 12), m.index + 12);
+      const roleWordHit = GAN_ROLE_WORDS.find((w) => window.includes(w));
+      if (!roleWordHit) continue;
+      // "丁은 연간이다" (positive misnaming) must still fail. "丁은 연간이 아니라 연지
+      // 속 글자다" / "연간이라고 부르지 않는다" is the report correctly WARNING AGAINST
+      // the exact confusion this check exists to catch — negationAware, scoped to this
+      // one check only (see NEGATION_MARKERS_RE / hasNegatedContext above).
+      if (hasNegatedContext(fullText, m.index, gan.length, 30)) continue;
+      errors.push(`화면 ${chapter.num ?? '?'}: 지장간(hideGan) 글자 '${gan}'를 일간/월간/연간/시간(천간)으로 서술함 — 지장간과 천간은 다른 의미입니다`);
+      break;
     }
   }
   return errors;
