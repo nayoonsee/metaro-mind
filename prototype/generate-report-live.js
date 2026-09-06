@@ -14,7 +14,7 @@ import { collectNatalTenGodOccurrences, groupPresence } from './ten-god-groups.j
 import { checkContradiction, buildCompanyJudgment, buildBusinessJudgment, buildMidConclusion, buildActionPlan } from './branch-rules.js';
 import * as N from './narrative-mock.js';
 import { isRuleUsable } from './interpretation-rules.js';
-import { validateReport } from './validators.js';
+import { validateReport, isHanjaTokenAnnotated } from './validators.js';
 
 const MIN_SCREENS = 15;
 const MIN_BODY_CHARS = 7000;
@@ -29,29 +29,44 @@ function factOfMember(member) {
 }
 
 // Deterministic safety net for item 3 (한자 첫 등장 독음): the system prompt already asks
-// the model to annotate every first hanja occurrence with "한글독음(漢字)", but a live
-// model call can still forget. This walks the WHOLE report in the same title->hook->
-// paragraphs, chapter-number order that validators.js's checkHanjaReadings() checks, and
-// inserts "(reading)" right after any first occurrence that's missing one. It never
-// changes an already-annotated occurrence, never touches evidence/action (which
-// checkHanjaReadings doesn't scan either), and only ever ADDS characters — never
-// rewrites or removes the model's own sentences.
+// the model to annotate every first hanja occurrence with "한글독음(漢字)" (or the reverse
+// order), but a live model call can still forget. This walks the WHOLE report in the
+// same title->hook->paragraphs, chapter-number order that validators.js's
+// checkHanjaReadings() checks, TOKEN by contiguous-hanja-TOKEN (never character by
+// character — a correctly-annotated compound word like "오행(五行)" must never be pulled
+// apart into "오(五)행(行)"), using the exact same isHanjaTokenAnnotated() the validator
+// uses so the two can never disagree. It only fills in a reading for a token this
+// project actually has a per-character table for (gan/zhi — the only characters our
+// calculatedFacts ever cite); an unannotated compound word we have no reading for (e.g.
+// a descriptive word the model wrote on its own) is left untouched rather than guessed
+// at, relying on the prompt instruction for those. It never rewrites or removes text,
+// only ever inserts a missing reading.
 function ensureHanjaReadings(chapters) {
   const seen = new Set();
-  const hanjaRe = /[一-鿿]/;
+  const hanjaRunRe = /[一-鿿]+/g;
   const fixField = (text) => {
     if (!text) return text;
     let out = '';
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i];
-      out += ch;
-      if (!hanjaRe.test(ch) || seen.has(ch)) continue;
-      seen.add(ch);
-      const window = text.slice(i, i + 8);
-      if (/\([가-힣]/.test(window)) continue; // already annotated
-      const reading = HANJA_READING[ch];
-      if (reading) out += `(${reading})`;
+    let lastEnd = 0;
+    let m;
+    hanjaRunRe.lastIndex = 0;
+    while ((m = hanjaRunRe.exec(text))) {
+      const token = m[0];
+      out += text.slice(lastEnd, m.index);
+      lastEnd = m.index + token.length;
+      if (seen.has(token) || isHanjaTokenAnnotated(text, m.index, token.length)) {
+        seen.add(token);
+        out += token;
+        continue;
+      }
+      seen.add(token);
+      if ([...token].every((c) => HANJA_READING[c])) {
+        out += [...token].map((c) => `${c}(${HANJA_READING[c]})`).join('');
+      } else {
+        out += token; // unknown compound word — left for the prompt-level instruction
+      }
     }
+    out += text.slice(lastEnd);
     return out;
   };
   for (const ch of chapters) {
@@ -70,6 +85,20 @@ const GOVERNANCE_RULES = {
   requiredJsonFields: ['num', 'title', 'hook', 'paragraphs', 'visual', 'action', 'evidence', 'sourceFacts', 'interpretationLevel'],
 };
 
+// Network/timeout/abort failures (a dropped connection, a client-side timeout abort, a
+// DNS blip) are transient and worth retrying automatically. An AI CONTENT problem (a
+// chapter the validator later rejects for a fact/rule/hanja/length issue) is a
+// completely different thing and is handled separately by the per-chapter regeneration
+// pass and the length-fallback pass further down — never by this retry loop, and this
+// loop never runs for a request that got a real HTTP response (even an error one).
+const MAX_NETWORK_RETRIES = 2;
+
+function isTransientNetworkError(e) {
+  if (e.name === 'AbortError') return true;
+  const msg = (e.message || '').toLowerCase();
+  return ['fetch failed', 'aborted', 'econnreset', 'etimedout', 'network', 'socket hang up', 'und_err'].some((s) => msg.includes(s));
+}
+
 function makeLiveClient({ endpointUrl, secret, timeoutMs = 30000 }) {
   const log = [];
   let callCount = 0;
@@ -85,26 +114,34 @@ function makeLiveClient({ endpointUrl, secret, timeoutMs = 30000 }) {
       approvedRule: spec.rule ? { allowedClaims: spec.rule.allowedClaims, forbiddenExtensions: spec.rule.forbiddenExtensions } : null,
       governanceRules: GOVERNANCE_RULES,
     };
-    callCount++;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const res = await fetch(`${endpointUrl.replace(/\/$/, '')}/api/prototype-generate-chapter`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-prototype-secret': secret },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-      const data = await res.json().catch(() => ({}));
-      log.push({ topic: spec.topic, slotName: spec.slotName, httpStatus: res.status, attempts: data.attempts ?? null, model: data.model ?? null, error: data.error ?? null });
-      if (!res.ok || !data.chapter) return null;
-      return data.chapter;
-    } catch (e) {
-      log.push({ topic: spec.topic, slotName: spec.slotName, httpStatus: null, attempts: null, model: null, error: e.message });
-      return null;
-    } finally {
-      clearTimeout(timer);
+
+    for (let networkAttempt = 0; networkAttempt <= MAX_NETWORK_RETRIES; networkAttempt++) {
+      callCount++;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(`${endpointUrl.replace(/\/$/, '')}/api/prototype-generate-chapter`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-prototype-secret': secret },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+        const data = await res.json().catch(() => ({}));
+        log.push({ topic: spec.topic, slotName: spec.slotName, httpStatus: res.status, attempts: data.attempts ?? null, model: data.model ?? null, error: data.error ?? null, networkAttempt });
+        // A real HTTP response came back (success or a content/server error) — that is
+        // never a transient network problem, so it is never retried here.
+        return (!res.ok || !data.chapter) ? null : data.chapter;
+      } catch (e) {
+        const transient = isTransientNetworkError(e);
+        const willRetry = transient && networkAttempt < MAX_NETWORK_RETRIES;
+        log.push({ topic: spec.topic, slotName: spec.slotName, httpStatus: null, attempts: null, model: null, error: e.message, networkAttempt, transientNetworkError: transient, retried: willRetry });
+        if (!willRetry) return null;
+        // else loop again — one more network attempt for this same screen only.
+      } finally {
+        clearTimeout(timer);
+      }
     }
+    return null;
   }
 
   async function requestChapter(spec) {
@@ -271,6 +308,40 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
     }
   }
 
+  // Length fallback: only if every screen otherwise came through cleanly and the TOTAL
+  // body is still short. Never adds filler text ourselves — it re-requests the shortest
+  // interpretive (AI-topic) screen(s) with the exact same facts/rule/prompt (no "make it
+  // longer" instruction added here, per explicit instruction not to raise the base prompt
+  // length again), shortest first, and keeps a re-roll only if it actually came back
+  // longer. Stops the moment the total clears the threshold, and never revisits a screen
+  // that already succeeded beyond this bounded, shortest-first pass.
+  let lengthFallbackRounds = 0;
+  const bodyLen = (list) => list.reduce((sum, c) => sum + (c.paragraphs || []).join('').length, 0);
+  if (bodyLen(chapters) < MIN_BODY_CHARS) {
+    const candidateNums = [...aiSpecs.keys()]
+      .filter((n) => chapters.some((c) => c.num === n))
+      .sort((a, b) => {
+        const la = (chapters.find((c) => c.num === a).paragraphs || []).join('').length;
+        const lb = (chapters.find((c) => c.num === b).paragraphs || []).join('').length;
+        return la - lb;
+      });
+    for (const n of candidateNums) {
+      if (bodyLen(chapters) >= MIN_BODY_CHARS) break;
+      const spec = aiSpecs.get(n);
+      lengthFallbackRounds++;
+      const fresh = await client.requestChapter(spec);
+      if (!fresh) continue;
+      const idx = chapters.findIndex((c) => c.num === n);
+      const oldLen = (chapters[idx].paragraphs || []).join('').length;
+      const newLen = (fresh.paragraphs || []).join('').length;
+      if (newLen > oldLen) chapters[idx] = { ...fresh, num: n, topic: spec.topic };
+    }
+    if (lengthFallbackRounds > 0) {
+      ensureHanjaReadings(chapters);
+      validation = validateReport(chapters, chart, customerId, { minBodyChars: MIN_BODY_CHARS });
+    }
+  }
+
   return {
     blocked: false,
     chart,
@@ -281,5 +352,6 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
     liveLog: client.getLog(),
     callCount: client.getCallCount(),
     regenerationCount,
+    lengthFallbackRounds,
   };
 }

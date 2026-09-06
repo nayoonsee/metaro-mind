@@ -79,24 +79,43 @@ export function verifyFactsExist(chapter, chart) {
   return missing;
 }
 
+// Contiguous-Hanja-TOKEN reading check — e.g. "五行", "歲運", "日干" are each checked as
+// ONE unit, never character-by-character (a single compound word like 오행(五行) must
+// never be flagged just because 五 and 行 aren't individually followed by their own
+// parenthesized reading). Both orders this project actually produces are accepted:
+//   - HANJA(reading), e.g. "戊(무)" — the convention used by calc-engine.js-derived text
+//   - reading(HANJA), e.g. "오행(五行)", "토(土)" — a live model sometimes writes it this
+//     way instead; it is equally a valid, complete reading and must not be rejected.
+// generate-report-live.js's ensureHanjaReadings() post-processor uses this SAME function
+// so the two never disagree about what already counts as annotated.
+export function isHanjaTokenAnnotated(text, idx, len) {
+  const after = text.slice(idx + len, idx + len + 2);
+  if (/^\([가-힣]/.test(after)) return true; // HANJA(reading)
+  if (text[idx + len] === ')') {
+    const before = text.slice(Math.max(0, idx - 12), idx);
+    if (/[가-힣]+\($/.test(before)) return true; // reading(HANJA)
+  }
+  return false;
+}
+
 // Hanja first-occurrence reading check, across the WHOLE report in screen order.
+// Dedup ("seen") happens at the TOKEN level (the exact contiguous run of hanja
+// characters), matching how a reading is actually attached to a word, not to each
+// character independently.
 export function checkHanjaReadings(chapters) {
   const seen = new Set();
   const errors = [];
-  const hanjaRe = /[一-鿿]/g;
   for (const ch of chapters) {
     const fullText = [ch.title, ch.hook, ...(ch.paragraphs || [])].join(' ');
+    const hanjaRunRe = /[一-鿿]+/g;
     let m;
-    while ((m = hanjaRe.exec(fullText))) {
-      const char = m[0];
-      if (seen.has(char)) continue;
-      seen.add(char);
-      // First occurrence must be followed within a few characters by a parenthesized
-      // reading, e.g. "戊(무)" or as part of "戊申(무신)".
-      const idx = m.index;
-      const window = fullText.slice(idx, idx + 8);
-      if (!/\([가-힣]/.test(window)) {
-        errors.push(`화면 ${ch.num}: 한자 '${char}' 첫 등장에 독음이 없음 (주변 텍스트: "${window}")`);
+    while ((m = hanjaRunRe.exec(fullText))) {
+      const token = m[0];
+      if (seen.has(token)) continue;
+      seen.add(token);
+      if (!isHanjaTokenAnnotated(fullText, m.index, token.length)) {
+        const window = fullText.slice(m.index, m.index + token.length + 8);
+        errors.push(`화면 ${ch.num}: 한자 '${token}' 첫 등장에 독음이 없음 (주변 텍스트: "${window}")`);
       }
     }
   }

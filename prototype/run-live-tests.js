@@ -53,8 +53,9 @@ for (const tc of TEST_CASES) {
   console.log('화면 수:', result.screenCount);
   console.log('본문(paragraphs) 글자 수:', bodyChars);
   console.log('전체(제목+훅+본문+실행+근거) 글자 수:', fullChars);
-  console.log('AI 호출 횟수(이 고객, 화면당 1회):', result.callCount);
-  console.log('재생성 패스 수행 여부:', result.regenerationCount > 0 ? '1회 수행' : '불필요');
+  console.log('AI 호출 횟수(네트워크 재시도 포함):', result.callCount);
+  console.log('검증 실패 후 재생성 패스:', result.regenerationCount > 0 ? '1회 수행' : '불필요');
+  console.log('7000자 미달로 인한 길이 보강 재생성 횟수:', result.lengthFallbackRounds);
   console.log('검증 결과:', result.validation.valid ? 'PASS' : 'FAIL');
   if (!result.validation.valid) result.validation.errors.forEach((e) => console.log(' -', e));
   console.log('호출 로그(모델/시도횟수/에러만, 개인정보 없음):');
@@ -62,7 +63,7 @@ for (const tc of TEST_CASES) {
 
   const outPath = `prototype/output-live/${tc.customer.id}.json`;
   fs.writeFileSync(outPath, JSON.stringify({
-    meta: { demoScenario: true, note: '합성 테스트 고객이며, 화면 텍스트는 실제 Claude API 호출 결과입니다.', callCount: result.callCount, regenerationCount: result.regenerationCount, bodyChars, fullChars, screenCount: result.screenCount, validationValid: result.validation.valid },
+    meta: { demoScenario: true, note: '합성 테스트 고객이며, 화면 텍스트는 실제 Claude API 호출 결과입니다.', callCount: result.callCount, regenerationCount: result.regenerationCount, lengthFallbackRounds: result.lengthFallbackRounds, bodyChars, fullChars, screenCount: result.screenCount, validationValid: result.validation.valid },
     chart: result.chart,
     chapters: result.chapters,
   }, null, 2));
@@ -71,6 +72,7 @@ for (const tc of TEST_CASES) {
   runLog.push({
     customerId: tc.customer.id, blocked: false, screenCount: result.screenCount,
     bodyChars, fullChars, callCount: result.callCount, regenerationCount: result.regenerationCount,
+    lengthFallbackRounds: result.lengthFallbackRounds,
     validationValid: result.validation.valid, validationErrors: result.validation.errors,
     liveLog: result.liveLog,
   });
