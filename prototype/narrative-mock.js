@@ -303,14 +303,42 @@ export function renderMidConclusion(num, mid) {
   };
 }
 
+// 화면14 정보 밀도 개선(2026-09 라운드): 강점 화면마다 서로 다른 desc를 복붙하던 문제를
+// 고쳤다. 새 사주 해석을 추가하지 않고, 각 강점 화면에 이미 강제된 ruleId
+// (single-symbol-bigyeop/insung/siksang-v1 — interpretation-rules.js에 이미 승인된
+// 프레임)만으로 항목별 무기 조건/과용 위험/확인 기준을 구분한다.
+const WEAPON_POISON_BY_RULE = {
+  'single-symbol-bigyeop-v1': {
+    weapon: '목표와 마감을 스스로 정해뒀을 때 무기가 돼 — 끝까지 밀어붙이는 힘으로 작동해.',
+    overuse: '기준 없이 혼자 다 짊어지기 시작하면 그게 독이야.',
+    check: '확인 기준: 지금 이 일, 도와달라고 말해도 되는 상황인데 혼자 붙잡고 있진 않은지.',
+  },
+  'single-symbol-insung-v1': {
+    weapon: '새로운 걸 배우고 받아들일 여지가 있을 때 무기가 돼 — 필요한 정보를 빠르게 흡수해.',
+    overuse: '검증 없이 다 받아들이기만 하면 그게 독이야.',
+    check: '확인 기준: 받아들인 걸 그대로 따르기 전에, 나한테 맞는 정보인지 한 번은 걸러봤는지.',
+  },
+  'single-symbol-siksang-v1': {
+    weapon: '아이디어를 결과물로 옮길 구체적인 계획이 있을 때 무기가 돼 — 만들어내는 힘으로 작동해.',
+    overuse: '완성도에 집착해서 손을 못 놓으면 그게 독이야.',
+    check: '확인 기준: 지금 붙잡고 있는 작업, 공개하기로 정한 시점이 이미 있는지.',
+  },
+};
+const WEAPON_POISON_FALLBACK = {
+  weapon: '스스로 정한 목표·기준이 있을 때 무기로 작동해.',
+  overuse: '기준 없이 계속 붙잡고만 있으면 그게 독이야.',
+  check: '확인 기준: 목표·범위·공개 시점을 스스로 정해뒀는지.',
+};
+
 export function renderWeaponPoison(num, strengthChapters) {
   const usable = strengthChapters.filter(Boolean);
   if (usable.length === 0) return null;
+  const withMeta = usable.map((s) => ({ s, wp: WEAPON_POISON_BY_RULE[s.ruleId] || WEAPON_POISON_FALLBACK }));
   return {
     num, title: '네 강점이 무기가 될 때와 독이 될 때',
     hook: '같은 힘이라도 조건에 따라 무기도 되고 독도 돼.',
-    paragraphs: usable.map((s) => `${s.title} — 목표와 완료 기준이 있으면 무기가 되고, 기준 없이 붙잡고 있으면 독이 돼.`),
-    visual: { type: 'criteria-list', items: usable.map((s) => ({ label: s.title, desc: '목표·범위·공개 시점을 스스로 정해뒀는지 확인해봐.' })) },
+    paragraphs: withMeta.map(({ s, wp }) => `${s.title} — ${wp.weapon} ${wp.overuse}`),
+    visual: { type: 'criteria-list', items: withMeta.map(({ s, wp }) => ({ label: s.title, desc: wp.check })) },
     action: null,
     evidence: '이 화면은 새로운 계산 근거를 추가하지 않고 앞서 확인한 특성을 조건별로 재구성했습니다.',
     sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
@@ -319,15 +347,19 @@ export function renderWeaponPoison(num, strengthChapters) {
 
 export function renderActionPlan(num, plan) {
   if (!plan) return null;
-  const tagOrder = ['유지', '시험', '확인', '멈춤', '재판단'];
-  const byTag = Object.fromEntries(plan.items.map((i) => [i.tag, i]));
+  // 화면15 중복 제거(2026-09 라운드): 이전 버전은 plan-list의 4~5개 항목을
+  // "[태그] desc" 형태로 paragraphs에 그대로 복붙해 visual과 내용이 겹쳤다. 이제
+  // paragraphs는 결론(왜 아직 확정보다 실험·증거 수집이 우선인지)만 2~3문장으로 짧게
+  // 설명하고, 유지/시험/확인/멈춤/재판단 상세는 visual plan-list에만 남긴다.
+  const tags = new Set(plan.items.map((i) => i.tag));
   const paragraphs = [];
-  for (const tag of tagOrder) {
-    const item = byTag[tag];
-    if (!item) continue;
-    paragraphs.push(`[${tag}] ${item.desc}`);
+  if (tags.has('시험') || tags.has('확인')) {
+    paragraphs.push('지금 나온 건 완전히 확정된 결론이 아니라, 반복해서 확인해야 할 실험 단계라는 뜻이야.');
+    paragraphs.push('퇴사나 전환처럼 큰 결정을 먼저 확정 짓기보다, 아래 항목대로 증거를 더 쌓는 쪽이 순서상 먼저야.');
+  } else {
+    paragraphs.push('지금은 큰 결정을 서두르기보다, 아래 항목을 지키면서 상황을 지켜보는 쪽이 먼저야.');
   }
-  paragraphs.push(plan.deadlineNote || '지금 이 순서대로만 따라가도 재판단할 시점을 스스로 알 수 있어.');
+  paragraphs.push(plan.deadlineNote || '아래 항목에 나온 조건이 바뀌는 시점이 재판단할 때야.');
   return {
     num, title: '유지할 것·시험할 것·멈출 것',
     hook: '여기까지 본 걸 실행 계획으로 묶을게.',

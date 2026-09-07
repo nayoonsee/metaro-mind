@@ -42,11 +42,41 @@ function factOfMember(member) {
 // a descriptive word the model wrote on its own) is left untouched rather than guessed
 // at, relying on the prompt instruction for those. It never rewrites or removes text,
 // only ever inserts a missing reading.
+// Cleanup for two real live-output defects, both applied as text NORMALIZATION passes
+// before the main per-token annotation loop runs (never after — a later pass must see
+// already-clean text, not re-split what this just merged).
+//
+// (a) collapseDuplicateReading: a model occasionally wrote a hanja+reading pair and then
+// appended a redundant "·reading" right after it (e.g. "水(수)·수"), producing doubled
+// text like "물(水(수)·수)". Strips the exact redundant "·reading" tail whenever it
+// matches the reading already given in the adjacent parens — never touches a middot
+// occurrence that ISN'T an exact duplicate of the preceding reading.
+function collapseDuplicateReading(text) {
+  if (!text) return text;
+  return text.replace(/([一-鿿]+\(([가-힣]+)\))·\2/g, '$1');
+}
+
+// (b) collapseSplitGanzhi: a full pillar citation (e.g. 庚寅) must read as ONE combined
+// word ("庚寅(경인)"), matching how daYun/seUn/wolun ganzhi are already cited everywhere
+// else in this project — never split into "庚(경)寅(인)". This merges an ALREADY-split
+// gan+zhi pair (each independently annotated, adjacent, no separator) back into one.
+// Verifies BOTH readings match GAN_READING/ZHI_READING exactly before merging, so it
+// never merges two unrelated hanja(reading) pairs that just happen to sit next to each
+// other.
+function collapseSplitGanzhi(text) {
+  if (!text) return text;
+  return text.replace(/([一-鿿])\(([가-힣])\)([一-鿿])\(([가-힣])\)/g, (whole, h1, r1, h2, r2) => {
+    if (GAN_READING[h1] === r1 && ZHI_READING[h2] === r2) return `${h1}${h2}(${r1}${r2})`;
+    return whole;
+  });
+}
+
 export function ensureHanjaReadings(chapters) {
   const seen = new Set();
   const hanjaRunRe = /[一-鿿]+/g;
-  const fixField = (text) => {
-    if (!text) return text;
+  const fixField = (rawText) => {
+    if (!rawText) return rawText;
+    const text = collapseSplitGanzhi(collapseDuplicateReading(rawText));
     let out = '';
     let lastEnd = 0;
     let m;
@@ -65,6 +95,11 @@ export function ensureHanjaReadings(chapters) {
         // A known compound myeongli term (연지/年支, 지장간/藏干, 화/火, ...) has exactly
         // one standard reading — use it as a whole word, never per-character.
         out += `${token}(${HANJA_GLOSSARY[token]})`;
+      } else if (token.length === 2 && GAN_READING[token[0]] && ZHI_READING[token[1]]) {
+        // A full ganzhi pillar citation (e.g. 庚寅) — ONE combined reading, matching the
+        // project's existing convention (daYun/seUn/wolun cite 癸亥(계해) etc. as a
+        // whole), never split per-character into 庚(경)寅(인).
+        out += `${token}(${GAN_READING[token[0]]}${ZHI_READING[token[1]]})`;
       } else if ([...token].every((c) => HANJA_READING[c])) {
         out += [...token].map((c) => `${c}(${HANJA_READING[c]})`).join('');
       } else {
