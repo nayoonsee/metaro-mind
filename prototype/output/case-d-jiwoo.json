@@ -1,0 +1,699 @@
+{
+  "meta": {
+    "version": "prototype-1",
+    "demoScenario": true,
+    "note": "SYNTHETIC TEST DATA — no real customer. AI narrative steps in this file are deterministic stand-ins (narrative-mock.js), not live Claude output — see prototype/README.md.",
+    "nickname": "지우",
+    "questionType": "increase_income",
+    "coreQuestionText": "지금 하는 일들을 다 유지하면서 수입을 더 늘리고 싶어.",
+    "realityInputs": {}
+  },
+  "chart": {
+    "hourKnown": true,
+    "dayMaster": {
+      "han": "癸",
+      "reading": "계"
+    },
+    "pillars": {
+      "year": {
+        "ganzhi": "乙亥",
+        "reading": "을해",
+        "gan": "乙",
+        "zhi": "亥",
+        "tenGod": "식신",
+        "ganReading": "을",
+        "zhiReading": "해"
+      },
+      "month": {
+        "ganzhi": "庚辰",
+        "reading": "경진",
+        "gan": "庚",
+        "zhi": "辰",
+        "tenGod": "정인",
+        "ganReading": "경",
+        "zhiReading": "진"
+      },
+      "day": {
+        "ganzhi": "癸未",
+        "reading": "계미",
+        "gan": "癸",
+        "zhi": "未",
+        "tenGod": "일주(본인)",
+        "ganReading": "계",
+        "zhiReading": "미"
+      },
+      "time": {
+        "ganzhi": "己未",
+        "reading": "기미",
+        "gan": "己",
+        "zhi": "未",
+        "tenGod": "편관",
+        "ganReading": "기",
+        "zhiReading": "미"
+      }
+    },
+    "hideGan": {
+      "year": [
+        {
+          "gan": "壬",
+          "reading": "임",
+          "tenGod": "겁재"
+        },
+        {
+          "gan": "甲",
+          "reading": "갑",
+          "tenGod": "상관"
+        }
+      ],
+      "month": [
+        {
+          "gan": "戊",
+          "reading": "무",
+          "tenGod": "정관"
+        },
+        {
+          "gan": "乙",
+          "reading": "을",
+          "tenGod": "식신"
+        },
+        {
+          "gan": "癸",
+          "reading": "계",
+          "tenGod": "비견"
+        }
+      ],
+      "day": [
+        {
+          "gan": "己",
+          "reading": "기",
+          "tenGod": "편관"
+        },
+        {
+          "gan": "丁",
+          "reading": "정",
+          "tenGod": "편재"
+        },
+        {
+          "gan": "乙",
+          "reading": "을",
+          "tenGod": "식신"
+        }
+      ],
+      "time": [
+        {
+          "gan": "己",
+          "reading": "기",
+          "tenGod": "편관"
+        },
+        {
+          "gan": "丁",
+          "reading": "정",
+          "tenGod": "편재"
+        },
+        {
+          "gan": "乙",
+          "reading": "을",
+          "tenGod": "식신"
+        }
+      ]
+    },
+    "naYin": {
+      "year": {
+        "han": "山头火",
+        "reading": "산두화"
+      },
+      "month": {
+        "han": "白蜡金",
+        "reading": "백랍금"
+      },
+      "day": {
+        "han": "杨柳木",
+        "reading": "양류목"
+      },
+      "time": {
+        "han": "天上火",
+        "reading": "천상화"
+      }
+    },
+    "daYun": {
+      "blocks": [
+        {
+          "startYear": 1999,
+          "endYear": 2008,
+          "startAge": 5,
+          "endAge": 14,
+          "ganzhi": "辛巳",
+          "reading": "신사",
+          "active": false
+        },
+        {
+          "startYear": 2009,
+          "endYear": 2018,
+          "startAge": 15,
+          "endAge": 24,
+          "ganzhi": "壬午",
+          "reading": "임오",
+          "active": false
+        },
+        {
+          "startYear": 2019,
+          "endYear": 2028,
+          "startAge": 25,
+          "endAge": 34,
+          "ganzhi": "癸未",
+          "reading": "계미",
+          "active": true
+        },
+        {
+          "startYear": 2029,
+          "endYear": 2038,
+          "startAge": 35,
+          "endAge": 44,
+          "ganzhi": "甲申",
+          "reading": "갑신",
+          "active": false
+        },
+        {
+          "startYear": 2039,
+          "endYear": 2048,
+          "startAge": 45,
+          "endAge": 54,
+          "ganzhi": "乙酉",
+          "reading": "을유",
+          "active": false
+        },
+        {
+          "startYear": 2049,
+          "endYear": 2058,
+          "startAge": 55,
+          "endAge": 64,
+          "ganzhi": "丙戌",
+          "reading": "병술",
+          "active": false
+        },
+        {
+          "startYear": 2059,
+          "endYear": 2068,
+          "startAge": 65,
+          "endAge": 74,
+          "ganzhi": "丁亥",
+          "reading": "정해",
+          "active": false
+        },
+        {
+          "startYear": 2069,
+          "endYear": 2078,
+          "startAge": 75,
+          "endAge": 84,
+          "ganzhi": "戊子",
+          "reading": "무자",
+          "active": false
+        },
+        {
+          "startYear": 2079,
+          "endYear": 2088,
+          "startAge": 85,
+          "endAge": 94,
+          "ganzhi": "己丑",
+          "reading": "기축",
+          "active": false
+        }
+      ],
+      "activeGanzhi": "癸未",
+      "activeReading": "계미",
+      "activeRange": {
+        "startYear": 2019,
+        "endYear": 2028,
+        "startAge": 25,
+        "endAge": 34
+      },
+      "activeTenGod": "비견",
+      "activeHideGan": [
+        {
+          "gan": "己",
+          "reading": "기",
+          "tenGod": "편관"
+        },
+        {
+          "gan": "丁",
+          "reading": "정",
+          "tenGod": "편재"
+        },
+        {
+          "gan": "乙",
+          "reading": "을",
+          "tenGod": "식신"
+        }
+      ]
+    },
+    "seUn": {
+      "year": 2026,
+      "ganzhi": "丙午",
+      "reading": "병오",
+      "gan": "丙",
+      "ganReading": "병",
+      "zhi": "午",
+      "zhiReading": "오",
+      "tenGod": "정재",
+      "hideGan": [
+        {
+          "gan": "丁",
+          "reading": "정",
+          "tenGod": "편재"
+        },
+        {
+          "gan": "己",
+          "reading": "기",
+          "tenGod": "편관"
+        }
+      ]
+    },
+    "wolun": [
+      {
+        "ganzhi": "丙申",
+        "reading": "병신",
+        "ganTenGod": "정재",
+        "hideGan": [
+          {
+            "gan": "庚",
+            "reading": "경",
+            "tenGod": "정인"
+          },
+          {
+            "gan": "壬",
+            "reading": "임",
+            "tenGod": "겁재"
+          },
+          {
+            "gan": "戊",
+            "reading": "무",
+            "tenGod": "정관"
+          }
+        ],
+        "rangeNote": "2026-08-07 20:42:43 ~ 2026-09-07 23:41:16",
+        "startISO": "2026-08-07 20:42:43",
+        "endISO": "2026-09-07 23:41:16",
+        "label": "申월(신월)"
+      },
+      {
+        "ganzhi": "丁酉",
+        "reading": "정유",
+        "ganTenGod": "편재",
+        "hideGan": [
+          {
+            "gan": "辛",
+            "reading": "신",
+            "tenGod": "편인"
+          }
+        ],
+        "rangeNote": "2026-09-07 23:41:16 ~ 2026-10-08 15:29:17",
+        "startISO": "2026-09-07 23:41:16",
+        "endISO": "2026-10-08 15:29:17",
+        "label": "酉월(유월)"
+      },
+      {
+        "ganzhi": "戊戌",
+        "reading": "무술",
+        "ganTenGod": "정관",
+        "hideGan": [
+          {
+            "gan": "戊",
+            "reading": "무",
+            "tenGod": "정관"
+          },
+          {
+            "gan": "辛",
+            "reading": "신",
+            "tenGod": "편인"
+          },
+          {
+            "gan": "丁",
+            "reading": "정",
+            "tenGod": "편재"
+          }
+        ],
+        "rangeNote": "2026-10-08 15:29:17 ~ 2026-11-07 18:52:05",
+        "startISO": "2026-10-08 15:29:17",
+        "endISO": "2026-11-07 18:52:05",
+        "label": "戌월(술월)"
+      },
+      {
+        "ganzhi": "己亥",
+        "reading": "기해",
+        "ganTenGod": "편관",
+        "hideGan": [
+          {
+            "gan": "壬",
+            "reading": "임",
+            "tenGod": "겁재"
+          },
+          {
+            "gan": "甲",
+            "reading": "갑",
+            "tenGod": "상관"
+          }
+        ],
+        "rangeNote": "2026-11-07 18:52:05 ~ 2026-12-07 11:52:32",
+        "startISO": "2026-11-07 18:52:05",
+        "endISO": "2026-12-07 11:52:32",
+        "label": "亥월(해월)"
+      },
+      {
+        "ganzhi": "庚子",
+        "reading": "경자",
+        "ganTenGod": "정인",
+        "hideGan": [
+          {
+            "gan": "癸",
+            "reading": "계",
+            "tenGod": "비견"
+          }
+        ],
+        "rangeNote": "2026-12-07 11:52:32 ~ 2027-01-05 23:09:58",
+        "startISO": "2026-12-07 11:52:32",
+        "endISO": "2027-01-05 23:09:58",
+        "label": "子월(자월)"
+      }
+    ],
+    "referenceDate": "2026-09-04"
+  },
+  "chapters": [
+    {
+      "num": 1,
+      "title": "지우아, 왔구나",
+      "hook": "몇 월에 대박 난다는 말부터 듣고 싶었어? 미안한데, 난 빈말로 사람 들뜨게 하는 재주는 없어.",
+      "paragraphs": [
+        "지우가 지금 고민하는 건 \"지금 하는 일들을 다 유지하면서 수입을 더 늘리고 싶어.\"였지. 그거 확인하러 온 거잖아. 좋아, 그럼 제대로 보자.",
+        "너에 대한 계산은 다 끝냈어. 지금 네가 고민하는 그 질문에 대한 답, 그리고 네가 원래 어떤 사람인지에 대한 배경, 순서대로 갈 테니까 끝까지 따라와."
+      ],
+      "visual": null,
+      "action": "각오는 해둬. 듣기 좋은 말만 하진 않을 거야.",
+      "evidence": "리포트 전체 안내: 계산으로 확인된 사실과 전통적으로 널리 쓰이는 상징을 기반으로 하며, 미래의 특정 사건·금액을 확정해 예언하지 않습니다.",
+      "sourceFacts": [],
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
+    },
+    {
+      "num": 2,
+      "title": "수입을 늘리는 방법, 질문부터 다시 보자",
+      "hook": "네가 물어본 건 \"지금 하는 일들을 다 유지하면서 수입을 더 늘리고 싶어.\"였지. 답하기 전에 지금 상황부터 정리해야 해.",
+      "paragraphs": [
+        "지금 이 고민을 완전히 밀어두지 못하고 있는 이유, 별거 아닐 수도 있어. 적어도 지금 네 현실에서는 쉽게 포기하기 어려운 선택지로 남아 있다는 뜻이니까."
+      ],
+      "visual": null,
+      "action": null,
+      "evidence": null,
+      "sourceFacts": [],
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
+    },
+    {
+      "num": 3,
+      "title": "네 중심을 이루는 癸(계)",
+      "hook": "네 일간, 그러니까 \"너 자신\"에 해당하는 글자는 癸(계)야.",
+      "paragraphs": [
+        "태어난 달은 辰(진)월이야. 이 계절이라는 것 자체가 계산사실이고, 여기서 성향이나 속도, 선호를 끌어내진 않을게."
+      ],
+      "visual": null,
+      "action": null,
+      "evidence": "일간 癸과 월지 辰는 계산사실입니다. 오행의 전통적 이미지만 소개했고, 계절에서 성격·행동 속도·선호를 파생하지 않았습니다.",
+      "sourceFacts": [
+        {
+          "kind": "gan",
+          "pillar": "day",
+          "gan": "癸"
+        }
+      ],
+      "interpretationLevel": "traditional_symbol",
+      "ruleId": "daymaster-season-v1",
+      "topic": "temperament"
+    },
+    {
+      "num": 4,
+      "title": "지금 10년의 배경",
+      "hook": "지금 지나고 있는 대운은 癸未(계미)야.",
+      "paragraphs": [
+        "2019년부터 2028년까지, 세는나이로 25세부터 34세까지야. 천간은 비견에 해당해.",
+        "이게 실제로 무엇을 키워준다는 예언은 아니야. 지금 이 10년의 배경 정도로만 받아들이면 돼."
+      ],
+      "visual": {
+        "type": "stat",
+        "label": "현재 대운",
+        "value": "癸未(계미)",
+        "sub": "2019~2028년"
+      },
+      "action": null,
+      "evidence": "현재 대운 癸未(2019~2028년)는 계산사실입니다.",
+      "sourceFacts": [
+        {
+          "kind": "daYun",
+          "ganzhi": "癸未"
+        }
+      ],
+      "interpretationLevel": "calculated",
+      "ruleId": "daeyun-fact-v1",
+      "topic": "daeyun"
+    },
+    {
+      "num": 5,
+      "title": "9월부터 연말까지, 절기로 나뉜 장면들",
+      "hook": "구간마다 계산상 배경이 달라. 어디가 더 좋고 나쁘고를 정하는 게 아니야.",
+      "paragraphs": [
+        "丙申(병신)월 — 2026-08-07 20:42:43 ~ 2026-09-07 23:41:16. 천간 십성 정재.",
+        "丁酉(정유)월 — 2026-09-07 23:41:16 ~ 2026-10-08 15:29:17. 천간 십성 편재.",
+        "戊戌(무술)월 — 2026-10-08 15:29:17 ~ 2026-11-07 18:52:05. 천간 십성 정관.",
+        "己亥(기해)월 — 2026-11-07 18:52:05 ~ 2026-12-07 11:52:32. 천간 십성 편관.",
+        "庚子(경자)월 — 2026-12-07 11:52:32 ~ 2027-01-05 23:09:58. 천간 십성 정인."
+      ],
+      "visual": {
+        "type": "wolun-timeline"
+      },
+      "action": null,
+      "evidence": "다섯 구간의 절입 시각과 월간지는 계산사실입니다. 월별 우열은 매기지 않았습니다.",
+      "sourceFacts": [
+        {
+          "kind": "wolun",
+          "index": 0,
+          "ganzhi": "丙申"
+        },
+        {
+          "kind": "wolun",
+          "index": 1,
+          "ganzhi": "丁酉"
+        },
+        {
+          "kind": "wolun",
+          "index": 2,
+          "ganzhi": "戊戌"
+        },
+        {
+          "kind": "wolun",
+          "index": 3,
+          "ganzhi": "己亥"
+        },
+        {
+          "kind": "wolun",
+          "index": 4,
+          "ganzhi": "庚子"
+        }
+      ],
+      "interpretationLevel": "calculated",
+      "ruleId": "wolun-fact-v1",
+      "topic": "wolun"
+    },
+    {
+      "num": 6,
+      "title": "스스로 해내려는 힘",
+      "hook": "癸(계), 비견이 네 원국에 있어.",
+      "paragraphs": [
+        "이건 계산으로 확인된 사실이야. 비견은 전통적으로 스스로 해내려는 태도으로 보는 상징이야.",
+        "강점으로 작동할 때와 과해질 때가 갈리니, 조건을 스스로 확인해봐."
+      ],
+      "visual": null,
+      "action": null,
+      "evidence": "癸(비견)는 계산사실입니다. 스스로 해내려는 태도으로 보는 건 십성의 전통적 상징입니다.",
+      "sourceFacts": [
+        {
+          "kind": "hideGan",
+          "pillar": "month",
+          "gan": "癸"
+        }
+      ],
+      "interpretationLevel": "traditional_symbol",
+      "ruleId": "single-symbol-bigyeop-v1",
+      "topic": "strength"
+    },
+    {
+      "num": 7,
+      "title": "배운 것을 받아들이는 방식",
+      "hook": "庚(경), 정인이 네 원국에 있어.",
+      "paragraphs": [
+        "이건 계산으로 확인된 사실이야. 정인은 전통적으로 배우고 받아들이는 힘으로 보는 상징이야.",
+        "강점으로 작동할 때와 과해질 때가 갈리니, 조건을 스스로 확인해봐."
+      ],
+      "visual": null,
+      "action": null,
+      "evidence": "庚(정인)는 계산사실입니다. 배우고 받아들이는 힘으로 보는 건 십성의 전통적 상징입니다.",
+      "sourceFacts": [
+        {
+          "kind": "gan",
+          "pillar": "month",
+          "gan": "庚"
+        }
+      ],
+      "interpretationLevel": "traditional_symbol",
+      "ruleId": "single-symbol-insung-v1",
+      "topic": "strength"
+    },
+    {
+      "num": 8,
+      "title": "돈을 대하는 방식",
+      "hook": "丁(정), 편재이 네 원국에 있어.",
+      "paragraphs": [
+        "편재은 전통적으로 재물을 대하는 태도의 상징이야. 이 계산만으로 구체적인 수입이나 재산을 판단하진 않아."
+      ],
+      "visual": null,
+      "action": null,
+      "evidence": "丁(편재)는 계산사실입니다. 구체적 재산액수나 투자 성패를 예측한 문장은 포함하지 않았습니다.",
+      "sourceFacts": [
+        {
+          "kind": "hideGan",
+          "pillar": "day",
+          "gan": "丁"
+        }
+      ],
+      "interpretationLevel": "traditional_symbol",
+      "ruleId": "single-symbol-jaeseong-v1",
+      "topic": "money"
+    },
+    {
+      "num": 9,
+      "title": "관계·조직에서 기준을 대하는 방식",
+      "hook": "戊(무), 정관이 네 원국에 있어.",
+      "paragraphs": [
+        "정관은 전통적으로 관계·조직 속 규범이나 책임 감각의 상징이야."
+      ],
+      "visual": null,
+      "action": null,
+      "evidence": "戊(정관)는 계산사실입니다. 특정 인물이나 사건을 지목한 예측이 아닙니다.",
+      "sourceFacts": [
+        {
+          "kind": "hideGan",
+          "pillar": "month",
+          "gan": "戊"
+        }
+      ],
+      "interpretationLevel": "traditional_symbol",
+      "ruleId": "single-symbol-gwanseong-v1",
+      "topic": "relationship"
+    },
+    {
+      "num": 10,
+      "title": "2026년의 배경",
+      "hook": "2026년 세운은 丙午(병오)야.",
+      "paragraphs": [
+        "천간 丙(병)은 정재에 해당해. 세운은 대운과 달리 이 한 해에만 걸리는 배경이야."
+      ],
+      "visual": {
+        "type": "stat",
+        "label": "2026년 세운",
+        "value": "丙午(병오)",
+        "sub": "정재"
+      },
+      "action": null,
+      "evidence": "2026년 세운 丙午, 천간 丙(정재)는 계산사실입니다.",
+      "sourceFacts": [
+        {
+          "kind": "seUn",
+          "ganzhi": "丙午"
+        }
+      ],
+      "interpretationLevel": "calculated",
+      "ruleId": "seun-fact-v1",
+      "topic": "seun"
+    },
+    {
+      "num": 11,
+      "title": "네 강점이 무기가 될 때와 독이 될 때",
+      "hook": "같은 힘이라도 조건에 따라 무기도 되고 독도 돼.",
+      "paragraphs": [
+        "스스로 해내려는 힘 — 목표와 마감을 스스로 정해뒀을 때 무기가 돼 — 끝까지 밀어붙이는 힘으로 작동해. 기준 없이 혼자 다 짊어지기 시작하면 그게 독이야.",
+        "배운 것을 받아들이는 방식 — 새로운 걸 배우고 받아들일 여지가 있을 때 무기가 돼 — 필요한 정보를 빠르게 흡수해. 검증 없이 다 받아들이기만 하면 그게 독이야."
+      ],
+      "visual": {
+        "type": "criteria-list",
+        "items": [
+          {
+            "label": "스스로 해내려는 힘",
+            "desc": "확인 기준: 지금 이 일, 도와달라고 말해도 되는 상황인데 혼자 붙잡고 있진 않은지."
+          },
+          {
+            "label": "배운 것을 받아들이는 방식",
+            "desc": "확인 기준: 받아들인 걸 그대로 따르기 전에, 나한테 맞는 정보인지 한 번은 걸러봤는지."
+          }
+        ]
+      },
+      "action": null,
+      "evidence": "이 화면은 새로운 계산 근거를 추가하지 않고 앞서 확인한 특성을 조건별로 재구성했습니다.",
+      "sourceFacts": [],
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
+    },
+    {
+      "num": 12,
+      "title": "명식표 읽는 법",
+      "hook": "이 리포트에 계속 나오는 표, 미리 읽는 법을 알려줄게.",
+      "paragraphs": [
+        "년주·월주·일주·시주 네 기둥이 네 원국이야. 지금 네 일간은 癸(계) — 사주에서 \"너 자신\"에 해당하는 글자야.",
+        "각 기둥에는 겉으로 보이는 천간·지지 말고도, 그 지지 속에 감춰진 지장간이 있어. 뒤에서 어떤 글자가 어디에 있는지 볼 때 이 구조를 기억해둬."
+      ],
+      "visual": null,
+      "action": null,
+      "evidence": "일간 癸은 계산사실입니다.",
+      "sourceFacts": [
+        {
+          "kind": "gan",
+          "pillar": "day",
+          "gan": "癸"
+        }
+      ],
+      "interpretationLevel": "calculated",
+      "ruleId": "chart-reading-guide-v1",
+      "topic": "guide"
+    },
+    {
+      "num": 13,
+      "title": "원국·대운·세운·월운, 뭐가 다른지",
+      "hook": "앞으로 나올 시간 단위 네 개, 헷갈리지 않게 미리 정리해줄게.",
+      "paragraphs": [
+        "원국은 태어난 순간에 고정돼서 평생 안 변하는 배경. 대운은 10년 단위로 바뀌는 배경. 세운은 1년, 월운은 그 안에서 더 짧게 절기 기준으로 바뀌는 구간이야.",
+        "넷 다 사실이지만, 하나는 평생 가는 배경이고 나머지는 지나가는 배경이라는 것만 구분해두면 돼."
+      ],
+      "visual": null,
+      "action": null,
+      "evidence": null,
+      "sourceFacts": [],
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
+    },
+    {
+      "num": 14,
+      "title": "현담의 마지막 말",
+      "hook": "네 인생을 대신 살아줄 생각은 없어.",
+      "paragraphs": [
+        "지금 하는 일들을 다 유지하면서 수입을 더 늘리고 싶어, 그 답 오늘 안에 안 나와도 돼. 오늘은 뭘 유지하고 뭘 작게 시험할지 그거 하나만 정하고 가."
+      ],
+      "visual": null,
+      "action": "수고했어. 이 정도면 충분히 잘 왔어.",
+      "evidence": null,
+      "sourceFacts": [],
+      "interpretationLevel": "client_reality_check",
+      "ruleId": null,
+      "topic": null
+    }
+  ]
+}

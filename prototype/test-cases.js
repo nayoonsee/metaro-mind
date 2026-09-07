@@ -53,6 +53,40 @@ export const TEST_CASES = [
       // → 5·8·16번 화면이 억지로 채워지지 않고 생략되는지 검증하기 위함.
     },
   },
+  {
+    id: 'case-d-jiwoo',
+    label: 'D. 지우 — Tier B(공통 현실입력만 있음, company/business 필드 없음, questionType은 increase_income이지만 company branch로 자동 라우팅되면 안 됨)',
+    birthInput: { year: 1995, month: 4, day: 22, hour: 14, minute: 0, gender: '여성', calendar: 'solar', referenceDate: '2026-09-04' },
+    customer: {
+      id: 'jiwoo',
+      nickname: '지우',
+      questionType: 'increase_income',
+      coreQuestionText: '지금 하는 일들을 다 유지하면서 수입을 더 늘리고 싶어.',
+      decisionDeadline: 'within_year',
+    },
+    // company/business 필드(companyIncomeNeed 등)는 의도적으로 전혀 없음 — questionType이
+    // increase_income이라도 resolveQuestionTier가 Tier A로 자동 라우팅하면 안 된다는 것을
+    // 검증하기 위한 케이스.
+    realityInputs: {},
+    commonContext: {
+      currentSituation: '본업 하나랑 부업 두 개를 같이 하고 있어',
+      mainDifficulty: '이것저것 벌려놨는데 정작 돈이 잘 안 모이는 느낌이야',
+    },
+  },
+  {
+    id: 'case-e-yuna',
+    label: 'E. 유나 — Tier C(공통 현실입력도 없음, 연애/기타 질문 — 6화면 일반론으로 부풀리면 안 됨)',
+    birthInput: { year: 1993, month: 9, day: 9, hour: null, minute: null, gender: '여성', calendar: 'solar', referenceDate: '2026-09-04' },
+    customer: {
+      id: 'yuna',
+      nickname: '유나',
+      questionType: 'other',
+      coreQuestionText: '연락은 하고 있는데 상대 마음을 모르겠어.',
+      decisionDeadline: 'no_deadline',
+    },
+    realityInputs: {},
+    commonContext: {},
+  },
 ];
 
 // Separate contradiction-guard unit check (not a full report — the point is that

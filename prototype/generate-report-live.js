@@ -16,9 +16,10 @@ import * as N from './narrative-mock.js';
 import { isRuleUsable } from './interpretation-rules.js';
 import { validateReport, isHanjaTokenAnnotated, HANJA_GLOSSARY } from './validators.js';
 import { fixNicknameJosa } from './korean-josa.js';
+import { resolveQuestionTier } from './question-tier.js';
 
-const MIN_SCREENS = 15;
-const MIN_BODY_CHARS = 7000;
+const MIN_BODY_CHARS = 7000; // Tier A only — Tier B/C never forced to this floor.
+const FILLER_TARGET_SCREENS = 20; // Tier A only — Tier B/C are allowed to stay short.
 const AI_TOPICS = new Set(['temperament', 'daeyun', 'wolun', 'strength', 'money', 'relationship', 'seun']);
 const HANJA_READING = { ...GAN_READING, ...ZHI_READING };
 
@@ -259,13 +260,15 @@ function makeLiveClient({ endpointUrl, secret, timeoutMs = 30000 }) {
   return { requestChapter, getLog: () => log, getCallCount: () => callCount };
 }
 
-export async function planAndGenerateLive({ birthInput, realityInputs, customer, endpointUrl, secret }) {
+export async function planAndGenerateLive({ birthInput, realityInputs, customer, endpointUrl, secret, commonContext = {} }) {
   const customerId = customer.id;
   if (!customerId) throw new Error('customer.id is required (used as the interpretation-rule scope key)');
   if (!endpointUrl || !secret) throw new Error('endpointUrl and secret are required for live generation');
 
   const contradiction = checkContradiction(realityInputs);
   if (contradiction) return { blocked: true, reason: contradiction };
+
+  const tier = resolveQuestionTier(realityInputs, commonContext);
 
   const chart = await buildFullChart(birthInput);
   const occurrences = collectNatalTenGodOccurrences(chart);
@@ -289,10 +292,15 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
     return ch;
   };
 
+  // ---- 1~3: 표지 / 질문 재구성 / 왜 지금 이 고민이 커졌는지 ----
   pushLocal(N.renderCover(0, customer, chart.hourKnown), null);
   pushLocal(N.renderQuestionReframe(0, customer), null);
+  pushLocal(N.renderWhyNow(0, customer, commonContext), null);
 
-  // Temperament
+  // ---- 4~14: 종합 사주 블록. realityInputs/coreQuestionText를 프롬프트에 전달하지
+  // 않는다 — 질문과 무관하게 사주 자체를 읽는 구간. ----
+  const STRENGTH_RULE = { bigyeop: 'single-symbol-bigyeop-v1', insung: 'single-symbol-insung-v1', siksang: 'single-symbol-siksang-v1' };
+
   {
     const comboRule = isRuleUsable('bigyeop-insung-combo-nayoon-frozen-only-v1', 'temperament', customerId);
     let rule, facts;
@@ -306,23 +314,7 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
     await pushAi({ topic: 'temperament', slotName: 'temperament', facts, usesRealityInputs: false, rule });
   }
 
-  pushLocal(N.renderCompanyJudgment(0, buildCompanyJudgment(realityInputs)), null);
-  pushLocal(N.renderBusinessJudgment(0, buildBusinessJudgment(realityInputs)), null);
-
-  if (chart.daYun.activeGanzhi) {
-    const rule = isRuleUsable('daeyun-fact-v1', 'daeyun', customerId);
-    await pushAi({ topic: 'daeyun', slotName: 'daeyun', facts: [{ kind: 'daYun', ganzhi: chart.daYun.activeGanzhi }], usesRealityInputs: false, rule });
-  }
-
-  {
-    const rule = isRuleUsable('wolun-fact-v1', 'wolun', customerId);
-    const facts = chart.wolun.map((w, i) => ({ kind: 'wolun', index: i, ganzhi: w.ganzhi }));
-    await pushAi({ topic: 'wolun', slotName: 'wolun', facts, usesRealityInputs: false, rule });
-  }
-
-  pushLocal(N.renderMidConclusion(0, buildMidConclusion(realityInputs, customer.decisionDeadline)), null);
-
-  const STRENGTH_RULE = { bigyeop: 'single-symbol-bigyeop-v1', insung: 'single-symbol-insung-v1', siksang: 'single-symbol-siksang-v1' };
+  const usedStrengthGroups = new Set();
   const strengthChapters = [];
   for (const g of ['bigyeop', 'insung', 'siksang']) {
     if (strengthChapters.length >= 2) break;
@@ -331,7 +323,24 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
     const rule = isRuleUsable(STRENGTH_RULE[g], 'strength', customerId);
     if (!rule) continue;
     const ch = await pushAi({ topic: 'strength', slotName: `strength-${g}`, facts: [factOfMember(grp.members[0])], usesRealityInputs: false, rule });
-    if (ch) strengthChapters.push(ch);
+    if (ch) { strengthChapters.push(ch); usedStrengthGroups.add(g); }
+  }
+
+  pushLocal(N.renderWeaponPoison(0, strengthChapters), null);
+
+  // "일·성취를 대하는 결" — strength-1/2가 이미 쓴 십성 그룹과 다른, 3번째로 남은
+  // 그룹이 있을 때만 생성한다. 같은 그룹 증거를 두 화면에서 재사용하지 않는다.
+  {
+    const achievementGroup = ['bigyeop', 'insung', 'siksang'].find((g) => !usedStrengthGroups.has(g) && groups[g].hasAny);
+    if (achievementGroup) {
+      const rule = isRuleUsable(STRENGTH_RULE[achievementGroup], 'strength', customerId);
+      if (rule) {
+        await pushAi({
+          topic: 'strength', slotName: `achievement-${achievementGroup}`,
+          facts: [factOfMember(groups[achievementGroup].members[0])], usesRealityInputs: false, rule,
+        });
+      }
+    }
   }
 
   if (groups.jaeseong.hasAny) {
@@ -344,24 +353,64 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
     if (rule) await pushAi({ topic: 'relationship', slotName: 'relationship', facts: [factOfMember(groups.gwanseong.members[0])], usesRealityInputs: false, rule });
   }
 
+  if (chart.daYun.activeGanzhi) {
+    const rule = isRuleUsable('daeyun-fact-v1', 'daeyun', customerId);
+    await pushAi({ topic: 'daeyun', slotName: 'daeyun', facts: [{ kind: 'daYun', ganzhi: chart.daYun.activeGanzhi }], usesRealityInputs: false, rule });
+  }
+
   {
     const rule = isRuleUsable('seun-fact-v1', 'seun', customerId);
     await pushAi({ topic: 'seun', slotName: 'seun', facts: [{ kind: 'seUn', ganzhi: chart.seUn.ganzhi }], usesRealityInputs: false, rule });
   }
 
-  pushLocal(N.renderWeaponPoison(0, strengthChapters), null);
-  pushLocal(N.renderActionPlan(0, buildActionPlan(realityInputs, customer.decisionDeadline)), null);
+  let hasWolun = false;
+  {
+    const rule = isRuleUsable('wolun-fact-v1', 'wolun', customerId);
+    const facts = chart.wolun.map((w, i) => ({ kind: 'wolun', index: i, ganzhi: w.ganzhi }));
+    const ch = await pushAi({ topic: 'wolun', slotName: 'wolun', facts, usesRealityInputs: false, rule });
+    hasWolun = !!ch;
+  }
 
-  const fillerQueue = [
-    { make: () => N.renderTimeUnknownNotice(0, chart), topic: null },
-    { make: () => N.renderChartReadingGuide(0, chart, customerId), topic: 'guide' },
-    { make: () => N.renderTimeframeExplainer(0), topic: null },
-    { make: () => N.renderRealityJudgmentSummary(0, realityInputs), topic: null },
-  ];
-  for (const { make, topic } of fillerQueue) {
-    if (chapters.length >= MIN_SCREENS - 1) break;
-    const f = make();
-    if (f) pushLocal(f, topic);
+  pushLocal(N.renderRecurringPattern(0, strengthChapters, hasWolun), null);
+
+  // Tier A에서만, 20에 못 미치면 "독립적으로 가치 있는" 필러만 보충한다(내용 없는
+  // 요약 필러는 사용하지 않는다). Tier B/C는 정보가 부족한 게 정상이라 채우지 않는다.
+  if (tier === 'A') {
+    const fillerQueue = [
+      { make: () => N.renderTimeUnknownNotice(0, chart), topic: null },
+      { make: () => N.renderChartReadingGuide(0, chart, customerId), topic: 'guide' },
+      { make: () => N.renderTimeframeExplainer(0), topic: null },
+    ];
+    for (const { make, topic } of fillerQueue) {
+      if (chapters.length >= FILLER_TARGET_SCREENS - 1) break;
+      const f = make();
+      if (f) pushLocal(f, topic);
+    }
+  }
+
+  // ---- 15번~: 질문심층. 여기서부터만 realityInputs/coreQuestionText를 프롬프트에
+  // 전달한다(현재 이 6/4/2 화면은 전부 deterministic이라 프롬프트 자체를 안 타지만,
+  // 구조상 이 지점이 그 경계다). Tier는 questionType 라벨이 아니라 실제 입력 필드로만
+  // 결정된다(question-tier.js). ----
+  if (tier === 'A') {
+    const company = buildCompanyJudgment(realityInputs);
+    const business = buildBusinessJudgment(realityInputs);
+    const mid = buildMidConclusion(realityInputs, customer.decisionDeadline);
+    const plan = buildActionPlan(realityInputs, customer.decisionDeadline);
+    pushLocal(N.renderQuestionSynthesis(0, customer, 'A'), null);
+    pushLocal(N.renderCurrentReading(0, company, business), null);
+    pushLocal(N.renderKeyTension(0, business), null);
+    pushLocal(N.renderNextMove(0, plan), null);
+    pushLocal(N.renderCheckAgain(0, plan, mid), null);
+    pushLocal(N.renderActionSummary(0, plan, company), null);
+  } else if (tier === 'B') {
+    pushLocal(N.renderQuestionSynthesisReading(0, customer, commonContext), null);
+    pushLocal(N.renderKeyTensionCommon(0, commonContext), null);
+    pushLocal(N.renderWhatToWatch(0, commonContext, customer.questionType), null);
+    pushLocal(N.renderCheckAgainSummary(0, commonContext, customer.decisionDeadline), null);
+  } else {
+    pushLocal(N.renderQuestionSynthesis(0, customer, 'C'), null);
+    pushLocal(N.renderActionSummaryGeneric(0), null);
   }
 
   pushLocal(N.renderClosing(0, customer), null);
@@ -371,7 +420,12 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
   ensureHanjaReadings(chapters);
   ensureNicknameJosa(chapters, customer.nickname);
 
-  let validation = validateReport(chapters, chart, customerId, { minBodyChars: MIN_BODY_CHARS });
+  // Tier B/C are allowed to be short by design ("화면 수보다 정보 가치 우선") — forcing
+  // the same 7000-char floor on them would either fail them permanently or push toward
+  // padding, both against the explicit instruction. Only Tier A (the full-evidence,
+  // 20-22-screen report) is held to it.
+  const minBodyChars = tier === 'A' ? MIN_BODY_CHARS : 0;
+  let validation = validateReport(chapters, chart, customerId, { minBodyChars });
   let regenerationCount = 0;
 
   // One regeneration pass: only for AI-topic screens the validator specifically flagged,
@@ -399,7 +453,7 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
       regenerationCount = 1;
       ensureHanjaReadings(chapters);
       ensureNicknameJosa(chapters, customer.nickname);
-      validation = validateReport(chapters, chart, customerId, { minBodyChars: MIN_BODY_CHARS });
+      validation = validateReport(chapters, chart, customerId, { minBodyChars });
     }
   }
 
@@ -412,7 +466,7 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
   // that already succeeded beyond this bounded, shortest-first pass.
   let lengthFallbackRounds = 0;
   const bodyLen = (list) => list.reduce((sum, c) => sum + (c.paragraphs || []).join('').length, 0);
-  if (bodyLen(chapters) < MIN_BODY_CHARS) {
+  if (bodyLen(chapters) < minBodyChars) {
     const candidateNums = [...aiSpecs.keys()]
       .filter((n) => chapters.some((c) => c.num === n))
       .sort((a, b) => {
@@ -421,7 +475,7 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
         return la - lb;
       });
     for (const n of candidateNums) {
-      if (bodyLen(chapters) >= MIN_BODY_CHARS) break;
+      if (bodyLen(chapters) >= minBodyChars) break;
       const spec = aiSpecs.get(n);
       lengthFallbackRounds++;
       const fresh = await client.requestChapter(spec);
@@ -434,7 +488,7 @@ export async function planAndGenerateLive({ birthInput, realityInputs, customer,
     if (lengthFallbackRounds > 0) {
       ensureHanjaReadings(chapters);
       ensureNicknameJosa(chapters, customer.nickname);
-      validation = validateReport(chapters, chart, customerId, { minBodyChars: MIN_BODY_CHARS });
+      validation = validateReport(chapters, chart, customerId, { minBodyChars });
     }
   }
 

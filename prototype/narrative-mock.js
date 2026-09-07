@@ -454,3 +454,243 @@ export function renderClosing(num, customer) {
     evidence: null, sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
   };
 }
+
+// ============================================================================
+// 질문심층 영역(2026-09 topic-aware 라운드) — 오직 generate-report-live.js에서만
+// 쓰인다(mock 전용 generate-report.js/run-tests.js는 손대지 않음). 전부
+// interpretationLevel: client_reality_check, ruleId: null — 새 계산·새 해석 규칙 없이,
+// branch-rules.js가 이미 계산한 judgment 객체나 고객이 답한 공통 현실입력만
+// 재구성한다. Tier(A/B/C)는 question-tier.js의 resolveQuestionTier()가 순수하게
+// 결정하고, 이 파일은 그 결과에 따라 어떤 화면을 만들지만 고른다.
+
+export function renderWhyNow(num, customer, commonContext = {}) {
+  const { currentSituation, mainDifficulty } = commonContext;
+  const paragraphs = [];
+  if (currentSituation) paragraphs.push(`지금 상황은 이래: ${currentSituation}`);
+  if (mainDifficulty) paragraphs.push(`요즘 제일 걸리는 건 이거고: ${mainDifficulty}`);
+  if (paragraphs.length === 0) {
+    paragraphs.push(`${stripTrailingPunctuation(customer.coreQuestionText)}, 이 고민이 지금 왜 커졌는지부터 같이 짚어보자.`);
+  }
+  paragraphs.push('이제부터 네 사주가 어떻게 생겼는지부터 차근차근 볼 건데, 이 질문은 뒤에서 다시 자세히 다룰게.');
+  return {
+    num, title: '왜 지금 이 고민이 커졌을까',
+    hook: '먼저 지금 상황부터 짚고 갈게.',
+    paragraphs, visual: null, action: null,
+    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객이 답한 현재 상황만 정리했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+// 새로운 계산 근거 없이 앞서 확인한 강점·월운 화면을 패턴으로 재구성한다.
+export function renderRecurringPattern(num, strengthChapters, hasWolun) {
+  const usable = (strengthChapters || []).filter(Boolean);
+  const paragraphs = [];
+  if (usable.length > 0) {
+    paragraphs.push('앞에서 본 강점들, 조건 없이 계속 밀어붙이면 매번 비슷한 지점에서 걸릴 수 있어.');
+  }
+  if (hasWolun) {
+    paragraphs.push('월별로 배경이 바뀌는 구간들도 있었지 — 그 구간이 바뀔 때마다 같은 패턴이 반복되는지 한 번씩 점검해봐.');
+  }
+  if (paragraphs.length === 0) return null;
+  return {
+    num, title: '반복적으로 조심할 패턴',
+    hook: '앞에서 본 것들을 패턴으로 다시 묶어볼게.',
+    paragraphs, visual: null, action: null,
+    evidence: '이 화면은 새로운 계산 근거를 추가하지 않고 앞서 확인한 내용을 패턴으로 재구성했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+// ---- Tier A: company/business 필드가 있는 고객. branch-rules.js의 4개 함수를 그대로
+// 재사용하되, 화면을 questionType 라벨과 무관한 범용 이름 6개로 재배치한다. ----
+
+export function renderQuestionSynthesis(num, customer, tier) {
+  const q = stripTrailingPunctuation(customer.coreQuestionText);
+  const honestNote = tier === 'C'
+    ? ' 지금 가진 정보로는 여기까지만 짚을 수 있어 — 나중에 상황을 더 알려주면 다음엔 더 구체적으로 볼 수 있어.'
+    : '';
+  return {
+    num, title: '이 질문, 지금까지 본 사주랑 이렇게 만나',
+    hook: `${q}, 이제 이 질문으로 돌아올 차례야.`,
+    paragraphs: [
+      `앞에서 본 네 사주 배경 위에서 이 질문을 다시 보자.${honestNote}`,
+      '지금부터는 사주 얘기가 아니라, 그 배경 위에서 지금 네 상황이 어떻게 보이는지 얘기할게.',
+    ],
+    visual: null, action: null,
+    evidence: '이 화면은 새로운 계산 근거를 추가하지 않고, 앞서 확인한 사주 배경과 질문을 연결했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+export function renderCurrentReading(num, company, business) {
+  const paragraphs = [];
+  if (company) paragraphs.push(company.summary);
+  if (business) paragraphs.push(`자기 일 쪽은 지금 "${business.experimentStage}" 단계야.`);
+  if (paragraphs.length === 0) return null;
+  return {
+    num, title: '지금 상황, 이렇게 정리돼',
+    hook: '지금까지 답한 걸 합쳐서 정리하면 이래.',
+    paragraphs, visual: null, action: null,
+    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객 입력값을 정리했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+export function renderKeyTension(num, business) {
+  if (!business || !business.bottleneck) return null;
+  const line = business.bottleneck === 'time'
+    ? '수요보다 시간이 부족한 게 지금 제일 걸리는 부분이야.'
+    : '회복 여력이 낮은 게 지금 제일 걸리는 부분이야.';
+  return {
+    num, title: '지금 제일 걸리는 부분',
+    hook: line,
+    paragraphs: [line, '이게 풀리기 전까지는 크게 벌이는 것보다 이 부분부터 다루는 게 순서야.'],
+    visual: null, action: null,
+    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객 입력값을 정리했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+export function renderNextMove(num, plan) {
+  if (!plan) return null;
+  const testItem = plan.items.find((i) => i.tag === '시험');
+  if (!testItem) return null;
+  return {
+    num, title: '지금 해볼 수 있는 것',
+    hook: '크게 벌이지 않는 선에서 지금 해볼 수 있는 걸 하나만 짚을게.',
+    paragraphs: [testItem.desc, '중요한 건 크게 걸지 않는 거야 — 확인해보는 정도로 충분해.'],
+    visual: null, action: '이번 주엔 이거 하나만 해봐.',
+    evidence: '이 화면은 새로운 계산 근거를 추가하지 않고 앞선 화면의 결론을 재구성했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+export function renderCheckAgain(num, plan, mid) {
+  const reassessItem = plan ? plan.items.find((i) => i.tag === '재판단') : null;
+  if (!reassessItem && !(mid && mid.urgentDeadline)) return null;
+  const paragraphs = [];
+  if (reassessItem) paragraphs.push(reassessItem.desc);
+  if (mid && mid.urgentDeadline) paragraphs.push('결정 시한이 촉박한 편이니, 그 전에 위 기준이 바뀌는지부터 확인해.');
+  return {
+    num, title: '무엇이 달라지면 다시 볼지',
+    hook: '지금 결론이 언제 바뀔 수 있는지 짚고 갈게.',
+    paragraphs, visual: null, action: null,
+    evidence: '이 화면은 새로운 계산 근거를 추가하지 않고 앞선 화면의 결론을 재구성했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+export function renderActionSummary(num, plan, company) {
+  if (!plan && !company) return null;
+  const paragraphs = [];
+  if (plan) {
+    const tags = new Set(plan.items.map((i) => i.tag));
+    paragraphs.push(tags.has('시험') || tags.has('확인')
+      ? '지금 나온 건 완전히 확정된 결론이 아니라, 반복해서 확인해야 할 실험 단계라는 뜻이야.'
+      : '지금은 큰 결정을 서두르기보다, 지금까지 짚은 걸 지키면서 상황을 지켜보는 쪽이 먼저야.');
+  }
+  paragraphs.push((plan && plan.deadlineNote) || '위에서 짚은 조건이 바뀌는 시점이 다시 판단할 때야.');
+  return {
+    num, title: '정리하면',
+    hook: '여기까지 본 걸 한 번에 정리할게.',
+    paragraphs,
+    visual: plan ? { type: 'plan-list', items: plan.items } : null,
+    action: '이번 주엔 이 중 딱 하나만 골라서 해봐.',
+    evidence: '이 화면은 새로운 계산 근거를 추가하지 않고 앞선 화면들의 결론을 정리했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+// ---- Tier B: company/business 필드는 없지만 공통 현실입력(currentSituation/
+// mainDifficulty/desiredAnswer) 중 2개 이상 있는 고객. 4화면으로 압축. ----
+
+export function renderQuestionSynthesisReading(num, customer, commonContext = {}) {
+  const q = stripTrailingPunctuation(customer.coreQuestionText);
+  const { currentSituation } = commonContext;
+  const paragraphs = [`${q}, 이제 이 질문으로 다시 돌아올게.`];
+  paragraphs.push(currentSituation
+    ? `지금 상황은 이래: ${currentSituation}`
+    : '지금까지 본 사주 배경 위에서 이 질문을 다시 보자.');
+  return {
+    num, title: '이 질문, 지금 상황이랑 이렇게 만나',
+    hook: `${q}, 지금 상황과 같이 보자.`,
+    paragraphs, visual: null, action: null,
+    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 질문과 고객이 답한 상황을 연결했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+export function renderKeyTensionCommon(num, commonContext = {}) {
+  const { mainDifficulty } = commonContext;
+  if (!mainDifficulty) return null;
+  return {
+    num, title: '지금 제일 걸리는 부분',
+    hook: '네가 답한 걸 그대로 짚어볼게.',
+    paragraphs: [`지금 제일 걸리는 건 이거야: ${mainDifficulty}`, '이걸 풀지 않고 다음 단계로 넘어가면 같은 지점에서 계속 막힐 가능성이 커.'],
+    visual: null, action: null,
+    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객이 답한 내용만 정리했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+const WATCH_CATEGORY_BY_TYPE = {
+  increase_income: '실제로 돈이 들어오는지, 결제나 매출처럼 눈에 보이는 변화가 있는지',
+  balance_ratio: '어느 쪽에 시간을 더 쓰게 되는지, 몸이 먼저 반응하는 쪽이 어디인지',
+  stay_job: '지금 일에서 소진 신호가 더 심해지는지 나아지는지',
+  start_business: '실제 결제나 재구매처럼 반복되는 신호가 나오는지',
+  continue_current_work: '지금 하는 일에서 제안이나 기회가 실제로 늘어나는지',
+  other: '지금 이 고민과 관련해서 실제로 달라지는 게 있는지 — 연락 빈도, 약속이 지켜지는지, 상대나 상황의 반응이 달라지는지',
+};
+
+// currentSituation/mainDifficulty와 questionType(문구 선택에만 사용, 사주 해석 아님)만
+// 근거로 삼는다 — 입력에 없는 사실을 새로 만들지 않는다.
+export function renderWhatToWatch(num, commonContext = {}, questionType) {
+  const { currentSituation, mainDifficulty } = commonContext;
+  if (!currentSituation && !mainDifficulty) return null;
+  const category = WATCH_CATEGORY_BY_TYPE[questionType] || WATCH_CATEGORY_BY_TYPE.other;
+  const paragraphs = [];
+  if (currentSituation) paragraphs.push(`지금 상황(${currentSituation})에서는, 다음에 뭐가 바뀌는지가 중요해.`);
+  paragraphs.push(`구체적으로는: ${category}.`);
+  paragraphs.push('지금 당장 뭔가를 크게 결정하기보다, 이 변화를 눈여겨보는 게 먼저야.');
+  return {
+    num, title: '지금 지켜봐야 할 것',
+    hook: '지금 결정을 내리기보다, 뭘 지켜봐야 할지부터 짚을게.',
+    paragraphs, visual: null, action: null,
+    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 고객이 답한 상황을 바탕으로 한 일반적 관찰 항목입니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+export function renderCheckAgainSummary(num, commonContext = {}, decisionDeadline) {
+  const paragraphs = [];
+  paragraphs.push(decisionDeadline === 'this_month'
+    ? '결정 시한이 촉박한 편이니, 위에서 짚은 걸 지켜보면서도 우선순위는 먼저 정해두자.'
+    : '위에서 짚은 게 달라지는 시점이 다시 판단할 때야.');
+  paragraphs.push(commonContext.desiredAnswer
+    ? `네가 제일 알고 싶어 했던 건 "${commonContext.desiredAnswer}"였지 — 지금은 그 답을 서두르기보다 지켜보는 게 먼저야.`
+    : '지금은 크게 결정하기보다 지켜보는 쪽이 먼저야.');
+  return {
+    num, title: '정리하면',
+    hook: '여기까지 정리할게.',
+    paragraphs, visual: null, action: null,
+    evidence: '이 화면은 새로운 계산 근거를 추가하지 않고 앞선 화면들의 결론을 정리했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}
+
+// ---- Tier C: 공통 현실입력도 거의 없는 고객. 6개도 4개도 아닌 2개만 — 일반론으로
+// 부풀리지 않는다. ----
+
+export function renderActionSummaryGeneric(num) {
+  return {
+    num, title: '정리하면',
+    hook: '지금 가진 정보로 할 수 있는 이야기는 여기까지야.',
+    paragraphs: [
+      '지금은 크게 서두르기보다, 상황을 조금 더 지켜보는 게 먼저야.',
+      '나중에 지금 상황이나 제일 걸리는 점을 좀 더 알려주면, 훨씬 더 구체적으로 짚어줄 수 있어.',
+    ],
+    visual: null, action: null,
+    evidence: '이 화면은 사주 계산 근거를 사용하지 않았습니다. 추가 정보가 없어 일반적인 안내로 정리했습니다.',
+    sourceFacts: [], interpretationLevel: TIER.REALITY_CHECK, ruleId: null,
+  };
+}

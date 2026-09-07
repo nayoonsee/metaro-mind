@@ -67,6 +67,7 @@ export async function callClaudeForChapter(payload) {
     '한자는 화면 안에서 처음 등장할 때 반드시 "한글독음(漢字)" 형식으로 독음을 함께 적는다(예: "壬(임)"). 일간·오행·천간·지지·대운·세운·월운 관련 한자 모두 포함한다.',
     'calculatedFacts의 각 항목에는 roleLabel이 있다. 그 글자를 서술할 때 반드시 roleLabel이 설명하는 역할로만 부른다. 지장간(hideGan)은 그 글자가 속한 지지 속에 숨어있는 글자일 뿐, 그 기둥의 천간(일간/월간/연간/시간)이 아니다 — 지장간을 "일간"이나 "월간/연간/시간"이라고 부르는 것은 절대 금지한다.',
     'payload의 nickname 뒤에 조사를 붙일 때(이/가, 은/는)는 받침 유무에 맞는 자연스러운 조사를 골라라 — 받침이 있으면 "이"/"은", 없으면 "가"/"는"이다.',
+    'payload의 slot 값은 이 화면이 어떤 각도를 다뤄야 하는지 알려준다. slot이 "strength-"로 시작하면 타고난 강점 자체를, "achievement-"로 시작하면 같은 힘이 일·성취를 대할 때 어떻게 나타나는지를 다뤄라 — 같은 근거라도 강점 화면과 achievement 화면이 같은 문장을 반복하면 안 된다.',
   ].join('\n');
   const messages = [{ role: 'user', content: JSON.stringify(payload) }];
   const data = await callClaude({ system, messages, maxTokens: 2600 });

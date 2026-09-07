@@ -2,11 +2,17 @@
 // planAndGenerateLive) — the exact same code path run-live-tests.js uses against the
 // real Vercel endpoint — except global.fetch is replaced with a canned, schema-valid
 // response so ZERO network calls and ZERO Anthropic API calls happen here. This proves
-// the deterministic renderers (renderCompanyJudgment/renderBusinessJudgment/
-// renderMidConclusion/renderActionPlan), ensureNicknameJosa(), and the renderClosing
-// punctuation fix all actually run inside the live path — not just inside run-tests.js's
-// separate mock-only path (generate-report.js), which is what this round's real minjun
-// output showed was NOT enough proof by itself.
+// ensureNicknameJosa() and the renderClosing punctuation fix actually run inside the
+// live path — not just inside run-tests.js's separate mock-only path
+// (generate-report.js), which is what this round's real minjun output showed was NOT
+// enough proof by itself.
+//
+// NOTE: as of the topic-aware question-tier round, screens 15+ (formerly
+// renderCompanyJudgment/renderBusinessJudgment/renderMidConclusion/renderActionPlan
+// under their own titles) were restructured into the Tier A/B/C block — that data and
+// its quality is now verified by test-question-tier.js under the NEW screen titles
+// ('지금 상황, 이렇게 정리돼' etc.). This file keeps only the josa/punctuation checks,
+// which are unrelated to that restructuring.
 import { planAndGenerateLive } from './generate-report-live.js';
 import { TEST_CASES } from './test-cases.js';
 
@@ -47,32 +53,14 @@ function check(label, ok, detail) {
 
 console.log(`(참고: fetch가 실제로 호출된 횟수 = ${fakeCallCount}, 전부 로컬 fake, 실제 Anthropic 호출 0회)\n`);
 
-const byTitle = (t) => result.chapters.find((c) => c.title === t);
 const cover = result.chapters[0];
-const company = byTitle('지금 놓으면 안 되는 것');
-const business = byTitle('자기 일이 커질 준비가 됐는지 보는 증거');
-const mid = byTitle('그래서 지금 어디에 무게를 둬야 하냐면');
-const plan = byTitle('유지할 것·시험할 것·멈출 것');
 const closing = result.chapters[result.chapters.length - 1];
 
 console.log('=== 1. 화면1(cover) 조사 오류 ===');
 check('민준가/민준는 없음', !cover.paragraphs.join(' ').includes('민준가') && !cover.paragraphs.join(' ').includes('민준는'));
 check('민준이 등장(정상 교정)', cover.paragraphs.join(' ').includes('민준이'), cover.paragraphs);
 
-console.log('\n=== 2. 화면4(companyJudgment) 정보 밀도 ===');
-check('paragraphs >= 2개', !!company && company.paragraphs.length >= 2, company?.paragraphs);
-
-console.log('\n=== 3. 화면5(businessJudgment) 정보 밀도 ===');
-check('paragraphs >= 2개', !!business && business.paragraphs.length >= 2, business?.paragraphs);
-
-console.log('\n=== 4. 화면8(midConclusion) 정보 밀도 ===');
-check('paragraphs >= 2개', !!mid && mid.paragraphs.length >= 2, mid?.paragraphs);
-
-console.log('\n=== 5. 화면15(actionPlan) paragraphs 비어있지 않음 ===');
-check('plan 화면 존재', !!plan);
-check('paragraphs >= 2개(plan-list 외 결론/기준 설명 포함)', !!plan && plan.paragraphs.length >= 2, plan?.paragraphs);
-
-console.log('\n=== 6. 화면16(closing) 문장부호 오류 ===');
+console.log('\n=== 2. closing 문장부호 오류 ===');
 check('".," 이중 문장부호 없음', !!closing && !/[.!?~][,、]/.test(closing.paragraphs.join(' ')), closing?.paragraphs);
 
 console.log('\n전체 결과:', allOk ? 'PASS' : 'FAIL');

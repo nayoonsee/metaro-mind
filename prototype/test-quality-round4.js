@@ -35,7 +35,9 @@ const result = await planAndGenerateLive({
 });
 
 const weaponPoison = result.chapters.find((c) => c.title === '네 강점이 무기가 될 때와 독이 될 때');
-const actionPlan = result.chapters.find((c) => c.title === '유지할 것·시험할 것·멈출 것');
+// 화면15의 옛 이름("유지할 것·시험할 것·멈출 것")은 topic-aware Tier 라운드에서
+// renderActionSummary("정리하면")로 대체됐다 — 같은 plan-list 중복 제거 속성을 검사한다.
+const actionPlan = result.chapters.find((c) => c.title === '정리하면');
 
 console.log('=== 1. 화면14(무기/독) 항목별 desc 다양성 ===');
 check('weapon/poison 화면 존재', !!weaponPoison);

@@ -62,6 +62,7 @@ for (const tc of casesToRun) {
       customer: tc.customer,
       endpointUrl,
       secret,
+      commonContext: tc.commonContext || {},
     });
   } catch (e) {
     if (e instanceof InsufficientCreditError) {
