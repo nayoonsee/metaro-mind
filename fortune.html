@@ -2120,6 +2120,21 @@ function renderRevealPage() {
   activateHero(arrivalHero, 1200, 1700);
 }
 
+// 테스트용 바로가기: /fortune?step=reveal → 샘플 입력으로 로딩을 거쳐 결과 화면으로 이동.
+// name, gender, year, month, day, hour, minute, topic, question 파라미터로 샘플 값을 바꿀 수 있음.
+(function applyTestShortcut() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('step') !== 'reveal') return;
+  Object.assign(state, {
+    name: '테스트', year: '1995', month: '5', day: '15', hour: '14', minute: '30',
+    topic: '앞으로의 전체 흐름', question: '올해 흐름이 궁금해',
+  });
+  ['name', 'gender', 'year', 'month', 'day', 'hour', 'minute', 'topic', 'question'].forEach((k) => {
+    if (params.has(k)) state[k] = params.get(k);
+  });
+  stepIndex = STEPS.indexOf('loading');
+})();
+
 render();
 </script>
 </body>
