@@ -24,7 +24,8 @@ const safeName = (s) => String(s || '').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
 const msg = (t) => { $('globalMsg').textContent = t; };
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const api = (path, body) => call(path, body); // 로컬 서버 또는 브라우저 내부 처리(정적 배포본)
+// 로컬 서버 또는 브라우저 내부 처리(정적 배포본). __testDelay는 늦은 응답 회귀 시험용(평소에는 비어 있음).
+const api = async (path, body) => { const r = await call(path, body); const d = window.__testDelay?.[path]; if (d) await new Promise((x) => setTimeout(x, d)); return r; };
 
 function emptyProject() {
   return { version: 1, id: uid(), createdAt: new Date().toISOString(), updatedAt: null, inputRev: 0,
@@ -35,7 +36,9 @@ function emptyProject() {
 }
 
 // ── 상태 판정 ──
-const isStale = () => !!project.generated && project.generated.clientKey !== clientKey(project.client, project.concern);
+// unverified: 가져오거나 저장본에서 연 본문 중 현재 생성기로 확인하지 못한 것(입력이 달라 대조 불가).
+// 입력을 되돌려도 풀리지 않고, "다시 생성"으로 정규 본문을 만들 때만 풀린다.
+const isStale = () => !!project.generated && (project.generated.unverified === true || project.generated.clientKey !== clientKey(project.client, project.concern));
 function markUnreviewed() { project.status.reviewed = false; project.status.reviewedHash = null; $('reviewed').checked = false; }
 function refreshState() {
   const stale = isStale(); const has = !!project.generated;
@@ -110,7 +113,10 @@ function setProject(p, note) { project = p; epoch++; bump(); dirty = false; proj
 async function normalizeBaseline(p) {
   if (!p.generated) return { p, note: '' };
   if (p.generated.clientKey !== clientKey(p.client, p.concern)) {
-    return { p, note: '저장된 결과가 지금 입력과 달라 이전 정보 기준 결과로 표시돼요. 다시 생성해 주세요. ' };
+    // 입력이 달라 현재 생성기로 대조할 수 없다: 본문을 확인 전 상태로 묶어 두고(편집기에 표시·검토·출력 안 함),
+    // 편집본(edits)은 그대로 보존한다. 입력을 되돌려도 다시 생성하기 전까지는 풀리지 않는다.
+    p.generated.unverified = true; p.status = { reviewed: false, reviewedHash: null };
+    return { p, note: '저장된 결과가 지금 입력과 달라 현재 생성기로 확인할 수 없어요. 본문은 확인 전 상태로 두고 검토·미리보기·PDF를 막았어요. 입력을 확인한 뒤 "다시 생성"해 주세요(직접 고친 문장은 보존돼요). ', changed: true };
   }
   const r = await api('/api/generate', { client: p.client, concern: p.concern });
   if (!r.ok) return { error: `저장된 입력으로 본문을 다시 만들지 못해 열지 않았어요: ${(r.data.errors || ['오류'])[0]}` };
@@ -118,7 +124,7 @@ async function normalizeBaseline(p) {
   const same = canon.fingerprint === p.generated.fingerprint && JSON.stringify(canon.report) === JSON.stringify(p.generated.report);
   const ids = new Set(allParaIds(canon)); const moved = [];
   for (const [id, text] of Object.entries(p.edits)) if (!ids.has(id)) { moved.push(id); p.orphanEdits.push({ id, text, at: new Date().toISOString() }); delete p.edits[id]; }
-  if (same && !moved.length) return { p, note: '' };
+  if (same && !moved.length && p.generated.unverified !== true) return { p, note: '' };
   canon.identityKey = identityKey(p.client);
   p.generated = canon; p.status = { reviewed: false, reviewedHash: null };
   let note = same ? '' : '저장된 생성 본문이 현재 생성 결과와 달라, 현재 기준 본문으로 바꿨어요(직접 고친 문장은 그대로 두었어요). 내용을 다시 검토해 주세요. ';
@@ -133,9 +139,12 @@ function openProject(id) {
   const p = loadAll()[id]; if (!p) return msg('저장된 프로젝트를 찾지 못했어요.');
   const errs = validateProjectSchema(p); if (errs.length) return msg(`${kept.note}저장된 프로젝트 형식이 올바르지 않아 열지 않았어요: ${errs[0]}`);
   const e0 = epoch;
+  const r0 = rev;
   return normalizeBaseline(p).then((n) => {
     if (epoch !== e0) return; // 그사이 다른 프로젝트로 바뀌었으면 적용하지 않음
     if (n.error) return msg(`${kept.note}${n.error}`);
+    // 기다리는 동안 현재 프로젝트를 더 고쳤으면, 넘어가기 직전에 다시 저장한다. 저장에 실패하면 넘어가지 않는다.
+    if (rev !== r0 || dirty) { const again = keepCurrentBeforeSwitch(); if (!again.ok) return; }
     setProject(n.p, `${kept.note}${n.note}프로젝트를 열었어요.`);
     if (n.changed) { dirty = true; refreshState(); }
   });
@@ -208,6 +217,12 @@ function paraEditor(id, text, { manual = false, label = '' } = {}) {
 function renderEditor() {
   const g = project.generated;
   if (!g) { $('editor').innerHTML = '<p class="hint">먼저 1단계에서 리포트를 생성해 주세요.</p>'; $('reviewBox').innerHTML = ''; $('orphanBox').style.display = 'none'; return; }
+  if (g.unverified === true) {
+    // 확인 전 본문은 보여 주지 않는다(검토 대상 제외). 편집본은 프로젝트·백업에 그대로 남는다.
+    const n = Object.keys(project.edits).length;
+    $('editor').innerHTML = `<p class="hint">가져온 본문을 현재 생성기로 확인하지 못해 표시하지 않아요. 1단계에서 입력을 확인하고 "다시 생성"하면 현재 기준 본문으로 만들고, 직접 고친 문장 ${n}개는 같은 자리에 다시 적용해요(자리가 없으면 "보존된 편집본"으로 옮겨요).</p>`;
+    $('reviewBox').innerHTML = ''; $('orphanBox').style.display = 'none'; return;
+  }
   $('reviewBox').innerHTML = `<b>검토 항목 (고객용 리포트에는 나오지 않아요)</b><ul>${g.report.review.map((r) => `<li>${esc(r.text)}${r.type === 'needs-writing' ? ' <span class="badge">직접 작성 필요</span>' : ''}${r.type === 'jasi' ? ' <span class="badge">검토 대상</span>' : ''}</li>`).join('')}</ul>`;
   const o = project.orphanEdits;
   $('orphanBox').style.display = o.length ? 'block' : 'none';

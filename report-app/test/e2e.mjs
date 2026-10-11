@@ -461,6 +461,76 @@ console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]
     assert.match(await page.textContent('#globalMsg'), /다시 검토/);
     await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${otherId}"]`), canonOther); assert.equal((await proj()).status.reviewedHash, null);
   });
+  await step('5) 입력이 달라(stale) 확인 못 한 변조 본문 → 입력을 되돌려도 검토·미리보기·출력 불가, 다시 생성해야 정규 본문 + 편집 보존', async () => {
+    const j = JSON.parse(readFileSync(bk, 'utf8'));
+    for (const c of j.generated.report.chapters) for (const s of c.sections) for (const p of s.paras) if (p.id === otherId) p.text = '변조된 본문 문장이에요.';
+    j.client.name = '입력 바뀐 고객';
+    await importFile(j, 'n5.json');
+    assert.match(await page.textContent('#globalMsg'), /현재 생성기로 확인할 수 없어요/);
+    await tab('edit'); assert.doesNotMatch(await page.textContent('#editor'), /변조된 본문/); assert.match(await page.textContent('#editor'), /표시하지 않아요/);
+    assert.equal((await proj()).edits[editId], EXPLICIT, '편집 보존');
+    await tab('input'); await page.fill('#clientName', '정규화 고객'); // 원래 입력으로 되돌림
+    await tab('edit'); assert.doesNotMatch(await page.textContent('#editor'), /변조된 본문/);
+    await tab('preview'); assert.ok(await page.isDisabled('#btnPdf')); assert.ok(await page.isVisible('#stalePreview'));
+    assert.ok(!(await page.locator('#previewFrame').getAttribute('srcdoc')));
+    await tab('deliver'); assert.ok(await page.isDisabled('#reviewed'));
+    await generate();
+    assert.equal(await page.inputValue(`textarea[data-id="${otherId}"]`), canonOther); assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
+    const t = await finalText('norm-stale-restored.pdf');
+    assert.doesNotMatch(t, /변조된 본문/); assert.ok(t.replace(/\s+/g, '').includes(EXPLICIT.replace(/\s+/g, '')));
+  });
+  await step('5-b) 확인 전 본문을 저장한 뒤 다시 열면: 입력이 맞으면 현재 생성기로 대조해 정규 본문으로 바꾸고 재검토, 아니면 계속 잠김', async () => {
+    const j = JSON.parse(readFileSync(bk, 'utf8'));
+    for (const c of j.generated.report.chapters) for (const s of c.sections) for (const p of s.paras) if (p.id === otherId) p.text = '변조된 본문 문장이에요.';
+    j.client.name = '입력 바뀐 고객'; await importFile(j, 'n5b.json');
+    await page.click('#btnSave'); const pid = (await proj()).id;
+    const saved = await page.evaluate((id) => JSON.parse(localStorage.getItem('reportApp.projects.v1'))[id], pid);
+    assert.equal(saved.generated.unverified, true); assert.equal(saved.edits[editId], EXPLICIT);
+    await page.click('#btnNew'); await page.selectOption('#projectList', pid);
+    await page.waitForFunction(() => /프로젝트를 열었어요/.test(document.getElementById('globalMsg').textContent));
+    await tab('preview'); assert.ok(await page.isDisabled('#btnPdf'), '입력이 그대로 다르면 계속 잠김');
+    await tab('input'); await page.fill('#clientName', '정규화 고객'); await page.click('#btnSave');
+    await page.click('#btnNew'); await page.selectOption('#projectList', pid);
+    await page.waitForFunction(() => /프로젝트를 열었어요/.test(document.getElementById('globalMsg').textContent));
+    assert.match(await page.textContent('#globalMsg'), /다시 검토/);
+    await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${otherId}"]`), canonOther); assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
+    assert.equal((await proj()).status.reviewedHash, null); assert.ok(!(await proj()).generated.unverified);
+  });
+  const twoSaved = async () => {
+    await page.click('#btnNew'); await fillInput({ brand: '달빛 상담소', name: '열기 B', birth: { leapMonth: false, hourUnknown: false, ...CASES[1].birth }, concern: CASES[1].concern }); await generate(); await page.click('#btnSave'); const b = (await proj()).id;
+    await page.click('#btnNew'); await fillInput({ brand: '달빛 상담소', name: '열기 A', birth: { leapMonth: false, hourUnknown: false, ...CASES[0].birth }, concern: CASES[0].concern }); await generate();
+    const ta = page.locator('#editor .chap').nth(2).locator('textarea'); const id1 = await ta.nth(1).getAttribute('data-id'); const id2 = await ta.nth(2).getAttribute('data-id');
+    await ta.nth(1).fill('A 첫 편집'); return { b, a: (await proj()).id, id1, id2 };
+  };
+  await step('6) A 편집 → B 열기(응답 지연) → 기다리는 동안 A 추가 편집 → 응답 완료: A 추가 편집이 저장본에 남고 B로 전환', async () => {
+    const { a, b, id1, id2 } = await twoSaved();
+    await page.evaluate(() => { window.__testDelay = { '/api/generate': 1500 }; });
+    await page.selectOption('#projectList', b);
+    await page.locator(`textarea[data-id="${id2}"]`).fill('A 추가 편집(대기 중)');
+    await page.waitForFunction(() => /프로젝트를 열었어요/.test(document.getElementById('globalMsg').textContent), null, { timeout: 15000 });
+    await page.evaluate(() => { window.__testDelay = null; });
+    assert.equal(await page.inputValue('#clientName'), '열기 B');
+    const stored = await page.evaluate((id) => JSON.parse(localStorage.getItem('reportApp.projects.v1'))[id], a);
+    assert.equal(stored.edits[id1], 'A 첫 편집'); assert.equal(stored.edits[id2], 'A 추가 편집(대기 중)');
+    await page.selectOption('#projectList', a); await page.waitForFunction(() => document.getElementById('clientName').value === '열기 A');
+    await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${id2}"]`), 'A 추가 편집(대기 중)');
+    await markReviewed(); const t = (await OUTPUT('open-race.pdf')).replace(/\s+/g, '');
+    assert.ok(t.includes('A추가편집(대기중)') && t.includes('A첫편집'), '화면·저장본·출력 일치');
+  });
+  await step('7) 같은 흐름에서 저장 공간 초과 → B로 넘어가지 않고 A와 추가 편집 유지, JSON 백업 가능', async () => {
+    const { b, id2 } = await twoSaved();
+    await page.evaluate(() => { window.__testDelay = { '/api/generate': 1500 }; });
+    await page.selectOption('#projectList', b);
+    await page.locator(`textarea[data-id="${id2}"]`).fill('용량 초과 중 추가 편집');
+    await page.evaluate(() => { window.__o = Storage.prototype.setItem; Storage.prototype.setItem = () => { throw new DOMException('full', 'QuotaExceededError'); }; });
+    try {
+      await page.waitForFunction(() => /넘어가지 않았어요/.test(document.getElementById('globalMsg').textContent), null, { timeout: 15000 });
+      assert.equal(await page.inputValue('#clientName'), '열기 A'); assert.equal(await page.inputValue(`textarea[data-id="${id2}"]`), '용량 초과 중 추가 편집');
+      const dl = page.waitForEvent('download'); await page.click('#btnExport'); const pth = join(ART, 'n7.json'); await (await dl).saveAs(pth);
+      assert.equal(JSON.parse(readFileSync(pth, 'utf8')).edits[id2], '용량 초과 중 추가 편집'); rmSync(pth);
+    } finally { await page.evaluate(() => { Storage.prototype.setItem = window.__o; window.__testDelay = null; }); }
+    await page.click('#btnSave');
+  });
   rmSync(bk, { force: true });
 }
 
