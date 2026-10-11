@@ -49,4 +49,12 @@
 ```
 node scripts/test-kst-solar-terms.mjs
 node scripts/test-cost-and-privacy.mjs
+node scripts/test-brand-report.mjs
 ```
+
+## 브랜드 사주 리포트 (규칙 기반 원고, 실험 단계)
+
+- `report/brand-report.mjs`: `calcSaju` 결과만으로 5개 항목(기본 성향·강점·관계·일·실천 제안)을 고른다. AI 호출 없음.
+  판단 근거는 일간, 월지와 일간의 생극 관계, 일지, 십성의 **자리**(천간/지장간, 년·월·일·시)뿐이다. 개수로 강약을 판단하지 않는다.
+- 고객 본문(`customer`)과 상담자 검토 항목(`review`)을 분리해서 돌려준다. 직업·관계·경험은 입력받지 않으므로 쓰지 않는다.
+- 가상 사례 3건 출력: `node report/run-cases.mjs` → `report/output/*.md`, `*.review.md`
