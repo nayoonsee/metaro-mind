@@ -39,10 +39,16 @@ const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inl
 const swap = (a, b) => { if (!html.includes(a)) throw new Error(`index.html 변경 지점 없음: ${a}`); html = html.replace(a, b); };
 swap('<meta charset="utf-8">', `<meta charset="utf-8">\n<meta http-equiv="Content-Security-Policy" content="${CSP}">\n<meta name="referrer" content="no-referrer">`);
 // 미리보기: 스크립트는 계속 막고(allow-scripts 없음), 같은 사이트의 글꼴을 쓰도록 출처만 유지한다.
-swap('<iframe id="previewFrame" title="리포트 미리보기" sandbox=""></iframe>', '<iframe id="previewFrame" title="리포트 미리보기" sandbox="allow-same-origin"></iframe>');
+swap('<iframe id="previewFrame" class="preview" title="리포트 미리보기" sandbox=""></iframe>', '<iframe id="previewFrame" class="preview" title="리포트 미리보기" sandbox="allow-same-origin"></iframe>');
+swap('<iframe id="sidePreview" class="preview" title="옆 미리보기" sandbox=""></iframe>', '<iframe id="sidePreview" class="preview" title="옆 미리보기" sandbox="allow-same-origin"></iframe>');
+// 화면 글꼴도 배포본 안의 글꼴을 쓴다(외부 Google Fonts 요청 없음).
+html = html.replace(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^"]*" id="uiFonts">/, '<link rel="stylesheet" href="fonts/fonts.css" id="uiFonts">');
+if (/googleapis|gstatic/.test(html)) throw new Error('index.html에 외부 글꼴 주소가 남아 있어요');
 swap('<title>사주 리포트 제작</title>', '<title>사주 리포트 제작 (브라우저 버전)</title>');
 writeFileSync(join(DIST, 'index.html'), html);
 copyFileSync(join(HERE, 'guide.html'), join(DIST, 'guide.html'));
+// 디자인 선택 카드 이미지(실제 렌더러로 만든 표지·본문 미리보기, scripts/make-design-thumbs.mjs)
+for (const f of readdirSync(join(ROOT, 'report-app', 'public')).filter((f) => /^design-[a-z]+\.png$/.test(f))) copyFileSync(join(ROOT, 'report-app', 'public', f), join(DIST, f));
 
 // 4) 글꼴: 리포트가 쓰는 글꼴·굵기만 woff2로 넣고 글꼴 CSS를 만든다(외부 Google Fonts 요청 없음).
 const FONTS = [

@@ -1,16 +1,14 @@
 // 프로젝트 JSON 스키마 검증 (화면과 서버가 함께 쓴다). 통과하지 못한 JSON은 적용하지 않는다.
+import { DESIGN_IDS, FONTS, LOGO_RE, LOGO_MAX_CHARS } from './designs.mjs';
 const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
 const str = (v, max) => typeof v === 'string' && v.length <= max;
 const numish = (v) => v === '' || v === null || v === undefined || (typeof v === 'number' && Number.isFinite(v)) || (typeof v === 'string' && /^-?\d{0,4}$/.test(v));
 const onlyKeys = (o, keys, path, errs) => { for (const k of Object.keys(o)) if (!keys.includes(k)) errs.push(`${path}: 알 수 없는 항목 "${String(k).slice(0, 30)}"`); };
 export const EDIT_ID_RE = /^[A-Za-z0-9가-힣\u4E00-\u9FFF_:+\-]{1,100}$/;
 
-// 브랜드·디자인 설정(프로젝트와 브랜드 프로필이 함께 쓴다). 값 목록은 report/design/designs.mjs와 같아야 한다(테스트로 확인).
-export const DESIGN_IDS = ['plain', 'mystic', 'paper', 'study', 'nature', 'bright'];
-export const BODY_FONTS = ['noto-sans', 'gowun', 'nanum'];
-export const HEAD_FONTS = ['noto-sans', 'gowun', 'nanum', 'noto-serif'];
-export const LOGO_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
-export const LOGO_MAX_CHARS = 400000;
+// 브랜드·디자인 설정(프로젝트와 브랜드 프로필이 함께 쓴다). 허용 값은 designs.mjs 한 곳에서 정한다.
+const BODY_FONTS = Object.keys(FONTS).filter((k) => FONTS[k].body);
+const HEAD_FONTS = Object.keys(FONTS).filter((k) => FONTS[k].head);
 export function validateBrand(b) {
   const e = [];
   if (!isObj(b)) return ['brand 없음'];

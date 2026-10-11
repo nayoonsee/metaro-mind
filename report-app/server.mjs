@@ -19,7 +19,7 @@ import { clientKey } from './public/schema.mjs';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
 const transport = createTestTransport(process.env.OUTBOX_DIR || join(ROOT, 'outbox-test'));
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png' };
 const SECURITY_HEADERS = { 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer', 'x-frame-options': 'DENY',
   'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src 'self' about:; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" };
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -104,7 +104,7 @@ export function createServer({ port }) {
       }
       if (req.method !== 'GET') return send(res, 405, { error: 'method not allowed' });
       const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
-      if (!/^[\w-]+\.(html|js|mjs|css)$/.test(file)) return send(res, 404, { error: 'not found' });
+      if (!/^[\w-]+\.(html|js|mjs|css|png)$/.test(file)) return send(res, 404, { error: 'not found' });
       const buf = await readFile(join(ROOT, 'public', file)).catch(() => null);
       if (!buf) return send(res, 404, { error: 'not found' });
       res.writeHead(200, { 'content-type': TYPES[extname(file)] || 'application/octet-stream', 'cache-control': 'no-store', ...SECURITY_HEADERS });

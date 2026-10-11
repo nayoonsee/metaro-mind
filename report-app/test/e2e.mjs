@@ -31,11 +31,15 @@ let pass = 0, fail = 0; const results = [];
 async function step(name, fn) { try { await fn(); pass++; results.push(['ok', name]); console.log('  ok  -', name); } catch (e) { fail++; results.push(['FAIL', name, e.message]); console.log('  FAIL -', name, '\n       ', e.message.split('\n')[0]); } }
 const pdfText = (file) => execFileSync('pdftotext', ['-layout', file, '-'], { encoding: 'utf8' });
 const proj = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__reportApp.project)));
-const tab = (t) => page.click(`nav button[data-tab=${t}]`);
+// 새 화면: 1 정보 입력 · 2 디자인 · 3 리포트 만들기 · 4 확인·PDF. 검토 체크와 메일 칸은 4단계에 있다(메일은 접힌 칸).
+const tab = async (t) => {
+  await page.click(`nav button[data-tab=${t === 'deliver' ? 'preview' : t}]`);
+  await page.evaluate(() => document.querySelectorAll('details').forEach((d) => { d.open = true; }));
+};
+const setBrand = async (v) => { await tab('design'); await page.fill('#brandName', v); };
 
 async function fillInput({ brand = '', name, birth, concern, sample = true }) {
-  await tab('input');
-  await page.fill('#brandName', brand);
+  await setBrand(brand); await tab('input');
   await page.fill('#clientName', name);
   await page.selectOption('#calendar', birth.calendar || 'solar');
   if (birth.calendar === 'lunar') await page.selectOption('#leapMonth', birth.leapMonth ? '1' : '');
@@ -47,7 +51,7 @@ async function fillInput({ brand = '', name, birth, concern, sample = true }) {
   for (let i = 0; i < 3; i++) await page.fill(`#opt${i + 1}`, (concern?.options || [])[i] || '');
   await page.selectOption('#period', concern?.period || '');
 }
-async function generate() { await tab('input'); await page.click('#btnGenerate'); await page.waitForSelector('#tab-edit.on', { timeout: 15000 }); }
+async function generate() { await tab('design'); await page.click('#btnGenerate'); await page.waitForSelector('#tab-edit.on', { timeout: 15000 }); }
 async function downloadPdf(fileName) {
   await tab('preview');
   const dl = page.waitForEvent('download', { timeout: 90000 });
@@ -79,16 +83,16 @@ await step('JSON이 아닌 Content-Type(text/plain 폼 위조)은 415', async ()
 console.log('\n[입력 검증]');
 await step('잘못된 날짜(1996-02-30)는 생성하지 않고 오류를 보여 줌', async () => {
   await fillInput({ name: '입력검증', birth: { calendar: 'solar', year: 1996, month: 2, day: 30, hourUnknown: true } });
-  await page.click('#btnGenerate'); await page.waitForSelector('#inputErrors', { state: 'visible' });
+  await tab('design'); await page.click('#btnGenerate'); await page.waitForSelector('#inputErrors', { state: 'visible' });
   assert.match(await page.textContent('#inputErrors'), /2월에는 30일이 없어요/);
 });
 await step('없는 윤달(음력 2024년 윤2월)은 거절', async () => {
   await fillInput({ name: '입력검증', birth: { calendar: 'lunar', leapMonth: true, year: 2024, month: 2, day: 3, hourUnknown: true } });
-  await page.click('#btnGenerate'); await page.waitForFunction(() => /윤2월이 없어요/.test(document.getElementById('inputErrors').textContent));
+  await tab('design'); await page.click('#btnGenerate'); await page.waitForFunction(() => /윤2월이 없어요/.test(document.getElementById('inputErrors').textContent));
 });
 await step('시간을 입력하지 않고 "시간 모름"도 체크하지 않으면 거절', async () => {
   await fillInput({ name: '입력검증', birth: { calendar: 'solar', year: 1996, month: 3, day: 21, hour: '', minute: '' } });
-  await page.click('#btnGenerate'); await page.waitForFunction(() => /태어난 시는 0~23/.test(document.getElementById('inputErrors').textContent));
+  await tab('design'); await page.click('#btnGenerate'); await page.waitForFunction(() => /태어난 시는 0~23/.test(document.getElementById('inputErrors').textContent));
 });
 
 console.log('\n[사례별 전체 흐름: 새 프로젝트 → 입력 → 생성 → 고유 편집 → 저장 → 다시 열기 → 검토 → 최종 PDF]');
@@ -146,7 +150,7 @@ for (const [label, change] of [
     assert.equal(p.status.reviewedHash, null, '검토 해제');
     await tab('preview');
     assert.ok(await page.isVisible('#stalePreview')); assert.ok(await page.isDisabled('#btnPdf'));
-    await tab('deliver'); assert.ok(await page.isDisabled('#btnQueue')); assert.ok(await page.isVisible('#staleDeliver'));
+    await tab('deliver'); assert.ok(await page.isDisabled('#btnQueue')); assert.ok(await page.isVisible('#stalePreview'));
     // 화면을 우회해 이전 검토 해시·이전 결과를 그대로 보내도 서버가 거절해야 한다.
     const forged = { ...p, status: before.status };
     const pdf = await apiFromPage('/api/pdf', { project: forged });
@@ -185,7 +189,7 @@ await step('생성 중 중복 클릭 → 요청은 1번만', async () => {
   await page.click('#btnNew'); await fillInput({ brand: '', name: '중복 클릭', birth: A.birth, concern: A.concern });
   let n = 0; const onReq = (r) => { if (r.url().endsWith('/api/generate')) n++; }; page.on('request', onReq);
   await delayGenerate(800);
-  await page.click('#btnGenerate'); await page.click('#btnGenerate', { force: true }).catch(() => {}); await page.evaluate(() => document.getElementById('btnGenerate').click());
+  await tab('design'); await page.click('#btnGenerate'); await page.click('#btnGenerate', { force: true }).catch(() => {}); await page.evaluate(() => document.getElementById('btnGenerate').click());
   await page.waitForSelector('#tab-edit.on', { timeout: 15000 });
   page.off('request', onReq); await page.unroute('**/api/generate');
   assert.equal(n, 1);
@@ -193,7 +197,7 @@ await step('생성 중 중복 클릭 → 요청은 1번만', async () => {
 await step('응답 대기 중 입력을 바꾸면 늦은 응답을 적용하지 않음', async () => {
   await page.click('#btnNew'); await fillInput({ name: '늦은 응답', birth: A.birth, concern: A.concern });
   await delayGenerate(1200);
-  await page.click('#btnGenerate'); await page.fill('#clientName', '늦은 응답 수정됨');
+  await tab('design'); await page.click('#btnGenerate'); await tab('input'); await page.fill('#clientName', '늦은 응답 수정됨');
   await page.waitForFunction(() => /적용하지 않았어요/.test(document.getElementById('globalMsg').textContent), null, { timeout: 15000 });
   await page.unroute('**/api/generate');
   assert.equal((await proj()).generated, null);
@@ -201,7 +205,7 @@ await step('응답 대기 중 입력을 바꾸면 늦은 응답을 적용하지 
 await step('응답 대기 중 다른 프로젝트로 전환하면 늦은 응답이 새 프로젝트를 덮어쓰지 않음', async () => {
   await page.click('#btnNew'); await fillInput({ name: '전환 전 고객', birth: A.birth, concern: A.concern });
   await delayGenerate(1200);
-  await page.click('#btnGenerate'); await page.click('#btnNew'); await page.fill('#clientName', '전환 후 고객');
+  await tab('design'); await page.click('#btnGenerate'); await page.click('#btnNew'); await tab('input'); await page.fill('#clientName', '전환 후 고객');
   await page.waitForFunction(() => /적용하지 않았어요/.test(document.getElementById('globalMsg').textContent), null, { timeout: 15000 });
   await page.unroute('**/api/generate');
   const p = await proj(); assert.equal(p.generated, null); assert.equal(await page.inputValue('#clientName'), '전환 후 고객');
@@ -305,7 +309,7 @@ await step('PDF 생성 중 같은 프로젝트의 내용을 고치면 받은 PDF
   await markReviewed();
   // 이 환경의 headless Chromium은 한글 파일명을 suggestedFilename에서 "download"로 바꾸므로, 앱이 지정한 download 속성을 직접 기록한다.
   await page.evaluate(() => { const orig = HTMLAnchorElement.prototype.click; window.__dlNames = []; HTMLAnchorElement.prototype.click = function () { window.__dlNames.push(this.download); return orig.call(this); }; });
-  await tab('input'); await page.fill('#brandName', '달빛 상담소'); await markReviewed();
+  await setBrand('달빛 상담소'); await markReviewed();
   await tab('preview'); const dl = page.waitForEvent('download', { timeout: 90000 }); await page.click('#btnPdf'); await dl;
   assert.deepEqual(await page.evaluate(() => window.__dlNames), ['달빛 상담소_이름 스냅샷_사주리포트.pdf']);
 });
@@ -558,7 +562,7 @@ await step('지원 밖 고민: 직접 작성 칸이 비면 검토해도 최종�
   await page.waitForSelector('#mailErrors', { state: 'visible' }); assert.match(await page.textContent('#mailErrors'), /직접 작성/);
 });
 await step('브랜드 미설정이면 검토해도 최종본 아님', async () => {
-  await freshA('브랜드 없음'); await tab('input'); await page.fill('#brandName', ''); await markReviewed();
+  await freshA('브랜드 없음'); await setBrand(''); await markReviewed();
   const { state } = await downloadPdf('blocked-unbranded.pdf'); assert.match(state, /최종본 아님/);
 });
 

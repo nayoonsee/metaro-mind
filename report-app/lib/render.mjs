@@ -130,7 +130,7 @@ export function renderReportHtml(project, { forPdf = false, density = 'normal', 
   @page { size: A4; margin: 20mm 20mm 22mm; @bottom-center { content: counter(page); font-size: 8pt; color: #8a8296; } ${testMark ? `@top-right { content: "${testMark}"; font-size: 7.5pt; color: #b0563a; }` : ''} }
   @page :first { margin: 0; @bottom-center { content: none; } @top-right { content: none; } }
   body { margin: 0; background: #fff; color: #24212B; font-family: 'Noto Sans KR', sans-serif; font-size: ${D.fs}pt; line-height: ${D.lh}; word-break: keep-all; orphans: 3; widows: 3; }
-  ${forPdf ? '' : '.cover{box-shadow:0 0 0 1px #ddd;margin-bottom:16px} body{padding:0 0 40px} .chapter{max-width:170mm;margin:0 auto;padding:0 8mm}'}
+  ${forPdf ? '' : '.cover{box-shadow:0 0 0 1px #ddd;margin-bottom:16px} body{padding:0 0 40px} .chapter,.greeting,.closing{max-width:170mm;margin-left:auto;margin-right:auto} .chapter{padding:0 8mm} @media (max-width:820px){html{zoom:.72}} @media (max-width:620px){html{zoom:.55}} @media (max-width:460px){html{zoom:.42}}'}
   ${COVER_CSS}
   h2 { font-family: 'Gowun Batang', serif; font-size: 19pt; color: ${accent}; margin: 10mm 0 4mm; padding-bottom: 3mm; border-bottom: 1px solid #D9CFE3; break-after: avoid; }
   .chapter:first-of-type h2 { margin-top: 0; } .newpage { break-before: page; }

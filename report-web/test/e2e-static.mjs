@@ -36,10 +36,15 @@ const errors = []; page.on('pageerror', (e) => errors.push(e.message)); page.on(
 let pass = 0, fail = 0; const results = [];
 async function step(name, fn) { try { await fn(); pass++; results.push(['ok', name]); console.log('  ok  -', name); } catch (e) { fail++; results.push(['FAIL', name, e.message]); console.log('  FAIL -', name, '\n       ', e.message.split('\n')[0]); } }
 const proj = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__reportApp.project)));
-const tab = (t) => page.click(`nav button[data-tab=${t}]`);
+// 새 화면: 1 정보 입력 · 2 디자인 · 3 리포트 만들기 · 4 확인·PDF. 검토 체크와 메일 칸은 4단계에 있다(메일은 접힌 칸).
+const tab = async (t) => {
+  await page.click(`nav button[data-tab=${t === 'deliver' ? 'preview' : t}]`);
+  await page.evaluate(() => document.querySelectorAll('details').forEach((d) => { d.open = true; }));
+};
+const setBrand = async (v) => { await tab('design'); await page.fill('#brandName', v); };
 async function fillInput({ brand = '', name, birth, concern }) {
-  await tab('input');
-  await page.fill('#brandName', brand); await page.fill('#clientName', name);
+  await setBrand(brand); await tab('input');
+  await page.fill('#clientName', name);
   await page.selectOption('#calendar', birth.calendar || 'solar');
   if (birth.calendar === 'lunar') await page.selectOption('#leapMonth', birth.leapMonth ? '1' : '');
   await page.fill('#year', String(birth.year)); await page.fill('#month', String(birth.month)); await page.fill('#day', String(birth.day));
@@ -49,7 +54,7 @@ async function fillInput({ brand = '', name, birth, concern }) {
   for (let i = 0; i < 3; i++) await page.fill(`#opt${i + 1}`, (concern?.options || [])[i] || '');
   await page.selectOption('#period', concern?.period || '');
 }
-async function generate() { await tab('input'); await page.click('#btnGenerate'); await page.waitForSelector('#tab-edit.on', { timeout: 15000 }); }
+async function generate() { await tab('design'); await page.click('#btnGenerate'); await page.waitForSelector('#tab-edit.on', { timeout: 15000 }); }
 async function markReviewed() { await tab('deliver'); await page.setChecked('#reviewed', true); await page.waitForFunction(() => !!window.__reportApp.project.status.reviewedHash); }
 // 인쇄: 앱이 인쇄 창에 넘기는 문서(printFrame)를 같은 출처의 새 탭에서 Chromium 인쇄 엔진(page.pdf)으로 저장한다.
 async function printToPdf(file) {
@@ -147,7 +152,7 @@ await step('입력을 바꾸면 이전 결과로 인쇄할 수 없음(버튼 잠
 await step('자동 이메일은 "연결 준비 중"으로 잠겨 있고, 시험용 전송기를 노출하지 않음', async () => {
   await tab('input'); await page.fill('#clientName', '검토 전 고객'); await generate(); await markReviewed();
   assert.match(await page.textContent('#btnQueue'), /연결 준비 중/); assert.ok(await page.isDisabled('#btnQueue'));
-  const t = await page.textContent('#tab-deliver'); assert.doesNotMatch(t, /테스트용 전송기|테스트 대기열/); assert.match(t, /연결 준비 중/);
+  const t = await page.textContent('#tab-preview'); assert.doesNotMatch(t, /테스트용 전송기|테스트 대기열/); assert.match(t, /연결 준비 중/);
 });
 await step('저장 공간 초과: 전환을 멈추고 편집본 유지, JSON 백업 가능', async () => {
   await tab('edit'); const ta = page.locator('#editor .chap').nth(2).locator('textarea').nth(1); const id = await ta.getAttribute('data-id');

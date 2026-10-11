@@ -5,12 +5,15 @@
 // - 미리보기·PDF·검토·발송 대기도 요청 당시 스냅샷(프로젝트 id, 전환 세대, 내용 revision)을 기억하고,
 //   응답이 왔을 때 현재 프로젝트·내용이 그대로일 때만 화면·프로젝트에 적용한다.
 // - 다른 프로젝트로 넘어가기 전에 저장하지 않은 변경은 자동으로 보관한다. 저장에 실패하면 넘어가지 않는다.
-import { validateProjectSchema, clientKey, identityKey } from './schema.mjs';
+import { validateProjectSchema, validateBrand, clientKey, identityKey } from './schema.mjs';
+import { DESIGNS, LEGACY_DESIGNS, FONTS, LOGO_MAX_CHARS } from './designs.mjs';
 import { call, caps } from './service.mjs';
 
 const $ = (id) => document.getElementById(id);
 const STORE = 'reportApp.projects.v1';
+const PROFILE = 'reportApp.brandProfile.v1'; // 판매자 브랜드 프로필(이 브라우저에만 저장)
 let project = null; let dirty = false; let generating = 0;
+let selBody = 'noto-sans'; let selHead = 'gowun'; // 디자인 화면에서 고른 글꼴
 // epoch: 프로젝트를 바꿀 때마다 증가. rev: 입력·편집·브랜드·검토 해제 등 내용이 바뀔 때마다 증가.
 let epoch = 0; let rev = 0; const busy = { pdf: false, queue: false, review: false };
 const snapshot = () => ({ id: project.id, epoch, rev, brandName: project.brand.name, clientName: project.client.name });
@@ -27,9 +30,12 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 // 로컬 서버 또는 브라우저 내부 처리(정적 배포본). __testDelay는 늦은 응답 회귀 시험용(평소에는 비어 있음).
 const api = async (path, body) => { const r = await call(path, body); const d = window.__testDelay?.[path]; if (d) await new Promise((x) => setTimeout(x, d)); return r; };
 
+function loadProfile() {
+  try { const b = JSON.parse(localStorage.getItem(PROFILE) || 'null'); return b && !validateBrand(b).length ? b : null; } catch { return null; }
+}
 function emptyProject() {
   return { version: 1, id: uid(), createdAt: new Date().toISOString(), updatedAt: null, inputRev: 0,
-    brand: { name: '', accent: '#3A2E4A', cover: 'mystic' },
+    brand: loadProfile() || { name: '', accent: '#3A2E4A', cover: 'mystic' },
     client: { name: '', isSample: false, birth: { calendar: 'solar', leapMonth: false, year: '', month: '', day: '', hour: '', minute: '', hourUnknown: false } },
     concern: { question: '', situation: '', options: ['', '', ''], period: '' },
     generated: null, edits: {}, orphanEdits: [], history: [], status: { reviewed: false, reviewedHash: null }, mail: { to: '', subject: '', body: '', queue: [] } };
@@ -42,18 +48,21 @@ const isStale = () => !!project.generated && (project.generated.unverified === t
 function markUnreviewed() { project.status.reviewed = false; project.status.reviewedHash = null; $('reviewed').checked = false; }
 function refreshState() {
   const stale = isStale(); const has = !!project.generated;
-  for (const id of ['staleEdit', 'stalePreview', 'staleDeliver']) $(id).style.display = stale ? 'block' : 'none';
+  for (const id of ['staleEdit', 'stalePreview']) $(id).style.display = stale ? 'block' : 'none';
+  renderChecklist();
   $('btnPdf').disabled = !has || stale || busy.pdf; $('btnQueue').disabled = !has || stale || busy.queue || $('btnQueue').dataset.unavailable === '1'; $('reviewed').disabled = !has || stale;
   $('btnPreview').disabled = !has || stale;
   $('btnGenerate').disabled = generating > 0;
-  $('btnGenerate').textContent = generating ? '생성 중…' : project.generated ? '다시 생성' : '리포트 생성';
+  $('btnGenerate').textContent = generating ? '만드는 중…' : project.generated ? '리포트 다시 만들기' : '리포트 만들기';
   $('dirtyMark').textContent = dirty ? '저장 안 됨' : '';
 }
 
 // ── 폼 ↔ 프로젝트 ──
 function formToProject() {
   const p = project;
-  p.brand = { name: $('brandName').value.trim(), accent: $('brandAccent').value.trim(), cover: $('brandCover').value };
+  const logo = p.brand?.logo || '';
+  p.brand = { name: $('brandName').value.trim(), accent: $('brandAccent').value.trim(), cover: $('brandCover').value, bodyFont: selBody, headFont: selHead,
+    ...(logo ? { logo } : {}), greeting: $('greeting').value.trim(), closing: $('closing').value.trim() };
   p.client = { name: $('clientName').value.trim(), isSample: $('isSample').checked, birth: {
     calendar: $('calendar').value, leapMonth: $('leapMonth').value === '1', year: $('year').value, month: $('month').value, day: $('day').value,
     hour: $('hour').value, minute: $('minute').value, hourUnknown: $('hourUnknown').checked } };
@@ -63,6 +72,10 @@ function formToProject() {
 function projectToForm() {
   const p = project; const b = p.client.birth;
   $('brandName').value = p.brand.name; $('brandAccent').value = p.brand.accent; $('brandCover').value = p.brand.cover;
+  const D = DESIGNS[p.brand.cover] || LEGACY_DESIGNS[p.brand.cover] || DESIGNS.mystic;
+  selBody = FONTS[p.brand.bodyFont]?.body ? p.brand.bodyFont : D.bodyFont; selHead = FONTS[p.brand.headFont]?.head ? p.brand.headFont : D.headFont;
+  $('greeting').value = p.brand.greeting || ''; $('closing').value = p.brand.closing || '';
+  renderDesignUi(); syncBirthDate();
   $('clientName').value = p.client.name; $('isSample').checked = !!p.client.isSample;
   $('calendar').value = b.calendar; $('leapMonth').value = b.leapMonth ? '1' : ''; $('year').value = b.year; $('month').value = b.month; $('day').value = b.day;
   $('hour').value = b.hour; $('minute').value = b.minute; $('hourUnknown').checked = !!b.hourUnknown;
@@ -70,7 +83,7 @@ function projectToForm() {
   ['opt1', 'opt2', 'opt3'].forEach((id, i) => { $(id).value = p.concern.options[i] || ''; });
   $('period').value = p.concern.period;
   $('reviewed').checked = !!p.status.reviewedHash; $('mailTo').value = p.mail.to; $('mailSubject').value = p.mail.subject; $('mailBody').value = p.mail.body;
-  $('previewFrame').srcdoc = ''; $('qaBox').innerHTML = ''; $('pdfState').textContent = '';
+  $('previewFrame').srcdoc = ''; $('sidePreview').srcdoc = ''; $('qaBox').innerHTML = ''; $('pdfState').textContent = '';
   syncFormState(); renderEditor(); renderOutbox(); refreshState();
 }
 function syncFormState() {
@@ -216,22 +229,23 @@ function paraEditor(id, text, { manual = false, label = '' } = {}) {
 }
 function renderEditor() {
   const g = project.generated;
-  if (!g) { $('editor').innerHTML = '<p class="hint">먼저 1단계에서 리포트를 생성해 주세요.</p>'; $('reviewBox').innerHTML = ''; $('orphanBox').style.display = 'none'; return; }
+  if (!g) { $('editor').innerHTML = '<p class="hint">먼저 2단계에서 리포트를 만들어 주세요.</p>'; $('reviewBox').innerHTML = ''; $('orphanBox').style.display = 'none'; renderChapNav(); return; }
   if (g.unverified === true) {
     // 확인 전 본문은 보여 주지 않는다(검토 대상 제외). 편집본은 프로젝트·백업에 그대로 남는다.
     const n = Object.keys(project.edits).length;
-    $('editor').innerHTML = `<p class="hint">가져온 본문을 현재 생성기로 확인하지 못해 표시하지 않아요. 1단계에서 입력을 확인하고 "다시 생성"하면 현재 기준 본문으로 만들고, 직접 고친 문장 ${n}개는 같은 자리에 다시 적용해요(자리가 없으면 "보존된 편집본"으로 옮겨요).</p>`;
-    $('reviewBox').innerHTML = ''; $('orphanBox').style.display = 'none'; return;
+    $('editor').innerHTML = `<p class="hint">가져온 본문을 현재 생성기로 확인하지 못해 표시하지 않아요. 입력을 확인하고 2단계에서 "리포트 다시 만들기"를 누르면 현재 기준 본문으로 만들고, 직접 고친 문장 ${n}개는 같은 자리에 다시 적용해요(자리가 없으면 "보존된 편집본"으로 옮겨요).</p>`;
+    $('reviewBox').innerHTML = ''; $('orphanBox').style.display = 'none'; renderChapNav(); return;
   }
   $('reviewBox').innerHTML = `<b>검토 항목 (고객용 리포트에는 나오지 않아요)</b><ul>${g.report.review.map((r) => `<li>${esc(r.text)}${r.type === 'needs-writing' ? ' <span class="badge">직접 작성 필요</span>' : ''}${r.type === 'jasi' ? ' <span class="badge">검토 대상</span>' : ''}</li>`).join('')}</ul>`;
   const o = project.orphanEdits;
   $('orphanBox').style.display = o.length ? 'block' : 'none';
   $('orphanBox').innerHTML = o.length ? `<b>보존된 편집본</b> — 다시 생성한 결과에 같은 자리가 없어 따로 모아 둔 문장이에요. 필요하면 복사해 알맞은 칸에 붙여 넣으세요.<ul>${o.map((x) => `<li><code>${esc(x.id)}</code> ${esc(x.text)}</li>`).join('')}</ul>` : '';
-  $('editor').innerHTML = g.report.chapters.map((c) => `<div class="chap"><h2>${esc(c.title)}${c.status === 'review' ? '<span class="badge">자동 풀이 범위 밖 · 직접 작성 필요</span>' : ''}</h2>
+  $('editor').innerHTML = g.report.chapters.map((c, i) => `<div class="chap" id="chap-${i}"><h2>${esc(c.title)}${c.status === 'review' ? '<span class="badge">자동 풀이 범위 밖 · 직접 작성 필요</span>' : ''}</h2>
     ${c.quoted ? `<p class="hint">${esc(c.quoted)}</p>` : ''}
     ${c.intro ? paraEditor(`${c.id}:intro`, c.intro, { label: '도입' }) : ''}
     ${c.sections.map((s) => `<h3>${esc(s.q)}${s.manual ? ' <span class="badge">직접 작성 칸</span>' : ''}</h3>${s.paras.map((p) => paraEditor(p.id, p.text, { manual: !!s.manual })).join('')}`).join('')}
     ${c.summary ? paraEditor(`${c.id}:summary`, c.summary, { label: '한 줄 정리' }) : ''}</div>`).join('');
+  renderChapNav();
 }
 function onEdit(e) {
   const ta = e.target.closest('textarea[data-id]'); if (!ta) return;
@@ -243,7 +257,9 @@ function onEdit(e) {
   markUnreviewed(); bump(); dirty = true; refreshState();
 }
 function onInputChange(e) {
-  if (e.target.closest('#tab-deliver')) { dirty = true; refreshState(); return; } // 메일 칸은 리포트 내용이 아니다.
+  if (e.target.closest('#mailDetails')) { dirty = true; refreshState(); return; } // 메일 칸은 리포트 내용이 아니다.
+  if (e.target.closest('#tab-design')) return onDesignChange();
+  if (e.target.id === 'birthDate') { if (!parseBirthDate()) return; } else if (['year', 'month', 'day'].includes(e.target.id)) syncBirthDate();
   syncFormState(); formToProject(); project.inputRev = (project.inputRev || 0) + 1; markUnreviewed(); bump(); dirty = true; refreshState();
   if (isStale()) msg('입력 정보가 바뀌었어요. 이전 결과는 미검토 상태가 되었고, 다시 생성해야 미리보기·PDF·전달을 할 수 있어요.');
 }
@@ -335,19 +351,148 @@ async function queueMail() {
   renderOutbox(); dirty = true; save({ quiet: true });
 }
 
+// ── 디자인·브랜드 ──
+const DESIGN_CHOICES = Object.entries(DESIGNS);
+const FONT_SAMPLE = '오래 비추는 불빛처럼, 마음을 둔 곳에 시간을 쓰는 사람이에요.';
+function renderDesignUi() {
+  const cur = project.brand.cover; const accent = (project.brand.accent || '').toLowerCase();
+  const legacy = LEGACY_DESIGNS[cur] ? `<p class="hint" style="grid-column:1/-1">이 프로젝트는 이전 표지("${esc(LEGACY_DESIGNS[cur].label)}")를 쓰고 있어요. 그대로 두거나 아래에서 새 디자인을 고를 수 있어요.</p>` : '';
+  $('designCards').innerHTML = legacy + DESIGN_CHOICES.map(([id, d]) => `<button type="button" class="card ${id === cur ? 'on' : ''}" data-design="${id}" aria-pressed="${id === cur}">
+    <img src="design-${id}.png" alt="${esc(d.label)} 표지와 본문 미리보기" loading="lazy"><b>${esc(d.label)}</b><span>${esc(d.desc)}</span></button>`).join('');
+  const D = DESIGNS[cur] || LEGACY_DESIGNS[cur] || DESIGNS.mystic;
+  $('paletteChips').innerHTML = D.palettes.map(([n, c]) => `<button type="button" class="chip ${c.toLowerCase() === accent ? 'on' : ''}" data-color="${c}"><i style="background:${c}"></i>${esc(n)}</button>`).join('');
+  if (/^#[0-9a-f]{6}$/i.test(project.brand.accent || '')) $('brandAccentPicker').value = project.brand.accent;
+  const card = (id, f, kind, on) => `<button type="button" class="fontcard ${on ? 'on' : ''}" data-${kind}="${id}"><small>${esc(f.label)} · ${esc(f.note)}</small><span class="sample" style="font-family:${f.family};font-weight:${kind === 'head' ? f.headWeight : 400}">${FONT_SAMPLE}</span></button>`;
+  $('bodyFontCards').innerHTML = Object.entries(FONTS).filter(([, f]) => f.body).map(([id, f]) => card(id, f, 'body', id === selBody)).join('');
+  $('headFontCards').innerHTML = Object.entries(FONTS).filter(([, f]) => f.head).map(([id, f]) => card(id, f, 'head', id === selHead)).join('');
+  const logo = project.brand.logo || '';
+  $('logoPreview').style.display = logo ? 'inline-block' : 'none'; $('logoPreview').src = logo || ''; $('btnLogoRemove').style.display = logo ? 'inline-block' : 'none';
+}
+// 디자인·브랜드 변경: 본문 편집은 그대로 두고, 검토 완료만 푼다(입력이 아니라서 stale은 아님).
+function onDesignChange() { formToProject(); markUnreviewed(); bump(); dirty = true; refreshState(); }
+function pickDesign(id) {
+  const D = DESIGNS[id]; if (!D) return;
+  $('brandCover').value = id; $('brandAccent').value = D.palettes[0][1]; selBody = D.bodyFont; selHead = D.headFont;
+  onDesignChange(); renderDesignUi(); msg(`디자인을 "${D.label}"(으)로 바꿨어요. 고친 문장은 그대로 두고, 검토 완료만 다시 확인하면 돼요.`.replace('"(으)로', '"로'));
+}
+$('designCards').addEventListener('click', (e) => { const b = e.target.closest('[data-design]'); if (b) pickDesign(b.dataset.design); });
+$('paletteChips').addEventListener('click', (e) => { const b = e.target.closest('[data-color]'); if (!b) return; $('brandAccent').value = b.dataset.color; onDesignChange(); renderDesignUi(); });
+$('brandAccentPicker').addEventListener('change', (e) => { $('brandAccent').value = e.target.value; onDesignChange(); renderDesignUi(); });
+$('bodyFontCards').addEventListener('click', (e) => { const b = e.target.closest('[data-body]'); if (!b) return; selBody = b.dataset.body; onDesignChange(); renderDesignUi(); });
+$('headFontCards').addEventListener('click', (e) => { const b = e.target.closest('[data-head]'); if (!b) return; selHead = b.dataset.head; onDesignChange(); renderDesignUi(); });
+
+// 로고: PNG·JPEG·WEBP만 받고, 캔버스로 다시 그려(최대 600px) 이미지 데이터만 남긴다. SVG·기타 형식은 받지 않는다.
+async function onLogoFile(file) {
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) return msg('로고는 PNG·JPEG·WEBP 이미지만 올릴 수 있어요.');
+  if (file.size > 2 * 1024 * 1024) return msg('로고 파일이 너무 커요(2MB 이하).');
+  let bmp; try { bmp = await createImageBitmap(file); } catch { return msg('이미지를 읽지 못했어요. 다른 파일을 골라 주세요.'); }
+  const k = Math.min(1, 600 / Math.max(bmp.width, bmp.height)); const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(bmp.width * k)); c.height = Math.max(1, Math.round(bmp.height * k)); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  let url = c.toDataURL('image/png'); if (url.length > LOGO_MAX_CHARS) url = c.toDataURL('image/jpeg', 0.85);
+  if (url.length > LOGO_MAX_CHARS) return msg('로고를 줄여도 용량이 커요. 더 단순한 이미지로 올려 주세요.');
+  project.brand.logo = url; onDesignChange(); renderDesignUi(); msg('로고를 넣었어요.');
+}
+$('logoFile').addEventListener('change', (e) => { if (e.target.files[0]) onLogoFile(e.target.files[0]); e.target.value = ''; });
+$('btnLogoRemove').addEventListener('click', () => { delete project.brand.logo; onDesignChange(); renderDesignUi(); msg('로고를 뺐어요.'); });
+
+// 브랜드 프로필: 새 고객에 자동으로 채운다. 이미 있는 고객 프로젝트는 "적용"을 눌렀을 때만 바꾼다.
+function brandOnly() { formToProject(); const b = structuredClone(project.brand); return b; }
+$('btnSaveProfile').addEventListener('click', () => {
+  const b = brandOnly(); const errs = validateBrand(b); if (errs.length) return msg(`브랜드 프로필로 저장하지 못했어요: ${errs[0]}`);
+  try { localStorage.setItem(PROFILE, JSON.stringify(b)); msg('내 브랜드 프로필로 저장했어요. 새 고객을 시작하면 자동으로 채워져요(이 브라우저에만 저장).'); }
+  catch { msg('브라우저 저장 공간이 부족해 프로필을 저장하지 못했어요. "브랜드 프로필 백업"으로 파일을 받아 두세요.'); }
+});
+$('btnApplyProfile').addEventListener('click', () => {
+  const b = loadProfile(); if (!b) return msg('저장된 브랜드 프로필이 없어요. 먼저 "내 브랜드 프로필로 저장"을 눌러 주세요.');
+  project.brand = structuredClone(b); projectToForm(); onDesignChange(); msg('저장한 브랜드 프로필을 이 고객에 적용했어요. 고친 문장은 그대로이고, 검토 완료만 다시 확인하면 돼요.');
+});
+$('btnExportProfile').addEventListener('click', () => {
+  const b = brandOnly(); const blob = new Blob([JSON.stringify({ type: 'reportApp.brandProfile', version: 1, brand: b }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `brand-profile-${safeName(b.name || 'unnamed')}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+$('profileImport').addEventListener('change', async (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  let j; try { j = JSON.parse(await f.text()); } catch { return msg('브랜드 프로필 파일을 읽을 수 없어요.'); }
+  const b = j && j.type === 'reportApp.brandProfile' ? j.brand : null; const errs = b ? validateBrand(b) : ['형식 오류'];
+  if (errs.length) return msg(`불러올 수 없는 브랜드 프로필이에요: ${errs[0]}`);
+  try { localStorage.setItem(PROFILE, JSON.stringify(b)); } catch { return msg('브라우저 저장 공간이 부족해 프로필을 저장하지 못했어요.'); }
+  msg('브랜드 프로필을 불러왔어요. 지금 고객에 쓰려면 "이 고객에 적용"을 누르세요.');
+});
+
+// ── 생년월일 빠른 입력 ──
+function parseBirthDate() {
+  const m = /^\s*(\d{4})\D?(\d{1,2})\D?(\d{1,2})\s*$/.exec($('birthDate').value);
+  if (!m) return false;
+  $('year').value = +m[1]; $('month').value = +m[2]; $('day').value = +m[3]; return true;
+}
+function syncBirthDate() {
+  const y = $('year').value, mo = $('month').value, d = $('day').value;
+  if (document.activeElement !== $('birthDate')) $('birthDate').value = y && mo && d ? `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` : '';
+}
+
+// ── PDF 전 확인 목록 ──
+function renderChecklist() {
+  if (!project) return;
+  const g = project.generated; const stale = isStale();
+  const manual = g && !g.unverified ? g.report.chapters.find((c) => c.sections.some((s) => s.manual)) : null;
+  const manualId = manual ? manual.sections.find((s) => s.manual).paras[0].id : null;
+  const items = [
+    [!!g && !stale, g ? (stale ? '입력이 바뀌어 리포트를 다시 만들어야 해요' : '리포트를 만들었어요') : '아직 리포트를 만들지 않았어요'],
+    [!!(project.brand.name || '').trim() && !/○○/.test(project.brand.name), '브랜드명을 넣었어요 (2단계)'],
+    ...(manualId ? [[!!(project.edits[manualId] || '').trim(), '7장 직접 작성 칸을 채웠어요 (3단계)']] : []),
+    [!!project.status.reviewedHash, '현재 내용으로 검토 완료를 확인했어요 (아래 체크)'],
+  ];
+  $('pdfChecklist').innerHTML = items.map(([ok, t]) => `<li class="${ok ? 'ok' : ''}">${esc(t)}</li>`).join('') + `<li class="ok" style="color:var(--muted)">모두 갖춰지지 않으면 "검토용 · 최종본 아님"이 찍힌 PDF만 만들어져요.</li>`;
+}
+
+// ── 편집기: 장 이동·옆 미리보기 ──
+function renderChapNav() {
+  const g = project.generated;
+  const label = (title) => { const i = title.indexOf('. '); return i > 0 ? `${title.slice(0, i)} · ${title.slice(i + 2).slice(0, 14)}` : title; };
+  $('chapNav').innerHTML = g && !g.unverified ? g.report.chapters.map((c, i) => `<a href="#chap-${i}" data-chap="${i}">${esc(label(c.title))}</a>`).join('') : '';
+}
+$('chapNav').addEventListener('click', (e) => { const a = e.target.closest('[data-chap]'); if (!a) return; e.preventDefault(); const el = document.getElementById(`chap-${a.dataset.chap}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+async function sidePreview() {
+  if (!project.generated || isStale()) { $('sidePreview').srcdoc = ''; return; }
+  formToProject(); const s = snapshot();
+  const r = await api('/api/preview', { project });
+  if (!current(s)) return;
+  $('sidePreview').srcdoc = r.ok ? r.data : '';
+}
+$('btnSidePreview').addEventListener('click', () => {
+  const on = $('editWrap').classList.toggle('withpreview');
+  $('btnSidePreview').textContent = on ? '옆 미리보기 닫기' : '옆에 미리보기 보기';
+  if (on) sidePreview();
+});
+$('btnToDesign').addEventListener('click', () => switchTab('design'));
+$('birthDate').addEventListener('blur', () => { if (parseBirthDate()) syncBirthDate(); });
+$('btnToPdf').addEventListener('click', () => switchTab('preview'));
+
+// ── 마지막 작업 이어서 하기 ──
+function showResume() {
+  const all = Object.values(loadAll()).filter((p) => p && p.id).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+  if (!all.length) return;
+  const p = all[0];
+  $('resumeText').textContent = `마지막 작업: ${p.client?.name || '(이름 없음)'} · ${(p.updatedAt || '').slice(0, 16).replace('T', ' ')}`;
+  $('resumeBox').style.display = 'flex'; $('btnResume').dataset.id = p.id;
+}
+$('btnResume').addEventListener('click', () => { $('resumeBox').style.display = 'none'; openProject($('btnResume').dataset.id); });
+$('btnResumeClose').addEventListener('click', () => { $('resumeBox').style.display = 'none'; });
+
 // ── 화면 전환·초기화 ──
 function switchTab(t) {
   document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.tab === t));
   document.querySelectorAll('section.tab').forEach((s) => s.classList.toggle('on', s.id === `tab-${t}`));
-  if (t === 'preview') preview();
-  if (t === 'deliver' && project.generated && !$('mailSubject').value) $('mailSubject').value = `${project.brand.name || ''} 사주 리포트를 보내 드려요`.trim();
+  if (t === 'preview') { preview(); if (project.generated && !$('mailSubject').value) $('mailSubject').value = `${project.brand.name || ''} 사주 리포트를 보내 드려요`.trim(); }
+  if (t === 'edit' && $('editWrap').classList.contains('withpreview')) sidePreview();
+  window.scrollTo(0, 0);
 }
 document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-for (const sel of ['#tab-input input', '#tab-input select', '#tab-input textarea', '#tab-deliver input:not(#reviewed)', '#tab-deliver textarea']) {
+for (const sel of ['#tab-input input', '#tab-input select', '#tab-input textarea', '#tab-design input:not([type=file]):not([type=color])', '#tab-design textarea', '#mailDetails input', '#mailDetails textarea']) {
   document.querySelectorAll(sel).forEach((el) => el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', onInputChange));
 }
 $('btnGenerate').addEventListener('click', generate); $('btnSave').addEventListener('click', () => save()); $('btnExport').addEventListener('click', exportJson);
-$('btnNew').addEventListener('click', () => { const kept = keepCurrentBeforeSwitch(); if (!kept.ok) return; setProject(emptyProject(), `${kept.note}새 프로젝트를 시작했어요.`); switchTab('input'); });
+$('btnNew').addEventListener('click', () => { const kept = keepCurrentBeforeSwitch(); if (!kept.ok) return; setProject(emptyProject(), `${kept.note}새 고객을 시작했어요.${loadProfile() ? ' 저장한 브랜드 프로필을 채워 두었어요.' : ''}`); switchTab('input'); });
 $('projectList').addEventListener('change', (e) => { if (e.target.value) openProject(e.target.value); e.target.value = ''; });
 $('fileImport').addEventListener('change', (e) => { if (e.target.files[0]) importJson(e.target.files[0]); e.target.value = ''; });
 $('editor').addEventListener('input', onEdit);
@@ -360,6 +505,7 @@ $('reviewed').addEventListener('change', onReviewed);
 window.addEventListener('beforeunload', (e) => { if (dirty) { keepCurrentBeforeSwitch(); e.preventDefault(); e.returnValue = ''; } });
 
 setProject(emptyProject(), '');
+showResume();
 try {
   const info = (await call('/api/info')).data;
   $('topicHint').textContent = `자동 집중 풀이가 가능한 고민: ${info.supportedTopics.join(', ')}. 그 밖의 질문은 근거 없이 풀지 않고, 7장에 직접 작성 칸으로 남겨요(직접 작성해야 최종본이 돼요).`;
@@ -367,8 +513,9 @@ try {
   if (caps.mail === 'unavailable') {
     // 정적 배포본: 자동 이메일은 아직 연결 준비 중. 시험용 전송기도 노출하지 않는다.
     $('btnQueue').textContent = '자동 이메일 (연결 준비 중)'; $('btnQueue').dataset.unavailable = '1';
-    $('attachInfo').textContent = '자동 이메일은 연결 준비 중이에요. 지금은 3단계에서 PDF로 저장한 파일을 직접 메일에 첨부해 보내 주세요.';
-  }
+    $('attachInfo').textContent = '자동 이메일은 연결 준비 중이에요. 지금은 PDF로 저장한 파일을 직접 메일에 첨부해 보내 주세요.';
+    $('mailState').textContent = '연결 준비 중';
+  } else { $('mailState').textContent = '시험용 전송기(실제 발송 안 함)'; }
   if (caps.pdf === 'print') { $('btnPdf').textContent = 'PDF로 저장(인쇄 창)'; $('pdfHint').style.display = 'block'; }
   if (!info.pdf) $('pdfState').textContent = 'PDF 엔진이 없어요. 미리보기에서 브라우저 인쇄(PDF로 저장)를 사용하세요.';
 } catch { /* 서버 정보 없이도 입력은 가능 */ }

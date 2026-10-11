@@ -143,7 +143,7 @@ function keyChapter(saju, k, c7, concern) {
   const q = (concern?.question || '').trim(); const qs = q.length > 30 ? `${q.slice(0, 30)}…` : q;
   const third = c7.status === 'generated'
     ? (c7.topic === 'work' ? `7장 · 적어 주신 고민("${qs}")을 선택지별로 나눠, 무엇이 다르고 무엇부터 확인할지 정리했어요.` : `7장 · 적어 주신 고민("${qs}")을 4장의 계산 요소에 맞춰 첫 석 달의 순서로 정리했어요.`)
-    : c7.status === 'review' ? `7장 · 적어 주신 질문("${qs}")은 자동 풀이 범위 밖이라, 상담 내용을 바탕으로 직접 쓴 풀이를 실어요.`
+    : c7.status === 'review' ? `7장 · 적어 주신 질문("${qs}")에 대한 풀이는 상담 내용을 바탕으로 직접 정리했어요.`
       : `4장 · 돈은 "${MONEY_FOCUS[k.status['비겁']]}"부터 살펴보면 좋아요. 이번에는 고민을 적지 않아 7장은 비워 두었어요.`;
   return { id: 'key', title: '한눈에 보는 핵심', intro: '', sections: [{ q: '이 리포트의 핵심 세 가지', paras: [
     P('meaning', `1장 · ${D.image}에 비유되는 ${D.name}의 사람이에요. 겉으로는 ${iga(S.label)} 먼저 보이고, 힘은 '${M.label}'에서 얻는 쪽이에요.`, 'KEY-1', `일간 ${k.dm}, 월간 ${k.monthStem}, 월지 ${k.monthZhi}`),
