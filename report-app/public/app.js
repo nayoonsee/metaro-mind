@@ -103,6 +103,28 @@ function keepCurrentBeforeSwitch() {
   return { ok: true, note: `저장하지 않았던 "${project.client.name || '이름 없음'}" 프로젝트를 자동으로 저장해 두었어요. ` };
 }
 function setProject(p, note) { project = p; epoch++; bump(); dirty = false; projectToForm(); refreshList(); msg(note); }
+// 가져오기·저장본 열기: 저장된 생성 본문(baseline)을 믿지 않고, 같은 입력으로 현재 생성기를 다시 돌려 대조한다.
+// 다르면 현재 정규 본문으로 바꾸고 검토를 해제한다. 사용자가 직접 고친 문장(edits)은 현재 문단에 대응되는 것만 적용하고,
+// 대응되지 않는 편집은 "보존된 편집본"(orphanEdits)으로 옮겨 백업에도 남긴다.
+// 결과: { p, note } 또는 { error }. 편집기·미리보기·검토·PDF가 모두 같은 정규 본문 + edits를 쓰게 된다.
+async function normalizeBaseline(p) {
+  if (!p.generated) return { p, note: '' };
+  if (p.generated.clientKey !== clientKey(p.client, p.concern)) {
+    return { p, note: '저장된 결과가 지금 입력과 달라 이전 정보 기준 결과로 표시돼요. 다시 생성해 주세요. ' };
+  }
+  const r = await api('/api/generate', { client: p.client, concern: p.concern });
+  if (!r.ok) return { error: `저장된 입력으로 본문을 다시 만들지 못해 열지 않았어요: ${(r.data.errors || ['오류'])[0]}` };
+  const canon = r.data.generated;
+  const same = canon.fingerprint === p.generated.fingerprint && JSON.stringify(canon.report) === JSON.stringify(p.generated.report);
+  const ids = new Set(allParaIds(canon)); const moved = [];
+  for (const [id, text] of Object.entries(p.edits)) if (!ids.has(id)) { moved.push(id); p.orphanEdits.push({ id, text, at: new Date().toISOString() }); delete p.edits[id]; }
+  if (same && !moved.length) return { p, note: '' };
+  canon.identityKey = identityKey(p.client);
+  p.generated = canon; p.status = { reviewed: false, reviewedHash: null };
+  let note = same ? '' : '저장된 생성 본문이 현재 생성 결과와 달라, 현재 기준 본문으로 바꿨어요(직접 고친 문장은 그대로 두었어요). 내용을 다시 검토해 주세요. ';
+  if (moved.length) note += `현재 본문에 같은 자리가 없는 편집 ${moved.length}개는 "보존된 편집본"으로 옮겼어요. `;
+  return { p, note, changed: true };
+}
 function openProject(id) {
   // 지금 열려 있는 프로젝트를 다시 고르면, 저장된(더 오래된) 사본으로 덮어쓰지 않고 그대로 둔다.
   if (project && id === project.id) { msg('이미 열려 있는 프로젝트예요. 화면의 내용이 가장 최신이에요.'); return; }
@@ -110,7 +132,13 @@ function openProject(id) {
   // 현재 프로젝트를 저장한 뒤에 읽는다(저장 전에 읽어 둔 오래된 객체를 쓰지 않음).
   const p = loadAll()[id]; if (!p) return msg('저장된 프로젝트를 찾지 못했어요.');
   const errs = validateProjectSchema(p); if (errs.length) return msg(`${kept.note}저장된 프로젝트 형식이 올바르지 않아 열지 않았어요: ${errs[0]}`);
-  setProject(p, `${kept.note}프로젝트를 열었어요.`);
+  const e0 = epoch;
+  return normalizeBaseline(p).then((n) => {
+    if (epoch !== e0) return; // 그사이 다른 프로젝트로 바뀌었으면 적용하지 않음
+    if (n.error) return msg(`${kept.note}${n.error}`);
+    setProject(n.p, `${kept.note}${n.note}프로젝트를 열었어요.`);
+    if (n.changed) { dirty = true; refreshState(); }
+  });
 }
 function exportJson() {
   formToProject();
@@ -123,9 +151,13 @@ async function importJson(file) {
   try { p = JSON.parse(await file.text()); } catch { return msg('JSON 파일을 읽을 수 없어요.'); }
   const errs = validateProjectSchema(p);
   if (errs.length) return msg(`불러올 수 없는 파일이에요. 형식 검사에 실패했어요: ${errs.slice(0, 3).join(' / ')}`);
+  const e0 = epoch;
+  const n = await normalizeBaseline(p);
+  if (epoch !== e0) return;
+  if (n.error) return msg(n.error);
   const kept = keepCurrentBeforeSwitch(); if (!kept.ok) return;
-  p.status = { reviewed: false, reviewedHash: null }; // 가져온 파일의 검토 표시는 다시 확인해야 한다.
-  setProject(p, `${kept.note}JSON 백업을 불러왔어요. 검토 완료는 다시 확인해 주세요.`); dirty = true; refreshState();
+  n.p.status = { reviewed: false, reviewedHash: null }; // 가져온 파일의 검토 표시는 다시 확인해야 한다.
+  setProject(n.p, `${kept.note}${n.note}JSON 백업을 불러왔어요. 검토 완료는 다시 확인해 주세요.`); dirty = true; refreshState();
 }
 
 // ── 생성·재생성 ──

@@ -190,6 +190,68 @@ await step('네트워크: 같은 사이트의 정적 파일 GET만 있고, 외�
   const kinds = [...new Set(requests.filter((r) => r.url.startsWith(BASE)).map((r) => new URL(r.url).pathname.replace(/files\/.*/, 'files/*')))];
   writeFileSync(join(ART, 'network-log.json'), JSON.stringify({ total: requests.length, distinctPaths: kinds, nonGet: 0, external: 0 }, null, 2));
 });
+const OUTPUT = async (file) => (await printToPdf(file)).text;
+console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]');
+{
+  const EXPLICIT = '[명시적 수정] 판매자가 직접 고친 문장이 최종 출력까지 그대로 가야 해요.';
+  let bk, editId, otherId, canonOther;
+  await step('준비: 명시적 수정 1개가 든 정상 백업', async () => {
+    await page.click('#btnNew'); await fillInput({ brand: '달빛 상담소', name: '정규화 고객', birth: { leapMonth: false, hourUnknown: false, ...CASES[0].birth }, concern: CASES[0].concern }); await generate();
+    const tas = page.locator('#editor .chap').nth(2).locator('textarea');
+    editId = await tas.nth(1).getAttribute('data-id'); otherId = await tas.nth(2).getAttribute('data-id'); canonOther = await tas.nth(2).inputValue();
+    await tas.nth(1).fill(EXPLICIT);
+    const dl = page.waitForEvent('download'); await page.click('#btnExport'); bk = join(ART, 'norm-backup.json'); await (await dl).saveAs(bk);
+  });
+  const importFile = async (obj, name) => { const pth = join(ART, name); writeFileSync(pth, JSON.stringify(obj)); await page.click('#btnNew'); await page.setInputFiles('#fileImport', pth); await page.waitForFunction(() => /JSON 백업을 불러왔어요|불러올 수 없는|열지 않았어요/.test(document.getElementById('globalMsg').textContent)); rmSync(pth); };
+  const finalText = async (file) => { await markReviewed(); return OUTPUT(file); };
+  await step('1) 정상 백업 왕복: 본문 변경 안내 없음, 명시적 수정 유지', async () => {
+    await importFile(JSON.parse(readFileSync(bk, 'utf8')), 'n1.json');
+    assert.doesNotMatch(await page.textContent('#globalMsg'), /현재 기준 본문으로 바꿨어요/);
+    await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
+  });
+  await step('2) 입력은 그대로, generated 문단만 바꾼 백업 → 현재 정규 본문으로 바꾸고 재검토 필요, 편집기 = 최종 출력', async () => {
+    const j = JSON.parse(readFileSync(bk, 'utf8'));
+    for (const c of j.generated.report.chapters) for (const s of c.sections) for (const p of s.paras) if (p.id === otherId) p.text = '변조된 본문 문장이에요.';
+    j.status = { reviewed: true, reviewedHash: 'x'.repeat(64) };
+    await importFile(j, 'n2.json');
+    assert.match(await page.textContent('#globalMsg'), /현재 기준 본문으로 바꿨어요.*다시 검토/);
+    assert.equal((await proj()).status.reviewedHash, null);
+    await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${otherId}"]`), canonOther);
+    assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
+    assert.doesNotMatch(await page.textContent('#editor'), /변조된 본문/);
+    const t = await finalText('norm-tampered.pdf');
+    assert.doesNotMatch(t, /변조된 본문/); assert.match(t.replace(/\s+/g, ''), new RegExp(canonOther.replace(/\s+/g, '').slice(0, 30).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  });
+  await step('3) 이전 라이브러리 본문 백업 → 현재 본문으로 정규화, 대응 없는 편집은 보존된 편집본으로 옮기고 백업에도 남음', async () => {
+    const j = JSON.parse(readFileSync(bk, 'utf8')); let n = 0;
+    for (const c of j.generated.report.chapters) for (const s of c.sections) for (const p of s.paras) if (p.id !== editId) p.text = `이전 라이브러리 문장 ${++n}`;
+    const s0 = j.generated.report.chapters[3].sections[0]; s0.paras[0].id = 'ch3:OLD-RULE:meaning:1';
+    j.edits['ch3:OLD-RULE:meaning:1'] = '[이전 편집] 옛 문단에 했던 수정';
+    await importFile(j, 'n3.json');
+    assert.match(await page.textContent('#globalMsg'), /현재 기준 본문으로 바꿨어요.*보존된 편집본/);
+    await tab('edit'); assert.doesNotMatch(await page.textContent('#editor'), /이전 라이브러리 문장/);
+    assert.match(await page.textContent('#orphanBox'), /\[이전 편집\] 옛 문단에 했던 수정/);
+    assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
+    const dl = page.waitForEvent('download'); await page.click('#btnExport'); const p2 = join(ART, 'n3-out.json'); await (await dl).saveAs(p2);
+    const out = JSON.parse(readFileSync(p2, 'utf8')); rmSync(p2);
+    assert.ok(out.orphanEdits.some((o) => o.text === '[이전 편집] 옛 문단에 했던 수정')); assert.ok(!JSON.stringify(out.generated).includes('이전 라이브러리 문장'));
+    const t = await finalText('norm-oldlib.pdf'); assert.doesNotMatch(t, /이전 라이브러리 문장|이전 편집/);
+  });
+  await step('4) 명시적 수정 문장 보존과 최종 출력 일치', async () => {
+    const t = (await finalText('norm-explicit.pdf')).replace(/\s+/g, '');
+    assert.ok(t.includes(EXPLICIT.replace(/\s+/g, '')), '명시적 수정이 최종 출력에 없음');
+  });
+  await step('저장본 열기도 같은 대조: 브라우저 저장소의 본문을 바꿔도 열 때 정규화·재검토', async () => {
+    await page.click('#btnSave'); const pid = (await proj()).id;
+    await page.evaluate(([id, oid]) => { const all = JSON.parse(localStorage.getItem('reportApp.projects.v1')); for (const c of all[id].generated.report.chapters) for (const s of c.sections) for (const p of s.paras) if (p.id === oid) p.text = '저장소에서 바뀐 본문'; all[id].status.reviewedHash = 'y'.repeat(64); localStorage.setItem('reportApp.projects.v1', JSON.stringify(all)); }, [pid, otherId]);
+    await page.click('#btnNew'); await page.selectOption('#projectList', pid);
+    await page.waitForFunction(() => /프로젝트를 열었어요/.test(document.getElementById('globalMsg').textContent));
+    assert.match(await page.textContent('#globalMsg'), /다시 검토/);
+    await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${otherId}"]`), canonOther); assert.equal((await proj()).status.reviewedHash, null);
+  });
+  rmSync(bk, { force: true });
+}
+
 await step('브라우저 콘솔 오류 없음', async () => assert.deepEqual(errors, []));
 
 await browser.close(); srv.close();
