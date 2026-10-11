@@ -1,0 +1,95 @@
+{
+  "sample": true,
+  "note": "가상의 인물로 만든 샘플 결과지입니다. 실제 사람의 정보나 실제 AI 풀이가 아닙니다.",
+  "saju": {
+    "name": "달빛",
+    "gender": "여성",
+    "solarBirth": "1996-03-21",
+    "lunarBirth": "一九九六年二月初三",
+    "pillars": {
+      "year": {
+        "ganzhi": "丙子",
+        "tenGod": "劫财",
+        "stage": "绝"
+      },
+      "month": {
+        "ganzhi": "辛卯",
+        "tenGod": "偏财",
+        "stage": "病"
+      },
+      "day": {
+        "ganzhi": "丁巳",
+        "tenGod": "日主",
+        "stage": "帝旺"
+      },
+      "time": null
+    },
+    "hideGan": {
+      "year": [
+        "癸"
+      ],
+      "month": [
+        "乙"
+      ],
+      "day": [
+        "丙",
+        "庚",
+        "戊"
+      ],
+      "time": null
+    },
+    "dayMaster": "丁",
+    "wuxingCount": {
+      "木": 1,
+      "火": 3,
+      "土": 0,
+      "金": 1,
+      "水": 1
+    },
+    "hourKnown": false,
+    "notices": []
+  },
+  "dateInfo": {
+    "currentDate": "2026-10-11",
+    "currentYear": 2026,
+    "currentMonth": 10,
+    "remainingMonthsInYear": 3,
+    "remainingMonthNames": [
+      "10월",
+      "11월",
+      "12월"
+    ]
+  },
+  "free": {
+    "opening": "일 얘기부터 하자. 너는 지금 일이 싫은 게 아니야. 이 일이 너를 얼마나 쓰고 있는지가 헷갈리는 거지.",
+    "temperament": {
+      "title": "타고난 기질",
+      "body": "너는 한 군데를 오래 비추는 사람이야. 넓게 퍼지기보다 마음 둔 일에 깊게 파고들어.",
+      "evidence": "일간이 정화(丁火)라 촛불처럼 한 점에 집중하는 기운이야. 일지 사화(巳火)가 그 불을 받쳐 줘."
+    },
+    "question": {
+      "title": "네가 물어본 것",
+      "body": "계속해도 돼. 다만 지금 방식 그대로는 아니야. 너는 이 일에서 불은 다 쓰고 있는데, 그 불이 어디로 새는지는 안 보고 있어. 올해 남은 기간에는 일을 더 늘리기 전에, 지금 하는 일 중 너를 가장 덜 쓰는 하나부터 정리해 봐.",
+      "evidence": "편재와 겁재가 함께 있어 벌이는 힘은 크고, 지키는 힘은 상대적으로 약한 배치야."
+    },
+    "wuxing": {
+      "title": "오행이 말해주는 것",
+      "body": "불의 기운이 세. 열정이 먼저 나가고, 정리는 나중에 와.",
+      "evidence": "년·월·일주 세 기둥 기준 화(火) 3, 목·금·수 각 1이야. 시간을 몰라 시주는 빠져 있어서 토(土)가 0이라고 단정하진 않아."
+    }
+  },
+  "previews": {
+    "wuxing:first": "불의 기운이 세.",
+    "wuxing:second": "열정이 먼저 나가고, 정리는 나중에 와.",
+    "wuxing:all": "불의 기운이 세.",
+    "love:first": "관계에서도 한 사람에게 깊게 들어가.",
+    "love:second": "대신 내 열기를 상대가 못 따라오면 혼자 지쳐.",
+    "love:all": "관계에서도 한 사람에게 깊게 들어가.",
+    "money:first": "돈은 꾸준한 월급보다 기회를 잡을 때 크게 움직여.",
+    "money:second": "문제는 기회가 보이면 조건을 덜 따진다는 거야.",
+    "money:all": "돈은 꾸준한 월급보다 기회를 잡을 때 크게 움직여.",
+    "question:first": "계속해도 돼.",
+    "question:second": "다만 지금 방식 그대로는 아니야.",
+    "question:all": "계속해도 돼."
+  }
+}

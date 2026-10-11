@@ -232,6 +232,7 @@ function renderPillars(pillars) {
   ];
   pillarsGrid.innerHTML = order.map(([key, label]) => {
     const p = pillars[key];
+    if (!p) return `<div class="pillar"><div class="gz">?</div><div class="label">${label}</div><div class="god">시간 모름</div></div>`;
     return `<div class="pillar">
       <div class="gz">${p.ganzhi}</div>
       <div class="label">${label}</div>

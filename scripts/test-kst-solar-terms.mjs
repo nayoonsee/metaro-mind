@@ -38,7 +38,7 @@ import {
   twelveStageForZhi,
   getKstYearMonthPillars,
 } from '../api/_kst-solar-term-adapter.js';
-import { calcSaju } from '../api/_saju-core.js';
+import { calcSaju, buildDaYun } from '../api/_saju-core.js';
 
 let passCount = 0;
 function check(name, fn) {
@@ -194,7 +194,8 @@ console.log('\n6. 일주·시주가 보정 과정에서 절대 바뀌지 않는�
 console.log('\n7. 대운 순서와 시작 연도는 유지되는지 (나윤)');
 // ---------------------------------------------------------------------------
 {
-  const result = await calcSaju({ year: 1983, month: 7, day: 19, hour: 10, minute: 30, gender: '여성', calendar: 'solar', name: '나윤' });
+  // 대운은 calcSaju 결과에서 빠졌다(미검증). 계산 함수 자체가 바뀌지 않았는지만 직접 확인한다.
+  const result = { daYun: buildDaYun(Solar.fromYmdHms(1983, 7, 19, 10, 30, 0).getLunar().getEightChar(), '여성') };
   const expected = [
     { startYear: 1990, endYear: 1999, startAge: 8, endAge: 17, ganzhi: '庚申' },
     { startYear: 2000, endYear: 2009, startAge: 18, endAge: 27, ganzhi: '辛酉' },
@@ -360,8 +361,9 @@ console.log('\n12. 대운 교운 계산 재검증 (source + 실행값)');
 
   console.log('\n  12-2. 연주·월주만 보정되고 대운은 기존 EightChar(비보정)를 쓰는지 — 소스 재확인');
   const saju = (await (await import('node:fs/promises')).readFile(new URL('../api/_saju-core.js', import.meta.url), 'utf8'));
-  check('calcSaju()가 buildDaYun에 trueEightChar를 그대로 넘김 (probe 아님)', () => {
-    assert.match(saju, /daYun: buildDaYun\(trueEightChar, gender\)/);
+  check('calcSaju()가 미검증 대운을 결과에 넣지 않음 (buildDaYun 호출 없음)', () => {
+    const body = saju.slice(saju.indexOf('export async function calcSaju'));
+    assert.doesNotMatch(body.slice(0, body.indexOf('export async function callClaude')), /buildDaYun\(|daYun:/);
   });
 
   console.log('\n  12-3. 출생시각-절입시각 실제 차이 (시:분 단위, 수정 전/후 동일 — 대운은 애초에 미수정)');

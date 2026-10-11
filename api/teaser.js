@@ -1,4 +1,6 @@
 import { calcSaju, callClaude } from './_saju-core.js';
+import { guardPaidCall } from './_guard.js';
+import { splitTeaser } from './_teaser-split.js';
 
 // Server-computed "today" in Asia/Seoul — never the browser's clock, never guessed
 // by the model. Accepts an optional reference Date so this is unit-testable without
@@ -68,23 +70,47 @@ function normalizeTeaser(rawText) {
   return { opening, sections };
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+const TOPICS = ['인연과 연애', '지나간 사람과의 재회', '돈과 일', '관계와 선택', '앞으로의 전체 흐름'];
+const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+const intIn = (v, min, max) => (Number.isInteger(v) && v >= min && v <= max ? v : null);
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
+// 유료 호출 전에 입력을 검증·축소한다. 잘못된 입력으로는 Claude를 부르지 않는다.
+export function validateTeaserInput(body) {
+  const b = body && typeof body === 'object' ? body : {};
+  const year = intIn(b.year, 1900, 2100);
+  const month = intIn(b.month, 1, 12);
+  const day = intIn(b.day, 1, 31);
+  if (!year || !month || !day) return { error: '생년월일을 다시 확인해줘.' };
+  const hour = intIn(b.hour, 0, 23);
+  const minute = hour === null ? null : (intIn(b.minute, 0, 59) ?? 0);
+  return {
+    value: {
+      year, month, day,
+      hour: hour === null ? undefined : hour,
+      minute: minute === null ? undefined : minute,
+      gender: b.gender === '남성' ? '남성' : '여성',
+      calendar: b.calendar === 'lunar' ? 'lunar' : 'solar',
+      name: str(b.name, 20),
+      relationshipStatus: str(b.relationshipStatus, 40),
+      jobStatus: str(b.jobStatus, 80),
+      topic: TOPICS.includes(b.topic) ? b.topic : '',
+      question: str(b.question, 300),
+    },
+  };
+}
+
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const parsed = validateTeaserInput(req.body);
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  if (!guardPaidCall(req, res, 'teaser')) return;
 
   try {
     const {
       year, month, day, hour, minute, gender, calendar, name,
       relationshipStatus, jobStatus, topic, question,
-    } = req.body;
-
-    if (!year || !month || !day) {
-      return res.status(400).json({ error: 'year, month, day는 필수입니다.' });
-    }
+    } = parsed.value;
 
     const saju = await calcSaju({ year, month, day, hour, minute, gender, calendar, name });
     const dateInfo = getSeoulDateInfo();
@@ -95,7 +121,7 @@ export default async function handler(req, res) {
       pillars: saju.pillars,
       hideGan: saju.hideGan,
       wuxingCount: saju.wuxingCount,
-      daYun: saju.daYun.slice(0, 5),
+      hourKnown: saju.hourKnown,
       relationshipStatus: relationshipStatus || '',
       jobStatus: jobStatus || '',
       topic: topic || '',
@@ -110,7 +136,13 @@ export default async function handler(req, res) {
 
     const system = `당신은 "현담"이라는 이름의 젊은 역술가 캐릭터입니다. 반말로 말하되, 흔한 "콜드리딩 챗봇" 말투(예: "너는 겉으론 태연한 척...", "그런데 진짜로는...")를 그대로 베끼지 말고, 현담만의 어투를 쓰세요: 문장을 짧게 끊고, 단정적으로 던진 뒤, 이유를 근거로 설명하는 방식. 다정하지 않고 살짝 시비 걸듯 직설적이되 무례하진 않게.
 
-아래 JSON으로 주어진 정확한 사주 데이터(일간, 십성, 지장간, 오행 분포, 대운)와 사용자가 알려준 상황(연애상태/직업상태/고민)을 근거로 리딩을 만들되, 절대 "사주 수업"처럼 쓰지 마세요. 사용자가 "맞아, 내가 실제로 그런데"라고 느끼게 만드는 게 목표입니다.
+아래 JSON으로 주어진 정확한 사주 데이터(일간, 십성, 지장간, 오행 분포)와 사용자가 알려준 상황(연애상태/직업상태/고민)을 근거로 리딩을 만들되, 절대 "사주 수업"처럼 쓰지 마세요. 사용자가 "맞아, 내가 실제로 그런데"라고 느끼게 만드는 게 목표입니다.
+
+[출생 시간을 모를 때 — 반드시 지킬 것]
+hourKnown이 false면 pillars.time과 hideGan.time은 null이고, wuxingCount도 년·월·일주 3개 기둥만 센 값입니다. 이때 시주·태어난 시간대·"말년" 같은 시주 기반 해석을 절대 하지 말고, 있는 3개 기둥만 근거로 쓰세요. 오행 개수가 적다고 "부족하다"고 단정하지 마세요(시주가 빠진 것일 수 있음).
+
+[대운은 쓰지 않습니다]
+대운 데이터는 검증되지 않아 제공하지 않습니다. 대운·10년 주기·몇 살부터 같은 말을 body와 evidence 어디에도 쓰지 마세요.
 
 [topic과 question은 다른 필드입니다 — 절대 혼동하지 마세요]
 topic은 사용자가 고른 "하나의 카테고리 이름"입니다 (예: "관계와 선택", "돈과 일"). 이름 안에 "와"/"과"가 있어도 두 가지를 각각 물어본 게 아니라 하나의 주제 명칭입니다 — 예를 들어 topic이 "관계와 선택"이면 "관계랑 선택, 두 개 다 물었네" 같은 문장을 절대 쓰지 마세요. question은 사용자가 직접 적은 자유 서술 고민이며, 비어 있을 수 있습니다. question이 비어 있으면 topic 카테고리 안에서 일반적인 흐름만 설명하고, topic을 질문처럼 되묻지 마세요.
@@ -119,7 +151,7 @@ topic은 사용자가 고른 "하나의 카테고리 이름"입니다 (예: "관
 1) 관찰 (전문용어 없이, 일상어로 성향/패턴을 짚기)
 2) 사용자의 현실에서 나타나는 구체적인 방식 (그 패턴이 실제로 어떤 행동/선택으로 드러나는지)
 3) 지금 고민(question 또는 topic)과의 명시적 연결 (왜 그 패턴이 지금 이 고민으로 이어지는지)
-사주 근거(일간/오행/십성/지장간/대운 명칭 등)는 body에 쓰지 말고 evidence 필드에만 담으세요.
+사주 근거(일간/오행/십성/지장간 명칭 등)는 body에 쓰지 말고 evidence 필드에만 담으세요.
 
 좋은 예시 (이 구조를 참고하되 문장을 그대로 베끼지 말고 실제 데이터에 맞게 새로 쓰세요):
 "너는 갈등 자체보다, 선택한 뒤 상대가 실망할까 봐 결정을 미루는 쪽에 가까워. 그래서 이미 마음은 한쪽으로 기울었는데도 관계를 끝내거나 이어가는 말을 먼저 꺼내지 못했을 가능성이 커. 네가 적어준 고민이 반복되는 이유도 여기에 있어."
@@ -150,9 +182,9 @@ topic은 사용자가 고른 "하나의 카테고리 이름"입니다 (예: "관
 - 금 기운 부족 → 선택 기준을 세우고 끝맺는 힘이 약해질 수 있음
 
 [다른 규칙]
-- 모든 문장은 반드시 사주 데이터(일간/십성/오행/지장간/대운 중 최소 하나)를 구체적으로 근거로 삼아야 합니다. "직장인이니까", "연애 중이니까" 처럼 사용자가 알려준 상황 라벨만 보고 일반적인 이야기를 지어내지 마세요 — jobStatus/relationshipStatus는 어떤 각도로 접근할지 정하는 참고 정보일 뿐, 내용의 근거가 되어선 안 됩니다.
+- 모든 문장은 반드시 사주 데이터(일간/십성/오행/지장간 중 최소 하나)를 구체적으로 근거로 삼아야 합니다. "직장인이니까", "연애 중이니까" 처럼 사용자가 알려준 상황 라벨만 보고 일반적인 이야기를 지어내지 마세요 — jobStatus/relationshipStatus는 어떤 각도로 접근할지 정하는 참고 정보일 뿐, 내용의 근거가 되어선 안 됩니다.
 - jobStatus가 겸업/복수 활동을 나타내면, 하나의 정체성으로 단정하지 말고 사주 데이터가 다중 활동 성향과 어떻게 맞아떨어지는지로 풀어내세요.
-- 주어진 사주/대운 데이터만 사실로 취급하고, 새로운 간지·연도·데이터를 지어내지 마세요.
+- 주어진 사주 데이터만 사실로 취급하고, 새로운 간지·연도·데이터를 지어내지 마세요.
 - 반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트나 마크다운 코드펜스 없이 순수 JSON만 출력하세요.
 
 {
@@ -162,7 +194,7 @@ topic은 사용자가 고른 "하나의 카테고리 이름"입니다 (예: "관
     { "title": "오행이 말해주는 것", "body": "wuxingCount의 강약 조합이 실제로 어떤 패턴(반복되는 행동/선택)으로 드러나는지 쉬운 말로. 3~5문장.", "evidence": "오행 수치 근거를 1~2문장으로." },
     { "title": "연애·관계", "body": "관계에서 반복되는 패턴을 쉬운 말로 설명하고 relationshipStatus 맥락과 연결. 3~5문장.", "evidence": "십성/오행 근거를 1~2문장으로." },
     { "title": "재물·커리어", "body": "돈/일에서 반복되는 방식을 쉬운 말로 설명. jobStatus는 상황 설명에만 참고. 3~5문장.", "evidence": "십성/오행 근거를 1~2문장으로." },
-    { "title": "네가 물어본 것", "body": "question이 있으면 그 고민이 왜 지금(올해 남은 remainingMonthsInYear개월 동안) 커졌는지 쉬운 말로 직접 답하듯, 남은 기간에 대한 핵심 질문도 던지기. question이 없으면(topic 카테고리만 있는 경우) 그 topic 안에서 지금 시기의 전반적 흐름을 방향으로만 설명 — topic을 둘로 쪼개 답하지 말 것. 미래의 정확한 연도/나이 예측 금지(currentYear 등 현재 시점 언급은 허용). 3~5문장.", "evidence": "관련 십성/대운 근거를 1~2문장으로, 미래의 정확한 연도·나이 예측은 여기도 금지." }
+    { "title": "네가 물어본 것", "body": "question이 있으면 그 고민이 왜 지금(올해 남은 remainingMonthsInYear개월 동안) 커졌는지 쉬운 말로 직접 답하듯, 남은 기간에 대한 핵심 질문도 던지기. question이 없으면(topic 카테고리만 있는 경우) 그 topic 안에서 지금 시기의 전반적 흐름을 방향으로만 설명 — topic을 둘로 쪼개 답하지 말 것. 미래의 정확한 연도/나이 예측 금지(currentYear 등 현재 시점 언급은 허용). 3~5문장.", "evidence": "관련 십성/오행 근거를 1~2문장으로, 미래의 정확한 연도·나이 예측은 여기도 금지." }
   ]
 }`;
 
@@ -193,7 +225,9 @@ topic은 사용자가 고른 "하나의 카테고리 이름"입니다 (예: "관
       throw err;
     }
 
-    return res.status(200).json({ saju, teaser, dateInfo });
+    // 잠긴(유료) 문장은 응답에 넣지 않는다 — _teaser-split.js 참고.
+    const { free, previews } = splitTeaser(teaser);
+    return res.status(200).json({ saju, dateInfo, free, previews });
   } catch (error) {
     if (!error.status) {
       console.error('[api/teaser] unexpected failure:', error?.message);

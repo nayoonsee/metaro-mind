@@ -1,4 +1,6 @@
 import { calcSaju, callClaude } from './_saju-core.js';
+import { guardPaidCall } from './_guard.js';
+import { validateTeaserInput } from './teaser.js';
 
 const DAY_MASTER_CLASS = {
   甲: { className: '팔라딘', title: '정의의 기사', element: '木', emoji: '🛡️', desc: '큰 나무처럼 곧고 굳센 기질' },
@@ -54,29 +56,24 @@ function buildCharacter(saju) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  try {
-    const { year, month, day, hour, minute, gender, calendar, name } = req.body;
+  const parsed = validateTeaserInput(req.body);
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  if (!guardPaidCall(req, res, 'saju')) return;
 
-    if (!year || !month || !day) {
-      return res.status(400).json({ error: 'year, month, day는 필수입니다.' });
-    }
+  try {
+    const { year, month, day, hour, minute, gender, calendar, name } = parsed.value;
 
     const saju = await calcSaju({ year, month, day, hour, minute, gender, calendar, name });
     const character = buildCharacter(saju);
     const sajuSummary = { ...saju, character };
 
-    const system = `당신은 판타지 세계관의 캐릭터 프로파일러이자 명리학(사주팔자) 전문가입니다. 아래 JSON으로 주어진 정확한 사주 원국(년/월/일/시주, 지장간, 십성, 오행 분포, 대운)과 이미 확정된 "character" 정보(클래스명, 칭호, 부클래스 태그, 스탯)를 바탕으로, 알차고 구체적인 판타지풍 사주 리포트를 작성하세요.
+    const system = `당신은 판타지 세계관의 캐릭터 프로파일러이자 명리학(사주팔자) 전문가입니다. 아래 JSON으로 주어진 정확한 사주 원국(년/월/일/시주, 지장간, 십성, 오행 분포)과 이미 확정된 "character" 정보(클래스명, 칭호, 부클래스 태그, 스탯)를 바탕으로, 알차고 구체적인 판타지풍 사주 리포트를 작성하세요.
 
 절대 규칙:
 - character의 클래스명/칭호/부클래스 태그/스탯 수치는 그대로 사용하고 절대 바꾸지 마세요.
-- 주어진 간지/십성/오행/대운 데이터만 사실로 사용하고, 임의로 새로운 사주 정보를 지어내지 마세요.
+- 주어진 간지/십성/오행 데이터만 사실로 사용하고, 임의로 새로운 사주 정보를 지어내지 마세요.
 - 미신적 단정("반드시 ~한다", "~하면 죽는다" 등)은 쓰지 말고, 성향 분석과 실용적 조언 중심으로 작성하세요.
 
 출력은 반드시 아래 8개 섹션으로, 각 섹션 3~6문장(500자 이상) 분량으로 풍부하게 작성하세요. 전체 분량은 한국어 기준 약 3000~5000자(웹에서 5~10페이지 분량)를 목표로 하세요.
@@ -88,7 +85,8 @@ export default async function handler(req, res) {
 5) 연애/인간관계 운 — 어떤 관계에서 강하고 어떤 관계에서 주의해야 하는지
 6) 재물/커리어 운 — 적성, 재물을 다루는 스타일, 유리한 분야
 7) 약점과 주의점 — 균형이 부족한 오행/십성에서 오는 리스크와 극복 방법
-8) 대운 흐름 & 오늘의 퀘스트 — daYun 데이터 중 현재~향후 몇 개 구간의 흐름을 간단히 짚고, 마지막에 실용적 조언 1~2문장을 "오늘의 퀘스트"로 마무리
+8) 오늘의 퀘스트 — 대운(10년 주기)은 검증되지 않아 제공하지 않으니 언급하지 말고, 지금 실천할 수 있는 실용적 조언 1~2문장을 "오늘의 퀘스트"로 마무리
+- hourKnown이 false면 시주 데이터는 null입니다. 시주·태어난 시간대 해석을 하지 마세요.
 
 각 섹션은 반드시 "1)"~"8)" 번호로 시작하고, 섹션 제목을 함께 적으세요 (예: "1) 캐릭터 프로필").`;
 
