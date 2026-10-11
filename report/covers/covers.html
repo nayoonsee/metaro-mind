@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<!-- 표지 시안 2종 (편집 시안). 무료 글꼴(Google Fonts, OFL)과 CSS/SVG 도형만 사용. 유료 이미지 없음. -->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;800&family=Noto+Sans+KR:wght@300;500&family=Cormorant+Garamond:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .cover { width: 210mm; height: 297mm; position: relative; overflow: hidden; break-after: page; }
+
+  /* ── 시안 1: 밝고 세련된 책 표지 ───────────────────────── */
+  .bright { background: #F6F1E8; color: #2B2622; font-family: 'Noto Sans KR', sans-serif; }
+  .bright .band { position: absolute; left: 0; right: 0; top: 0; height: 9mm; background: #E9DFD0; }
+  .bright .series { position: absolute; top: 22mm; left: 22mm; font-size: 8.5pt; letter-spacing: .32em; color: #8A7D6E; }
+  .bright .art { position: absolute; top: 52mm; left: 50%; transform: translateX(-50%); width: 120mm; height: 120mm; }
+  .bright .title { position: absolute; left: 22mm; right: 22mm; top: 182mm; font-family: 'Nanum Myeongjo', serif; font-weight: 800; font-size: 34pt; line-height: 1.25; letter-spacing: -.01em; }
+  .bright .subtitle { position: absolute; left: 22mm; top: 222mm; font-family: 'Gowun Batang', serif; font-size: 12pt; color: #6E6458; }
+  .bright .client { position: absolute; left: 22mm; bottom: 26mm; font-family: 'Gowun Batang', serif; font-size: 15pt; }
+  .bright .client small { display: block; font-family: 'Noto Sans KR'; font-size: 8pt; letter-spacing: .2em; color: #8A7D6E; margin-bottom: 2mm; }
+  .bright .brand { position: absolute; right: 22mm; bottom: 26mm; text-align: right; font-family: 'Cormorant Garamond', serif; font-size: 13pt; letter-spacing: .14em; color: #B4583A; }
+  .bright .brand small { display: block; font-family: 'Noto Sans KR'; font-size: 7.5pt; letter-spacing: .1em; color: #8A7D6E; }
+  .bright .rule { position: absolute; left: 22mm; width: 18mm; top: 176mm; height: 1.4mm; background: #B4583A; }
+
+  /* ── 시안 2: 차분하고 신비로운 책 표지 ─────────────────── */
+  .mystic { background: radial-gradient(120% 80% at 50% 38%, #3A2E4A 0%, #1B1626 55%, #0F0C16 100%); color: #EDE6F2; font-family: 'Noto Sans KR', sans-serif; }
+  .mystic .stars { position: absolute; inset: 0; }
+  .mystic .art { position: absolute; top: 46mm; left: 50%; transform: translateX(-50%); width: 110mm; height: 110mm; }
+  .mystic .kicker { position: absolute; top: 24mm; width: 100%; text-align: center; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 12pt; letter-spacing: .25em; color: #BBA9CC; }
+  .mystic .title { position: absolute; top: 172mm; width: 100%; text-align: center; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 32pt; line-height: 1.3; }
+  .mystic .subtitle { position: absolute; top: 210mm; width: 100%; text-align: center; font-family: 'Gowun Batang', serif; font-size: 11.5pt; color: #BBA9CC; }
+  .mystic .divider { position: absolute; top: 228mm; left: 50%; transform: translateX(-50%); width: 40mm; height: 1px; background: linear-gradient(90deg, transparent, #D9B98A, transparent); }
+  .mystic .client { position: absolute; top: 236mm; width: 100%; text-align: center; font-family: 'Nanum Myeongjo', serif; font-size: 15pt; letter-spacing: .08em; }
+  .mystic .brand { position: absolute; bottom: 20mm; width: 100%; text-align: center; font-family: 'Cormorant Garamond', serif; font-size: 11pt; letter-spacing: .4em; color: #D9B98A; }
+
+  .note { position: absolute; top: 3mm; right: 5mm; font-size: 6.5pt; opacity: .55; font-family: 'Noto Sans KR'; }
+</style></head><body>
+
+<!-- 시안 1 -->
+<section class="cover bright">
+  <div class="band"></div>
+  <div class="note">표지 시안 1 · 가상 사례 · 실제 내담자 아님</div>
+  <div class="series">SAJU READING · VOL. 01</div>
+  <!-- 상징: 일간 정화(작은 불)와 월간 신금(다듬은 보석)을 선과 면으로 단순화 -->
+  <svg class="art" viewBox="0 0 200 200" aria-hidden="true">
+    <circle cx="100" cy="100" r="92" fill="#EFE5D6"/>
+    <circle cx="100" cy="100" r="92" fill="none" stroke="#D8C9B3" stroke-width=".6"/>
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#D8C9B3" stroke-width=".6" stroke-dasharray="1.5 3"/>
+    <path d="M100 52 C 112 72, 122 86, 118 104 C 115 120, 106 128, 100 128 C 92 128, 82 120, 81 104 C 80 90, 90 80, 94 66 C 96 74, 99 78, 103 80 C 104 70, 102 60, 100 52 Z" fill="#B4583A"/>
+    <path d="M100 86 C 106 96, 109 104, 106 112 C 104 118, 100 120, 99 120 C 94 120, 91 114, 92 108 C 93 101, 98 96, 100 86 Z" fill="#F2C38A"/>
+    <rect x="96" y="128" width="8" height="30" rx="2" fill="#2B2622"/>
+    <g transform="translate(140 136)"><path d="M0 -12 L10 -3 L6 10 L-6 10 L-10 -3 Z" fill="none" stroke="#7D8C93" stroke-width="1.4"/><path d="M-10 -3 L10 -3 M0 -12 L-6 10 M0 -12 L6 10" stroke="#7D8C93" stroke-width=".7"/></g>
+  </svg>
+  <div class="rule"></div>
+  <div class="title">오래 비추는 불빛,<br>나를 읽는 시간</div>
+  <div class="subtitle">성향 · 일 · 돈 · 관계 · 선택을 담은 종합 사주 리포트</div>
+  <div class="client"><small>FOR</small>가상 사례 A 님</div>
+  <div class="brand">○○ STUDIO<small>브랜드 로고 자리</small></div>
+</section>
+
+<!-- 시안 2 -->
+<section class="cover mystic">
+  <svg class="stars" viewBox="0 0 210 297" preserveAspectRatio="none" aria-hidden="true">
+    <g fill="#EDE6F2">
+      <circle cx="22" cy="40" r=".35" opacity=".7"/><circle cx="48" cy="18" r=".25"/><circle cx="170" cy="30" r=".4" opacity=".8"/>
+      <circle cx="188" cy="72" r=".25"/><circle cx="16" cy="120" r=".3" opacity=".6"/><circle cx="196" cy="150" r=".35" opacity=".6"/>
+      <circle cx="30" cy="200" r=".25" opacity=".5"/><circle cx="182" cy="230" r=".3" opacity=".5"/><circle cx="120" cy="14" r=".3"/>
+      <circle cx="80" cy="262" r=".25" opacity=".4"/><circle cx="150" cy="276" r=".3" opacity=".4"/><circle cx="60" cy="90" r=".2"/>
+    </g>
+  </svg>
+  <div class="note">표지 시안 2 · 가상 사례 · 실제 내담자 아님</div>
+  <div class="kicker">a reading of light</div>
+  <svg class="art" viewBox="0 0 200 200" aria-hidden="true">
+    <defs>
+      <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#F4D6A0" stop-opacity=".55"/><stop offset=".55" stop-color="#C98A5A" stop-opacity=".12"/><stop offset="1" stop-color="#C98A5A" stop-opacity="0"/></radialGradient>
+    </defs>
+    <circle cx="100" cy="96" r="96" fill="url(#glow)"/>
+    <circle cx="100" cy="100" r="74" fill="none" stroke="#D9B98A" stroke-width=".5" opacity=".6"/>
+    <circle cx="100" cy="100" r="58" fill="none" stroke="#D9B98A" stroke-width=".4" opacity=".35"/>
+    <path d="M100 58 C 109 74, 116 86, 113 100 C 111 112, 105 118, 100 118 C 94 118, 87 112, 86 100 C 85 90, 92 82, 95 72 C 97 78, 99 81, 102 82 C 103 75, 102 66, 100 58 Z" fill="#F0C987"/>
+    <path d="M100 86 C 104 93, 106 99, 104 105 C 103 109, 101 111, 100 111 C 97 111, 95 107, 95 103 C 96 98, 99 94, 100 86 Z" fill="#FFF3DA"/>
+    <line x1="100" y1="118" x2="100" y2="146" stroke="#D9B98A" stroke-width="1.2"/>
+    <g transform="translate(100 168)" opacity=".9"><path d="M0 -9 L8 -2 L5 8 L-5 8 L-8 -2 Z" fill="none" stroke="#BBA9CC" stroke-width="1"/><path d="M-8 -2 L8 -2" stroke="#BBA9CC" stroke-width=".5"/></g>
+  </svg>
+  <div class="title">오래 비추는 불빛</div>
+  <div class="subtitle">조용히 깊어지는 사람의 종합 사주 이야기</div>
+  <div class="divider"></div>
+  <div class="client">가상 사례 A 님</div>
+  <div class="brand">○○ STUDIO</div>
+</section>
+</body></html>
