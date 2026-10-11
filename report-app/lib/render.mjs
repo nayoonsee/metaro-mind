@@ -52,7 +52,8 @@ function sectionHtml(project, s) {
 }
 
 export const DENSITIES = { normal: { lh: 1.85, fs: 10.8 }, compact: { lh: 1.75, fs: 10.6 }, loose: { lh: 1.95, fs: 11 }, tight: { lh: 1.7, fs: 10.4 }, airy: { lh: 2.0, fs: 11.2 } };
-export function renderReportHtml(project, { forPdf = false, density = 'normal', final = false } = {}) {
+// fontHref: 글꼴 CSS 주소. 로컬 서버는 Google Fonts, 정적 배포본은 함께 넣은 글꼴(fonts/fonts.css)을 쓴다.
+export function renderReportHtml(project, { forPdf = false, density = 'normal', final = false, fontHref = null } = {}) {
   const D = DENSITIES[density] || DENSITIES.normal;
   const g = project.generated; const saju = g.saju; const brandOk = isBrandSet(project);
   const brand = brandOk ? project.brand.name.trim() : DEFAULT_BRAND;
@@ -71,8 +72,8 @@ export function renderReportHtml(project, { forPdf = false, density = 'normal', 
     const table = ch.id === 'basis' ? pillarTable(saju) : '';
     return `<section class="chapter"><h2>${esc(ch.title)}</h2>${quoted}${intro ? `<p class="intro keep">${esc(intro)}</p>` : ''}${table}${body}${summary}</section>`;
   }).join('');
-  const fonts = 'https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600&family=Cormorant+Garamond:ital,wght@0,500;1,400&display=swap';
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(brand)} 사주 리포트</title><link href="${fonts}" rel="stylesheet"><style>
+  const fonts = fontHref || 'https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600&family=Cormorant+Garamond:ital,wght@0,500;1,400&display=swap';
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><title>${esc(brand)} 사주 리포트</title><link href="${fonts}" rel="stylesheet"><style>
   @page { size: A4; margin: 20mm 20mm 22mm; @bottom-center { content: counter(page); font-size: 8pt; color: #8a8296; } ${testMark ? `@top-right { content: "${testMark}"; font-size: 7.5pt; color: #b0563a; }` : ''} }
   @page :first { margin: 0; @bottom-center { content: none; } @top-right { content: none; } }
   body { margin: 0; background: #fff; color: #24212B; font-family: 'Noto Sans KR', sans-serif; font-size: ${D.fs}pt; line-height: ${D.lh}; word-break: keep-all; orphans: 3; widows: 3; }

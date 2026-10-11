@@ -6,6 +6,7 @@
 //   응답이 왔을 때 현재 프로젝트·내용이 그대로일 때만 화면·프로젝트에 적용한다.
 // - 다른 프로젝트로 넘어가기 전에 저장하지 않은 변경은 자동으로 보관한다. 저장에 실패하면 넘어가지 않는다.
 import { validateProjectSchema, clientKey, identityKey } from './schema.mjs';
+import { call, caps } from './service.mjs';
 
 const $ = (id) => document.getElementById(id);
 const STORE = 'reportApp.projects.v1';
@@ -23,11 +24,7 @@ const safeName = (s) => String(s || '').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
 const msg = (t) => { $('globalMsg').textContent = t; };
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const api = async (path, body) => {
-  const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  const ct = r.headers.get('content-type') || '';
-  return { ok: r.ok, status: r.status, data: ct.includes('json') ? await r.json() : await r.text() };
-};
+const api = (path, body) => call(path, body); // 로컬 서버 또는 브라우저 내부 처리(정적 배포본)
 
 function emptyProject() {
   return { version: 1, id: uid(), createdAt: new Date().toISOString(), updatedAt: null, inputRev: 0,
@@ -43,7 +40,7 @@ function markUnreviewed() { project.status.reviewed = false; project.status.revi
 function refreshState() {
   const stale = isStale(); const has = !!project.generated;
   for (const id of ['staleEdit', 'stalePreview', 'staleDeliver']) $(id).style.display = stale ? 'block' : 'none';
-  $('btnPdf').disabled = !has || stale || busy.pdf; $('btnQueue').disabled = !has || stale || busy.queue; $('reviewed').disabled = !has || stale;
+  $('btnPdf').disabled = !has || stale || busy.pdf; $('btnQueue').disabled = !has || stale || busy.queue || $('btnQueue').dataset.unavailable === '1'; $('reviewed').disabled = !has || stale;
   $('btnPreview').disabled = !has || stale;
   $('btnGenerate').disabled = generating > 0;
   $('btnGenerate').textContent = generating ? '생성 중…' : project.generated ? '다시 생성' : '리포트 생성';
@@ -226,6 +223,7 @@ async function makePdf() {
     $('pdfState').textContent = (r.data.errors || ['PDF를 만들지 못했어요.'])[0];
     $('qaBox').innerHTML = `<ul class="qa">${(r.data.errors || []).slice(1).map((p) => `<li>${esc(p)}</li>`).join('')}</ul>`; return;
   }
+  if (caps.pdf === 'print') return printPdf(r.data, s);
   const { pdfBase64, qa, final, blockers } = r.data;
   const bytes = Uint8Array.from(atob(pdfBase64), (c) => c.charCodeAt(0));
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
@@ -233,6 +231,24 @@ async function makePdf() {
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
   $('pdfState').textContent = `${final ? '최종본' : '검토용 PDF(최종본 아님)'}을 받았어요 · ${qa.available ? `${qa.pageCount}쪽, 자동 검사 통과` : '자동 검사 도구 없음 — 직접 확인 필요'}`;
   $('qaBox').innerHTML = final ? '' : `<p class="hint">최종본이 아닌 이유:</p><ul class="qa">${blockers.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
+}
+
+// 정적 배포본: 브라우저 인쇄 창으로 PDF 저장. 글꼴을 모두 불러온 뒤 인쇄하고, 문서 제목(=저장 파일 이름 기본값)은 요청 당시 스냅샷을 쓴다.
+async function printPdf({ html, final, blockers }, s) {
+  const old = document.getElementById('printFrame'); if (old) old.remove();
+  const f = document.createElement('iframe'); f.id = 'printFrame'; f.title = '인쇄용 리포트';
+  f.setAttribute('sandbox', 'allow-same-origin allow-modals'); // 스크립트 실행 불가. 같은 출처 글꼴을 쓰고 인쇄 창을 열기 위한 최소 권한
+  f.style.cssText = 'position:fixed;left:-10000px;top:0;width:210mm;height:297mm;border:0;';
+  $('pdfState').textContent = '인쇄용 문서와 글꼴을 준비하는 중…';
+  await new Promise((res) => { f.onload = res; f.srcdoc = html; document.body.appendChild(f); });
+  const d = f.contentDocument; void d.body.offsetHeight;
+  await d.fonts.ready;
+  if (!current(s)) { f.remove(); $('pdfState').textContent = '인쇄를 준비하는 동안 프로젝트나 내용이 바뀌어 인쇄하지 않았어요. 다시 눌러 주세요.'; return; }
+  d.title = safeName(`${final ? s.brandName : '검토용'}_${s.clientName}_사주리포트`);
+  $('pdfState').textContent = `${final ? '최종본' : '검토용(최종본 아님)'} 인쇄 창을 열었어요. 대상에서 "PDF로 저장"을 고르세요. 배경 그래픽을 켜야 표지 색이 나와요.`;
+  $('qaBox').innerHTML = final ? '' : `<p class="hint">최종본이 아닌 이유:</p><ul class="qa">${blockers.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
+  window.__lastPrint = { title: d.title, final, fontsLoaded: [...d.fonts].filter((x) => x.status === 'loaded').map((x) => `${x.family} ${x.weight}`) }; // 시험 확인용
+  f.contentWindow.print();
 }
 
 // ── 검토 완료 · 전달 ──
@@ -298,9 +314,15 @@ window.addEventListener('beforeunload', (e) => { if (dirty) { keepCurrentBeforeS
 
 setProject(emptyProject(), '');
 try {
-  const info = await (await fetch('/api/info')).json();
+  const info = (await call('/api/info')).data;
   $('topicHint').textContent = `자동 집중 풀이가 가능한 고민: ${info.supportedTopics.join(', ')}. 그 밖의 질문은 근거 없이 풀지 않고, 7장에 직접 작성 칸으로 남겨요(직접 작성해야 최종본이 돼요).`;
   $('transportInfo').textContent = `현재 전송기: ${info.mail.label}. 실제 메일 계정은 아직 연결되지 않았어요.`;
+  if (caps.mail === 'unavailable') {
+    // 정적 배포본: 자동 이메일은 아직 연결 준비 중. 시험용 전송기도 노출하지 않는다.
+    $('btnQueue').textContent = '자동 이메일 (연결 준비 중)'; $('btnQueue').dataset.unavailable = '1';
+    $('attachInfo').textContent = '자동 이메일은 연결 준비 중이에요. 지금은 3단계에서 PDF로 저장한 파일을 직접 메일에 첨부해 보내 주세요.';
+  }
+  if (caps.pdf === 'print') { $('btnPdf').textContent = 'PDF로 저장(인쇄 창)'; $('pdfHint').style.display = 'block'; }
   if (!info.pdf) $('pdfState').textContent = 'PDF 엔진이 없어요. 미리보기에서 브라우저 인쇄(PDF로 저장)를 사용하세요.';
 } catch { /* 서버 정보 없이도 입력은 가능 */ }
 window.__reportApp = { get project() { return project; }, get dirty() { return dirty; } }; // 테스트 확인용(읽기 전용)

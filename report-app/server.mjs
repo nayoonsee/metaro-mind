@@ -10,21 +10,18 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { calcSaju } from '../api/_saju-core.js';
-import { generateFullReport, SUPPORTED_TOPICS, EXCLUDED } from '../report/chapters/full.mjs';
-import { validateInput } from './lib/validate.mjs';
-import { renderReportHtml, isBrandSet, DENSITIES } from './lib/render.mjs';
+import { SUPPORTED_TOPICS, EXCLUDED } from '../report/chapters/full.mjs';
+import { renderReportHtml, DENSITIES } from './lib/render.mjs';
+import { createCore, GENERATOR } from './lib/core.mjs';
 import { htmlToPdf, qaPdf, loadPlaywright } from './lib/pdf.mjs';
 import { validateMail, createTestTransport } from './lib/mail.mjs';
-import { validateProjectSchema, clientKey, EDIT_ID_RE } from './public/schema.mjs';
+import { clientKey } from './public/schema.mjs';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
-const GENERATOR = 'full-rule-v1';
 const transport = createTestTransport(process.env.OUTBOX_DIR || join(ROOT, 'outbox-test'));
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 const SECURITY_HEADERS = { 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer', 'x-frame-options': 'DENY',
   'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src 'self' about:; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" };
-const canon = (v) => JSON.stringify(v, Object.keys(v).sort());
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 
 const send = (res, code, obj) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...SECURITY_HEADERS }); res.end(JSON.stringify(obj)); };
@@ -46,42 +43,9 @@ export function checkRequestOrigin(req, port) {
   return null;
 }
 
-export function fingerprintOf(value) { return sha(JSON.stringify({ g: GENERATOR, name: value.name, s: value.sajuInput, c: value.concern })); }
-export function reviewHashOf(fp, project) {
-  const edits = Object.fromEntries(Object.entries(project.edits || {}).sort(([a], [b]) => a.localeCompare(b)));
-  return sha(JSON.stringify({ fp, edits, brand: { name: (project.brand.name || '').trim(), accent: project.brand.accent, cover: project.brand.cover } }));
-}
-
-async function generateFromInput(client, concern) {
-  const v = validateInput({ client, concern });
-  if (v.errors) return { errors: v.errors };
-  const value = { ...v.value, name: client.name.trim() };
-  const saju = await calcSaju(v.value.sajuInput);
-  const report = generateFullReport(saju, { concern: v.value.concern });
-  return { saju, report, fingerprint: fingerprintOf(value), value };
-}
-
-// 프로젝트를 검증하고, 서버에서 다시 생성한 본문 + 유효한 편집본으로 렌더링할 "신뢰 가능한" 프로젝트를 만든다.
-export async function verifyProject(project) {
-  const schema = validateProjectSchema(project);
-  if (schema.length) return { status: 400, errors: ['프로젝트 형식 오류', ...schema.slice(0, 5)] };
-  if (!project.generated) return { status: 409, errors: ['아직 생성된 리포트가 없어요.'] };
-  const g = await generateFromInput(project.client, project.concern);
-  if (g.errors) return { status: 400, errors: g.errors };
-  if (project.generated.fingerprint !== g.fingerprint) return { status: 409, stale: true, errors: ['입력 정보가 생성 당시와 달라요. 다시 생성한 뒤 진행해 주세요.'] };
-  const ids = new Set(g.report.chapters.flatMap((c) => [`${c.id}:intro`, ...(c.summary ? [`${c.id}:summary`] : []), ...c.sections.flatMap((s) => s.paras.map((p) => p.id))]));
-  const edits = Object.fromEntries(Object.entries(project.edits).filter(([k]) => EDIT_ID_RE.test(k) && ids.has(k)));
-  const trusted = { brand: project.brand, client: project.client, edits, generated: { saju: g.saju, report: g.report } };
-  const manualId = g.report.needsWriting ? g.report.chapters.find((c) => c.id === 'ch7').sections[0].paras[0].id : null;
-  const manualDone = !manualId || !!(edits[manualId] || '').trim();
-  const reviewHash = reviewHashOf(g.fingerprint, project);
-  const reviewed = project.status?.reviewedHash === reviewHash;
-  const blockers = [];
-  if (!isBrandSet(project)) blockers.push('브랜드명이 설정되지 않았어요.');
-  if (!manualDone) blockers.push('7장 직접 작성 칸이 비어 있어요(자동 풀이 범위 밖 질문).');
-  if (!reviewed) blockers.push('현재 내용으로 검토 완료가 확인되지 않았어요.');
-  return { trusted, fingerprint: g.fingerprint, reviewHash, final: blockers.length === 0, blockers, manualDone };
-}
+const core = createCore(sha);
+export const { fingerprintOf, reviewHashOf, verifyProject } = core;
+const { generateFromInput } = core;
 
 const headingsOf = (report) => report.chapters.flatMap((c) => [c.title, ...c.sections.map((s) => s.q)]);
 // 페이지 나눔 검사에 걸리면 줄 간격을 조금씩 바꿔 다시 렌더링한다(끝 페이지가 몇 줄만 남는 것을 막기 위해).
