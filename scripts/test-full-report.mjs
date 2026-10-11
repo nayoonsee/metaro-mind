@@ -5,6 +5,7 @@ import { calcSaju } from '../api/_saju-core.js';
 import { generateFullReport } from '../report/chapters/full.mjs';
 import { CASES } from '../report-app/test/cases.mjs';
 import { validateInput } from '../report-app/lib/validate.mjs';
+import { classifyWorkOption } from '../report/chapters/generate.mjs';
 
 let pass = 0, fail = 0;
 const check = (n, f) => { try { f(); pass++; console.log('  ok  -', n); } catch (e) { fail++; console.log('  FAIL -', n, '\n       ', e.message); } };
@@ -17,10 +18,10 @@ const texts = (r) => r.chapters.flatMap((c) => [c.intro, c.summary || '', ...c.s
 const sents = (r) => texts(r).join(' ').split(/(?<=[.요])\s+/).map((s) => s.trim()).filter((s) => s.length > 10);
 const chRules = (r, id) => new Set(r.chapters.find((c) => c.id === id).sections.flatMap((s) => s.paras.map((p) => p.rule)));
 
-const ORDER = ['guide', 'ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7', 'ch8', 'basis'];
+const ORDER = ['key', 'guide', 'ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7', 'ch8', 'basis'];
 for (const [id, r] of Object.entries(R)) {
   const all = texts(r).join('\n');
-  check(`${id}: 합의한 10개 장 순서`, () => assert.deepEqual(r.chapters.map((c) => c.id), ORDER));
+  check(`${id}: 핵심 요약 + 10개 장 순서`, () => assert.deepEqual(r.chapters.map((c) => c.id), ORDER));
   check(`${id}: 장마다 질문 제목이 서로 다름`, () => { const qs = r.chapters.flatMap((c) => c.sections.map((s) => s.q)).filter((q) => !/현실적으로 확인할 것|직접 작성/.test(q)); assert.equal(new Set(qs).size, qs.length); });
   check(`${id}: 문장 반복 없음`, () => { const s = sents(r); const d = s.filter((x, i) => s.indexOf(x) !== i); assert.equal(d.length, 0, d.join(' | ')); });
   check(`${id}: 결과 확정·시기 예측·대운 문장 없음(제외 안내 제외)`, () => {
@@ -70,5 +71,36 @@ check('입력 검증: 존재하지 않는 날짜·윤달·시간 누락 거절',
   assert.ok(validateInput({ client: { name: '', birth: { calendar: 'solar', year: 2000, month: 1, day: 1, hourUnknown: true } } }).errors);
   assert.ok(!validateInput({ client: { name: 'x', birth: { calendar: 'solar', year: 2024, month: 2, day: 29, hourUnknown: true } } }).errors);
 });
+
+console.log('\n[v2 내용 개선 회귀]');
+const gen = async (birth, concern) => { const v = validateInput({ client: { name: 'x', birth }, concern }); return generateFullReport(await calcSaju(v.value.sajuInput), { concern: v.value.concern }); };
+const chText = (r, id) => { const c = r.chapters.find((x) => x.id === id); return [c.intro || '', ...c.sections.flatMap((s) => [s.q, ...s.paras.map((p) => p.text)])].join('\n'); };
+check('선택지 분류: 유지·병행·이직·구직·독립·창업·애매', () => {
+  const T = { '지금 회사 계속 다니기': 'stay', '회사에 다니면서 개인 작업 병행': 'stay-prep', '다니면서 이직 준비': 'stay-prep', '재직 중 이직 준비': 'stay-prep', '다른 회사로 이직': 'move', '퇴사 후 구직': 'quit-seek', '그만두고 쉬면서 재취업': 'quit-seek', '6개월 안에 퇴사하고 독립': 'freelance', '프리랜서로 일하기': 'freelance', '카페 창업': 'startup', '잘 모르겠어요': 'neutral' };
+  for (const [o, e] of Object.entries(T)) assert.equal(classifyWorkOption(o), e, o);
+});
+{
+  const r = await gen(CASES[0].birth, { question: '이직을 해야 할까요?', situation: '마케팅 3년 차', options: ['다니면서 이직 준비', '다른 회사로 이직'], period: '' });
+  check('이직 준비 고민: 7장에 첫 수입·의뢰·고객 문구 없음, 이직 점검 있음', () => { const t7 = chText(r, 'ch7'); assert.doesNotMatch(t7, /첫 수입|의뢰|고객/); assert.match(t7, /결정 권한|지원할 곳/); });
+  const r2 = await gen(CASES[0].birth, { question: '일을 어떻게 해야 할지 모르겠어요', situation: '', options: [], period: '' });
+  check('애매한 일 고민: 중립 처리(종류 단정 없음), 검토 항목에 기록', () => { assert.match(chText(r2, 'ch7'), /어떤 선택에나 필요한 기본 점검/); assert.ok(r2.review.some((x) => /정하지 못해/.test(x.text))); });
+}
+for (const [id, r] of Object.entries(R)) {
+  const all = texts(r).join('\n');
+  check(`${id}: 조사 표식(을(를)·이(가)·은(는)) 없음`, () => assert.doesNotMatch(all, /을\(를\)|이\(가\)|은\(는\)|와\(과\)/));
+  check(`${id}: 핵심 요약 3개 + 마지막 장의 "다시 펼칠 곳"이 실제 절 제목을 가리킴`, () => {
+    assert.equal(r.chapters[0].sections[0].paras.length, 3);
+    const qs = new Set(r.chapters.flatMap((c) => c.sections.map((s) => s.q)));
+    const nav = r.chapters.find((c) => c.id === 'ch8').sections[0].paras;
+    assert.ok(nav.length >= 5); for (const p of nav) { const m = /"([^"]+)"/.exec(p.text); assert.ok(m && qs.has(m[1]), p.text); }
+  });
+  check(`${id}: 3·4·7장이 같은 월간 설명을 되풀이하지 않음(월간 근거 문단 3장 2개 이하, 4·7장 0개)`, () => {
+    const n = (cid) => r.chapters.find((c) => c.id === cid).sections.flatMap((s) => s.paras).filter((p) => /^월간/.test(p.evidence)).length;
+    assert.ok(n('ch3') <= 2, `ch3 ${n('ch3')}`); assert.equal(n('ch4'), 0); assert.equal(n('ch7'), 0);
+  });
+  check(`${id}: 검증 안 된 조합 가설·대운·올해 장식 문장 없음`, () => { assert.doesNotMatch(all, /편인[^.]*편재[^.]*(속도|긴장)|군겁쟁재|비겁과 재성이 함께/); assert.doesNotMatch(all.replace(/이번 리포트에서 다루지 않은 것:[^\n]*/, ''), /대운|올해 (운|흐름)|재회/); });
+  check(`${id}: 단락마다 면책 반복 없음(검수 전 안내는 1회)`, () => assert.ok((all.match(/검수/g) || []).length <= 1));
+  check(`${id}: 고객 본문에 테스트 문구 없음`, () => assert.doesNotMatch(all, /고유 편집|case-[a-z]|edge-/));
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

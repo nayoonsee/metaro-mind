@@ -8,7 +8,7 @@ import { validateInput } from './validate.mjs';
 import { isBrandSet } from './render.mjs';
 import { validateProjectSchema, EDIT_ID_RE } from '../public/schema.mjs';
 
-export const GENERATOR = 'full-rule-v1';
+export const GENERATOR = 'full-rule-v2'; // v2: 3·4·7장 재구성, 핵심 요약·다시 펼칠 곳 추가
 
 export function createCore(sha) {
   const fingerprintOf = (value) => sha(JSON.stringify({ g: GENERATOR, name: value.name, s: value.sajuInput, c: value.concern }));

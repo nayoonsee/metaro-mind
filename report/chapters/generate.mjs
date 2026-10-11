@@ -2,6 +2,7 @@
 // 입력: calcSaju() 결과 + 선택 입력(concern). 출력: 고객용 본문, 사용 규칙 목록, 상담자 검토 항목(분리).
 import { tenGod } from '../../api/_kst-solar-term-adapter.js';
 import { DAY_MASTER, SHOWN_GROUP, MONTH_RELATION, ROOT_GROUP, DAY_BRANCH, WORK_CHOICE, MONEY } from './library.mjs';
+import { AUTH, ENV, ENV_LABEL, OPTION_KIND, DRIVE_USE, MONEY_FOCUS, MONEY_PLAN2 } from './library5.mjs';
 
 const GAN_EL = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
 const ZHI_EL = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
@@ -29,8 +30,12 @@ export function chartKeys(saju) {
   const shownTg = tenGod(dm, monthStem);
   const rootGan = (saju.hideGan.month || [])[0];
   const rootTg = rootGan ? tenGod(dm, rootGan) : null;
+  // 십성 묶음별 위치: shown(천간) · hidden(지장간에만) · none(없음). 일간 자신은 제외한다.
+  const stemGroups = new Set(['year', 'month', 'time'].filter((p) => saju.pillars[p]).map((p) => TG_GROUP[tenGod(dm, saju.pillars[p].ganzhi[0])]));
+  const hiddenGroups = new Set(['year', 'month', 'day', 'time'].flatMap((p) => (saju.hideGan[p] || []).map((g) => TG_GROUP[tenGod(dm, g)])));
+  const status = Object.fromEntries(['비겁', '식상', '재성', '관성', '인성'].map((g) => [g, stemGroups.has(g) ? 'shown' : hiddenGroups.has(g) ? 'hidden' : 'none']));
   return {
-    dm, dayEl, monthStem, monthZhi, dayZhi, shownTg, rootGan, rootTg,
+    dm, dayEl, monthStem, monthZhi, dayZhi, shownTg, rootGan, rootTg, status,
     shownGroup: TG_GROUP[shownTg], rootGroup: rootTg ? TG_GROUP[rootTg] : null,
     monthRel: relation(dayEl, ZHI_EL[monthZhi]), dayRel: relation(dayEl, ZHI_EL[dayZhi]),
   };
@@ -44,6 +49,9 @@ function batchim(w) {
 const iyeyo = (w) => `${w}${batchim(w) ? '이에요' : '예요'}`;
 const iga = (w) => `${w}${batchim(w) ? '이' : '가'}`;
 const P = (kind, text, rule, evidence) => ({ kind, text, rule, evidence });
+export const STATUS_KO = { shown: '천간에 있음', hidden: '지장간에만 있음', none: '천간·지장간에 없음' };
+const STATUS_MID = { shown: '겉(천간)에 드러나 있고', hidden: '안쪽(지장간)에만 있고', none: '천간·지장간 어디에도 없고' };
+const STATUS_END = { shown: '겉(천간)에 드러나 있어요', hidden: '안쪽(지장간)에만 있어요', none: '천간·지장간 어디에도 없어요' };
 
 export function chapter1(saju, k) {
   const D = DAY_MASTER[k.dm]; const S = SHOWN_GROUP[k.shownGroup]; const M = MONTH_RELATION[k.monthRel];
@@ -96,6 +104,21 @@ export function classifyConcern(c) {
   return 'unsupported';
 }
 const classifyOption = (o) => (CHANGE_RE.test(o) ? 'change' : KEEP_RE.test(o) ? 'keep' : 'unknown');
+// 일·진로 선택지를 구조가 다른 여섯 종류로 나눈다. 애매하면 neutral(일반 점검만).
+// "다니면서 이직 준비"처럼 재직 중 준비는 이직·창업으로 보지 않는다.
+export function classifyWorkOption(o) {
+  const s = String(o || '').replace(/\s+/g, ' ');
+  const whileEmployed = /다니면서|다니며|병행|재직 ?중|회사를 다니|일하면서|퇴근 후/.test(s);
+  const quits = /퇴사|그만두|그만 두|관두|나오(고|기)/.test(s);
+  if (whileEmployed && !quits) return /준비|공부|이직|독립|창업|개인 작업|부업|사이드|자격/.test(s) ? 'stay-prep' : 'stay';
+  if (/창업|사업(을|체)? ?(시작|차리|열)|가게|매장|법인|스타트업/.test(s)) return 'startup';
+  if (/프리랜서|독립|1인|외주|개인 작업으로|자영/.test(s)) return 'freelance';
+  if (quits && /구직|취업|찾|쉬면서|쉬고|재취업/.test(s)) return 'quit-seek';
+  if (/이직|다른 회사|회사를 옮|옮기|전직|경력직/.test(s)) return 'move';
+  if (/계속|유지|남(는|기|아)|머무|버티/.test(s)) return 'stay';
+  if (quits) return 'quit-seek';
+  return 'neutral';
+}
 function periodMonths(p) { const m = /(\d+)\s*개월/.exec(p || ''); if (m) return +m[1]; if (/올해|1년|일 년/.test(p || '')) return 12; return null; }
 
 export function chapter8(saju, k, concern, review) {
@@ -110,53 +133,62 @@ export function chapter8(saju, k, concern, review) {
     review.push(`검토 필요: 질문 유형을 자동 풀이가 지원하지 않아요(현재 지원: 일·진로 선택, 돈 관리). 질문: "${concern.question.trim()}" → 상담자가 직접 작성하세요.`);
     return { ...base, status: 'review', quoted, intro: '이 질문은 이 리포트의 자동 풀이 범위(일·진로 선택, 돈 관리) 밖이라, 근거 없이 답을 만들지 않기 위해 이 장에는 풀이를 싣지 않았어요.', sections: [] };
   }
-  const S = SHOWN_GROUP[k.shownGroup]; const M = MONTH_RELATION[k.monthRel];
-  const intro = '먼저 분명히 해 둘게요. 사주는 선택의 결과를 알려 주지 않아요. 이 장이 도와줄 수 있는 건, 이 고민 앞에서 당신의 성향이 어떻게 작동하기 쉬운지, 그리고 무엇을 확인하면 덜 흔들리고 고를 수 있는지예요. 아래 질문과 상황은 사주로 알아낸 것이 아니라 직접 적어 주신 내용이에요.';
+  const M = MONTH_RELATION[k.monthRel];
+  const intro = '먼저 분명히 해 둘게요. 사주는 선택의 결과를 알려 주지 않아요. 이 장은 선택지마다 구조가 무엇이 다른지 정리하고, 앞 장에서 본 계산 요소에 비추어 무엇을 먼저 확인하면 좋을지 적었어요. 위의 질문과 상황은 사주로 알아낸 것이 아니라 직접 적어 주신 내용이에요.';
   const sections = [];
   if (topic === 'work') {
-    sections.push({ q: '이 고민에서 나의 성향은 어떻게 작동할까요?', paras: [
-      P('meaning', `1장에서 본 것처럼 당신에게는 ${iga(S.label)} 겉으로 드러나 있고, 힘의 바탕은 '${M.label}'이에요. ${WORK_CHOICE.drive[k.monthRel]}`, `W-drive-${k.monthRel}`, `월지 ${k.monthZhi}, 월간 ${k.monthStem}`),
-      P('caution', `이 고민에서도 마찬가지로, ${S.caution}`, `SHOWN-${k.shownGroup}`, `월간 ${k.monthStem}`),
+    const AU = AUTH[k.status['관성']]; const EN = ENV[k.monthRel];
+    sections.push({ q: '이 결정 앞에서 나는 어떻게 움직이기 쉬울까요?', paras: [
+      P('meaning', `힘의 바탕은 '${M.label}'이에요(1장). ${WORK_CHOICE.drive[k.monthRel]}`, `W-drive-${k.monthRel}`, `월지 ${k.monthZhi}와 일간 ${k.dm}의 관계`),
+      P('use', DRIVE_USE[k.monthRel], `W-driveuse-${k.monthRel}`, `월지 ${k.monthZhi}와 일간 ${k.dm}의 관계`),
     ] });
-    const opts = (concern.options || []).filter(Boolean);
-    if (!opts.length) review.push('선택지 미입력: 선택지별 풀이를 생략했어요.');
-    for (const o of opts) {
-      const t = classifyOption(o);
-      if (t === 'unknown') {
-        review.push(`검토 필요: 선택지 "${o}"를 유지/변화로 분류하지 못해 풀이를 생략했어요.`);
-        sections.push({ q: `선택지: ${o}`, paras: [P('meaning', '이 선택지는 자동 풀이로 분류하지 못했어요. 상담자가 직접 살펴볼 예정이에요.', 'W-opt-unknown', '선택지 분류 실패')] });
-        continue;
-      }
-      const L = WORK_CHOICE[t];
-      sections.push({ q: `선택지: ${o}`, paras: [
-        P('meaning', `이 선택이 성향과 맞는 지점: ${L.fit[k.shownGroup]}`, `W-${t}-fit-${k.shownGroup}`, `월간 ${k.monthStem} = ${TG_KO[k.shownTg]}`),
-        P('caution', `주의할 점: ${L.caution[k.shownGroup]}`, `W-${t}-caution-${k.shownGroup}`, `월간 ${k.monthStem}`),
-        P('use', t === 'keep' ? `이 선택을 고른다면: ${WORK_CHOICE.keep.action[k.shownGroup]}` : `이 선택을 고른다면: 아래 현실 점검 항목을 숫자로 먼저 채우고, 결정하기 전에 믿을 만한 사람 한 명에게 그 숫자를 보여 주세요. 주의할 점이 실제로 작동하고 있는지 바깥 눈으로 확인하는 방법이에요.`, t === 'keep' ? `W-keep-action-${k.shownGroup}` : 'W-change-action', t === 'keep' ? `월간 ${k.monthStem}` : '현실 점검 연결'),
-      ] });
+    let opts = (concern.options || []).filter(Boolean);
+    if (!opts.length) {
+      const qk = classifyWorkOption(concern.question);
+      review.push(qk === 'neutral' ? '선택지 미입력: 질문만으로 선택지 종류를 정하지 못해 일반 점검만 실었어요.' : '선택지 미입력: 질문 문장으로 선택지 종류를 추정했어요. 상담 내용과 맞는지 확인하세요.');
+      opts = [qk !== 'neutral' ? OPTION_KIND[qk].label : '아직 선택지를 정하지 않은 경우'];
     }
-    sections.push({ q: '사주와 별개로, 현실적으로 확인할 것', box: true, paras: WORK_CHOICE.reality.map((r) => P('check', r, 'W-reality', '사주 해석 아님')) });
+    const kinds = opts.map((o) => [o, classifyWorkOption(o)]);
+    for (const [o, kd] of kinds) if (kd === 'neutral' && o !== '아직 선택지를 정하지 않은 경우') review.push(`검토 필요: 선택지 "${o}"의 종류(유지·병행·이직·구직·독립·창업)를 자동으로 정하지 못해 일반 점검만 실었어요.`);
+    kinds.forEach(([o, kd], i) => {
+      const K = OPTION_KIND[kd];
+      const lens = kd === 'move' ? AU.move : kd === 'freelance' || kd === 'startup' ? AU.solo : kd === 'quit-seek' ? EN.seek : kd === 'neutral' ? null : EN.stay;
+      const lensRule = kd === 'move' || kd === 'freelance' || kd === 'startup' ? `W-lens-auth-${k.status['관성']}-${kd === 'move' ? 'move' : 'solo'}` : `W-lens-env-${k.monthRel}-${kd === 'quit-seek' ? 'seek' : 'stay'}`;
+      const lensEv = kd === 'move' || kd === 'freelance' || kd === 'startup' ? `관성 위치: ${STATUS_KO[k.status['관성']]}` : `월지 ${k.monthZhi}와 일간의 관계`;
+      sections.push({ q: `선택지 ${i + 1}. ${o}`, paras: [
+        P('meaning', `${K.label && K.label !== o ? `이 선택지는 "${K.label}"에 가까워요. ` : ''}${K.diff}`, `W-kind-${kd}`, '선택지 구조 비교(사주 해석 아님)'),
+        ...(lens ? [P('use', lens, lensRule, lensEv)] : []),
+      ] });
+    });
+    const checks = [...new Set(kinds.flatMap(([, kd]) => OPTION_KIND[kd].checks))];
+    sections.push({ q: '사주와 별개로, 현실적으로 확인할 것', box: true, paras: checks.map((r) => P('check', r, 'W-reality', '사주 해석 아님')) });
   } else {
-    sections.push({ q: '돈을 다루는 나의 방식은 어떤가요?', paras: [
-      P('meaning', `${MONEY.style[k.shownGroup]} 태어난 달의 겉면에 ${S.label}(${TG_KO[k.shownTg]})이 드러난 데서 나온 해석이에요.`, `MONEY-style-${k.shownGroup}`, `월간 ${k.monthStem}`),
-      P('caution', `주의할 점: ${MONEY.caution[k.monthRel]}`, `MONEY-caution-${k.monthRel}`, `월지 ${k.monthZhi}`),
-      P('use', `활용 방법: ${MONEY.action[k.shownGroup]}`, `MONEY-action-${k.shownGroup}`, `월간 ${k.monthStem}`),
+    const f = k.status['비겁']; const w = k.status['재성'];
+    sections.push({ q: '돈이 모이지 않는다면 어디부터 볼까요?', paras: [
+      P('meaning', `4장에서 본 것처럼 ${w === f ? `재물을 뜻하는 글자(재성)와 사람 사이의 지출과 연결해 읽는 비겁이 모두 ${STATUS_END[w]}` : `재물을 뜻하는 글자(재성)는 ${STATUS_MID[w]}, 사람 사이의 지출과 연결해 읽는 비겁은 ${STATUS_END[f]}`}. 그래서 이 질문에서는 "${MONEY_FOCUS[f]}"부터 한 달 동안 따로 적어 보는 것을 첫 순서로 권해요.`, `MONEY-focus-${f}`, `재성 위치: ${STATUS_KO[w]}, 비겁 위치: ${STATUS_KO[f]}`),
+      P('caution', `주의할 점: ${MONEY.caution[k.monthRel]}`, `MONEY-caution-${k.monthRel}`, `월지 ${k.monthZhi}와 일간의 관계`),
     ] });
-    if ((concern.options || []).length) review.push('돈 관리 유형은 선택지별 풀이를 아직 지원하지 않아요. 선택지는 상담자가 검토하세요.');
-    sections.push({ q: '사주와 별개로, 현실적으로 확인할 것', box: true, paras: MONEY.reality.map((r) => P('check', r, 'MONEY-reality', '사주 해석 아님')) });
+    const EARN_SHORT = { shown: '만든 결과물 목록을 근거로', hidden: '내가 만든 것의 바깥 가격을 견줘 본 숫자를 근거로', none: '처음 계약 때보다 늘어난 업무를 근거로' };
+    const salary = /월급|급여|직장/.test(`${concern.question} ${concern.situation || ''}`);
+    sections.push({ q: '들어오는 돈을 늘릴까, 새는 돈을 먼저 막을까요?', paras: [
+      P('meaning', `방향은 두 가지예요. 들어오는 쪽은 4장 "일한 대가" 절에서 본 방식대로, ${EARN_SHORT[k.status['식상']]} 대가를 다시 이야기해 보는 것이에요. 새는 쪽은 위에서 정한 첫 순서를 지키는 것이에요. ${salary ? '월급처럼 들어오는 돈이 정해져 있다고 적어 주셨으니, 석 달 동안은 새는 쪽을 먼저 막는 편이 결과가 빨리 보여요.' : '들어오는 돈이 일정한지 아닌지에 따라 순서가 달라지니, 지난 석 달 수입이 매달 같았는지부터 확인해 보세요.'}`, `MONEY-dir-${k.status['식상']}`, `식상 위치: ${STATUS_KO[k.status['식상']]}`),
+    ] });
+    sections.push({ q: '앞으로 석 달, 어떻게 시작할까요?', paras: [P('use', MONEY_PLAN2[w], `MPLAN2-${w}`, `재성 위치: ${STATUS_KO[w]}`)] });
+    if ((concern.options || []).filter(Boolean).length) review.push('돈 관리 유형은 선택지별 풀이를 아직 지원하지 않아요. 선택지는 상담자가 검토하세요.');
   }
   const n = periodMonths(concern.period);
   if (n) {
     const a = n >= 3 ? Math.max(1, Math.round(n / 3)) : 1; const b = n >= 3 ? Math.max(a + 1, Math.min(n - 1, Math.round((2 * n) / 3))) : 1;
     const span = (x, y) => (n === 1 ? (x === 1 && y === 1 && !span.used ? (span.used = true, '처음 2주') : '마지막 2주') : x === y ? `${x}개월 차` : `${x}~${y}개월 차`);
     const last = topic === 'work'
-      ? `처음 적은 숫자와 시험해 본 결과를 나란히 놓고 다시 골라요. 이때 ${iga(SHOWN_GROUP[k.shownGroup].label)} 결정을 앞질러 가지 않는지 확인하세요.`
-      : `처음 적은 숫자와 지금 숫자를 비교해 관리 방식을 조정해요. 이때 ${iga(SHOWN_GROUP[k.shownGroup].label)} 계획보다 앞서 가지 않았는지 확인하세요.`;
+      ? '처음 적은 숫자와 시험해 본 결과를 나란히 놓고 다시 골라요. 3장에서 매긴 환경 점수도 함께 놓고 보세요.'
+      : '처음 적은 숫자와 지금 숫자를 비교해 관리 방식을 조정해요. 첫 달에 따로 적은 항목이 줄었는지부터 보세요.';
     const deadline = topic === 'work' ? '실제로 정해진 마감(계약 만료, 제안 기한 등)이 있다면 그 날짜에 맞춰 구간을 앞당겨 쓰세요.' : '큰 지출이 예정된 달이 있다면 그 달을 피해 구간을 조정해 쓰세요.';
     sections.push({ q: `앞으로 ${n}개월, 이렇게 점검해 보세요`, paras: [
       P('meaning', '어느 달이 좋은 시기인지 같은 시기 판단은 이 리포트에서 하지 않아요. 계산 기준이 검증된 범위가 아니기 때문이에요. 대신 정해 주신 기간을 점검 구간으로 나눴어요.', 'PERIOD', `입력 기간 ${n}개월`),
-      P('use', `${span(1, a)}: 위의 현실 점검 항목을 숫자로 채워요.`, 'PERIOD', `입력 기간 ${n}개월`),
-      ...(n >= 3 ? [P('use', `${span(a + 1, b)}: 작게 시험해 보는 구간이에요. 위의 활용 방법을 실제로 해 보는 기간이에요.`, `PERIOD+MREL-${k.monthRel}`, `월지 ${k.monthZhi}`)] : []),
-      P('use', `${span(n >= 3 ? b + 1 : n, n)}: ${last}`, `PERIOD+SHOWN-${k.shownGroup}`, `월간 ${k.monthStem}`),
+      P('use', `${span(1, a)}: ${topic === 'work' ? '위의 현실 점검 항목을 숫자로 채워요.' : '4장 끝의 현실 점검 항목을 숫자로 채워요.'}`, 'PERIOD', `입력 기간 ${n}개월`),
+      ...(n >= 3 ? [P('use', `${span(a + 1, b)}: 작게 시험해 보는 구간이에요. 위의 활용 방법을 실제로 해 보는 기간이에요.`, 'PERIOD-mid', `입력 기간 ${n}개월`)] : []),
+      P('use', `${span(n >= 3 ? b + 1 : n, n)}: ${last}`, 'PERIOD-last', `입력 기간 ${n}개월`),
       P('caution', deadline, 'PERIOD', '마감 정보 미입력'),
     ] });
   } else if (concern.period) {

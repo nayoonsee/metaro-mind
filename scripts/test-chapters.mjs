@@ -41,7 +41,7 @@ console.log('\n[입력 되풀이 방지]');
 for (const id of ['case-a', 'case-b', 'case-c']) {
   const r = R[id]; const ch = chapter(r, 'ch8'); const c = r.c.concern;
   const own = sentences(ch).filter((s) => !s.includes(c.question) && !(c.situation && s.includes(c.situation)) && !(c.options || []).some((o) => s.includes(o)));
-  const personal = (ch.sections || []).flatMap((s) => s.paras).filter((p) => /SHOWN|MREL|W-drive|W-keep|W-change-(fit|caution)|MONEY-(style|caution)/.test(p.rule));
+  const personal = (ch.sections || []).flatMap((s) => s.paras).filter((p) => /SHOWN|MREL|W-drive|W-lens|W-keep|W-change-(fit|caution)|MONEY-(style|caution|focus|dir)|MPLAN2/.test(p.rule));
   check(`${id}: 8장에 입력 문장을 되풀이하지 않은 문장 ${own.length}개, 명식 근거 문단 ${personal.length}개(≥3)`, () => assert.ok(own.length >= 8 && personal.length >= 3));
   check(`${id}: 1장에 고민 입력 문장이 섞이지 않음`, () => assert.ok(!sentences(chapter(r, 'ch1')).some((s) => s.includes(c.question))));
 }
