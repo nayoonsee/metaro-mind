@@ -125,6 +125,8 @@ export function renderReportHtml(project, { forPdf = false, density = 'normal', 
     const table = ch.id === 'basis' ? pillarTable(saju) : '';
     return `<section class="chapter ch-${esc(ch.id)}"><h2>${esc(ch.title)}</h2>${quoted}${intro ? `<p class="intro keep">${esc(intro)}</p>` : ''}${table}${body}${summary}</section>`;
   }).join('');
+  // 마지막 안내문은 본문 끝(8장 다음), 계산 부록 앞에 둔다.
+  const closing = B.closing ? `<div class="closing keep">${B.logo ? `<img class="closing-logo" src="${esc(B.logo)}" alt="">` : ''}<p>${esc(B.closing)}</p><p class="sign">${esc(brand)}</p></div>` : '';
   const fonts = fontHref || 'https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600&family=Cormorant+Garamond:ital,wght@0,500;1,400&display=swap';
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><title>${esc(brand)} 사주 리포트</title><link href="${fonts}" rel="stylesheet"><style>
   @page { size: A4; margin: 20mm 20mm 22mm; @bottom-center { content: counter(page); font-family: 'Noto Sans KR', sans-serif; font-size: 8pt; color: #8a8296; } ${testMark ? `@top-right { content: "${testMark}"; font-family: 'Noto Sans KR', sans-serif; font-size: 7.5pt; color: #b0563a; }` : ''} }
@@ -152,7 +154,6 @@ export function renderReportHtml(project, { forPdf = false, density = 'normal', 
   </style></head><body>
   ${coverHtml({ template: B.id, title: g.report.cover.title, subtitle: g.report.cover.subtitle, clientName: project.client.name, brand, element: GAN_EL[saju.dayMaster], sampleNote, logo: B.logo, accent: B.accent, ink: B.ink })}
   ${B.greeting ? `<div class="greeting keep"><p>${esc(B.greeting)}</p><p class="sign">${esc(brand)}</p></div>` : ''}
-  ${chapters}
-  ${B.closing ? `<div class="closing keep">${B.logo ? `<img class="closing-logo" src="${esc(B.logo)}" alt="">` : ''}<p>${esc(B.closing)}</p><p class="sign">${esc(brand)}</p></div>` : ''}
+  ${chapters.replace('<section class="chapter ch-basis">', `${closing}<section class="chapter ch-basis">`)}
   </body></html>`;
 }

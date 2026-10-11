@@ -362,10 +362,10 @@ await step('로고: PNG는 다시 그려 넣고, SVG·2MB 초과는 거절, 인�
   const html = await page.evaluate(() => document.getElementById('printFrame').srcdoc); assert.match(html, /<img class="cpa-logo" src="data:image\/(png|jpeg);base64,/);
   assert.equal(await page.evaluate(() => window.__pwned), undefined);
 });
-await step('인사말·마지막 안내문: 공격 문자열도 글자로만 표시, 첫 쪽·마지막 쪽에 들어감', async () => {
+await step('인사말·마지막 안내문: 공격 문자열도 글자로만 표시, 표지 다음 첫 쪽과 본문 끝(부록 앞)에 들어감', async () => {
   await tab('design'); await page.fill('#greeting', '<img src=x onerror=window.__pwned=1>안녕하세요, 상담 내용을 정리했어요.'); await page.fill('#closing', '궁금한 점은 편하게 물어봐 주세요.');
   await markReviewed(); const r = await printToPdf('greeting.pdf'); const pages = r.text.split('\f');
-  assert.match(pages[1], /안녕하세요, 상담 내용을 정리했어요/); assert.match(pages[1], /&lt;|<img src=x/); assert.match(pages.filter((x) => x.trim()).at(-1), /궁금한 점은 편하게/);
+  assert.match(pages[1], /안녕하세요, 상담 내용을 정리했어요/); assert.match(pages[1], /&lt;|<img src=x/); const flatAll = r.text.replace(/\s+/g, ''); assert.ok(flatAll.indexOf('궁금한점은편하게') > flatAll.indexOf('이번달해볼세가지') && flatAll.indexOf('궁금한점은편하게') < flatAll.indexOf('부록.명식과계산기준'), '마지막 안내문은 8장 뒤·부록 앞');
   assert.equal(await page.evaluate(() => window.__pwned), undefined);
 });
 await step('브랜드 프로필: 저장 → 새 고객에 자동으로 채움, 기존 고객 프로젝트는 몰래 바뀌지 않음, "적용"을 눌렀을 때만 바뀜', async () => {
