@@ -1,0 +1,18 @@
+{
+  "brandName": "○○ 브랜드",
+  "brandTagline": "사주로 읽는 나의 결",
+  "logoText": "○○",
+  "logoImage": null,
+  "colors": {
+    "primary": "#2F3A5A",
+    "accent": "#B08D57",
+    "ink": "#1E2230",
+    "muted": "#6B7080",
+    "paper": "#FFFFFF",
+    "soft": "#F4F1EA"
+  },
+  "fonts": {
+    "heading": "'Noto Serif KR', 'WenQuanYi Zen Hei', serif",
+    "body": "'Noto Sans KR', 'WenQuanYi Zen Hei', sans-serif"
+  }
+}

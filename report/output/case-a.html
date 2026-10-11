@@ -1,0 +1,94 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --primary:#2F3A5A; --accent:#B08D57; --ink:#1E2230; --muted:#6B7080; --paper:#FFFFFF; --soft:#F4F1EA;
+          --font-h:'Noto Serif KR', 'WenQuanYi Zen Hei', serif; --font-b:'Noto Sans KR', 'WenQuanYi Zen Hei', sans-serif; }
+  @page { size: A4; margin: 20mm 18mm 22mm; }
+  @page :first { margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: var(--font-b); color: var(--ink); font-size: 10.5pt; line-height: 1.75; word-break: keep-all; orphans: 2; widows: 2; }
+  h1, h2, h3 { font-family: var(--font-h); color: var(--primary); break-after: avoid; page-break-after: avoid; }
+  .cover { height: 297mm; padding: 34mm 24mm; background: var(--primary); color: #fff; display:flex; flex-direction:column; justify-content:space-between; break-after: page; }
+  .cover .logo { font-family: var(--font-h); font-size: 14pt; letter-spacing: .2em; color: var(--accent); }
+  .cover h1 { color:#fff; font-size: 30pt; line-height:1.3; margin: 0 0 6mm; }
+  .cover .client { font-size: 15pt; } .cover .date { color: rgba(255,255,255,.7); font-size: 10pt; margin-top: 3mm; }
+  .proto { display:inline-block; border:1px solid var(--accent); color: var(--accent); padding: 2mm 4mm; font-size: 9pt; border-radius: 2mm; }
+  .page { break-before: page; }
+  .toc ol { list-style: none; padding: 0; counter-reset: t; }
+  .toc li { counter-increment: t; padding: 3mm 0; border-bottom: 1px solid #e3e0d8; font-size: 12pt; }
+  .toc li::before { content: counter(t, decimal-leading-zero); color: var(--accent); font-weight: 700; margin-right: 5mm; }
+  .summary .card { background: var(--soft); border-left: 3px solid var(--accent); padding: 4mm 5mm; margin: 0 0 4mm; break-inside: avoid; }
+  .summary .card b { display:block; color: var(--primary); margin-bottom: 1mm; }
+  table { width:100%; border-collapse: collapse; break-inside: avoid; margin: 4mm 0 8mm; }
+  th, td { border: 1px solid #d9d5cc; padding: 2.5mm; text-align: center; }
+  thead th { background: var(--primary); color:#fff; font-weight:500; }
+  tbody th { background: var(--soft); font-weight:500; width: 22mm; }
+  .gz { font-size: 18pt; font-family: var(--font-h); } .gz small { display:block; font-size: 9pt; color: var(--muted); font-family: var(--font-b); }
+  .unknown { color: var(--muted); font-size: 10pt; }
+  caption { caption-side: bottom; font-size: 8.5pt; color: var(--muted); padding-top: 2mm; text-align:left; }
+  .chapter { margin-bottom: 8mm; }
+  .chapter h2 { font-size: 16pt; border-bottom: 2px solid var(--accent); padding-bottom: 2mm; margin: 0 0 4mm; }
+  .chapter h2 .num { color: var(--accent); margin-right: 3mm; font-size: 12pt; }
+  .para { break-inside: avoid; margin-bottom: 4mm; } .para p { margin: 0; }
+  .para .evidence { font-size: 8.5pt; color: var(--muted); margin-top: 1mm; }
+  .limits li { margin-bottom: 2mm; } .limits { break-inside: avoid; }
+  .todo { border: 1px dashed var(--accent); padding: 4mm 5mm; font-size: 9.5pt; break-inside: avoid; }
+</style></head><body>
+<div class="cover">
+  <div class="logo">○○</div>
+  <div>
+    <div class="proto">시제품 · 판매용 본문 확장 미완료</div>
+    <h1>○○ 브랜드<br>사주 리포트</h1>
+    <div class="client">가상 사례 A 님</div>
+    <div class="date">사주로 읽는 나의 결 · 작성일 2026-10-11</div>
+  </div>
+  <div style="font-size:8.5pt;color:rgba(255,255,255,.6)">가상의 인물로 만든 시제품이에요. 실제 사람의 정보가 아니에요.</div>
+</div>
+<div class="toc"><h2>목차</h2><ol><li>한 페이지 요약</li><li>명식과 오행</li><li>기본 성향</li><li>강점</li><li>관계</li><li>일</li><li>실천 제안</li><li>계산 기준과 한계</li></ol>
+  <div class="todo"><b>이 시제품에서 미완료인 것</b><br>판매용 본문(질문 12~15개, 항목별 생활 예시·장단점·활용 방법)은 아직 작성 전이에요. 지금 본문은 계산 근거를 정리한 자동 생성 자료(약 1,300자)이고, 디자인과 가독성 확인용이에요.</div></div>
+<div class="page summary"><h2>한 페이지 요약</h2>
+  <div class="card"><b>기본 성향</b>일간은 丁巳(정사)의 丁, 음의 화(火)예요.</div><div class="card"><b>강점</b>재성(재물·결과물)이 월주 천간(辛, 편재)에 있어요.</div><div class="card"><b>관계</b>일지의 지장간은 丙(겁재)·庚(정재)·戊(상관)이에요.</div><div class="card"><b>일</b>월주에는 천간 辛(편재), 지장간 乙(편인)이 있어요.</div>
+</div>
+<div class="page"><h2>명식과 오행</h2><table class="pillars">
+    <thead><tr><th></th><th>시주</th><th>일주</th><th>월주</th><th>년주</th></tr></thead>
+    <tbody>
+      <tr><th>천간</th><td class="gz"><span class="unknown">모름</span></td><td class="gz">丁<small>정</small></td><td class="gz">辛<small>신</small></td><td class="gz">丙<small>병</small></td></tr>
+      <tr><th>지지</th><td class="gz"><span class="unknown">모름</span></td><td class="gz">巳<small>사</small></td><td class="gz">卯<small>묘</small></td><td class="gz">子<small>자</small></td></tr>
+      <tr><th>천간 십성</th><td><span class="unknown">모름</span></td><td>일간(나)</td><td>편재</td><td>겁재</td></tr>
+      <tr><th>지장간</th><td><span class="unknown">모름</span></td><td>丙 庚 戊</td><td>乙</td><td>癸</td></tr>
+    </tbody></table><table class="elements">
+    <thead><tr><th class="el-wood">목(木)</th><th class="el-fire">화(火)</th><th class="el-earth">토(土)</th><th class="el-metal">금(金)</th><th class="el-water">수(水)</th></tr></thead>
+    <tbody><tr><td>1</td><td>3</td><td>0</td><td>1</td><td>1</td></tr></tbody>
+    <caption>겉으로 드러난 6글자 기준 개수 (시주 제외) · 개수만으로 강약을 판단하지 않아요</caption>
+  </table></div>
+<div class="page">
+    <section class="chapter">
+      <h2><span class="num">01</span>기본 성향</h2>
+      <div class="para"><p>일간은 丁巳(정사)의 丁, 음의 화(火)예요. 등불·촛불에 비유돼요. 전통적으로 가까운 곳을 오래 비추는 집중과 온기를 상징해요.</p><p class="evidence">근거 · 일간 丁</p></div><div class="para"><p>태어난 달은 봄의 卯(묘)월이에요. 태어난 달의 기운이 일간을 생(生)해 주는 오행이에요. 전통적으로 배우고 흡수하며 힘을 얻는 바탕으로 읽어요.</p><p class="evidence">근거 · 월지 卯 = 목(木), 일간 화(火) 기준 일간을 생하는 오행</p></div><div class="para"><p>앉은 자리인 일지는 巳(사), 화(火)예요. 일간과 같은 오행이라, 전통적으로 자기 기반이 스스로에게서 나오는 자리로 읽어요.</p><p class="evidence">근거 · 일지 巳</p></div><div class="para"><p>겉으로 드러난 6글자의 오행 분포는 목(木) 1 · 화(火) 3 · 토(土) 0 · 금(金) 1 · 수(水) 1이에요. 이 숫자는 글자 개수일 뿐이라, 이것만으로 어떤 기운이 &quot;강하다·약하다&quot;고 판단하지 않아요. 강약은 태어난 달의 기운, 뿌리(지장간), 드러남(천간)을 함께 봐야 하는 판단이고 보는 방식에 따라 결론이 달라질 수 있어요. 토(土)가 0개로 나오지만 시주가 빠진 계산이라 더더욱 &quot;없다&quot;고 단정하지 않아요.</p><p class="evidence">근거 · 오행 개수(6글자): 목(木) 1 · 화(火) 3 · 토(土) 0 · 금(金) 1 · 수(水) 1</p></div>
+    </section>
+    <section class="chapter">
+      <h2><span class="num">02</span>강점</h2>
+      <div class="para"><p>재성(재물·결과물)이 월주 천간(辛, 편재)에 있어요. 전통적으로 현실의 조건을 따지고 쓸모를 만드는 감각으로 읽어요.</p><p class="evidence">근거 · 월주 천간(辛, 편재)</p></div><div class="para"><p>비겁(자기 힘·동료)이 년주 천간(丙, 겁재)에 있어요. 전통적으로 스스로 버티고 밀고 나가는 힘으로 읽어요. 이 기운들은 천간에 드러나 있어서, 바깥에서 비교적 잘 보이는 쓰임으로 봐요.</p><p class="evidence">근거 · 년주 천간(丙, 겁재)</p></div><div class="para"><p>인성·식상·관성은 지장간에만 있어요. 전통적으로 겉으로 바로 드러나기보다 안에 지니고 있는 가능성으로 읽어요. 인성: 나를 생하는 오행으로, 배움·보호·해석하는 힘을 상징 / 식상: 내가 생하는 오행으로, 표현·기획·만들어 내는 힘을 상징 / 관성: 나를 다스리는 오행으로, 규범·책임·외부의 기준을 상징.</p><p class="evidence">근거 · 인성: 월주 지장간(乙, 편인) / 식상: 일지 지장간(戊, 상관) / 관성: 년주 지장간(癸, 편관)</p></div>
+    </section>
+    <section class="chapter">
+      <h2><span class="num">03</span>관계</h2>
+      <div class="para"><p>일지는 전통적으로 가장 가까운 관계와 나의 기반 자리로 봐요. 이 자리의 지장간은 丙(겁재)·庚(정재)·戊(상관)이에요. 가장 가까운 관계 안에 비겁·재성·식상의 상징이 함께 있다는 뜻으로 읽어요.</p><p class="evidence">근거 · 일지 지장간 丙=겁재, 庚=정재, 戊=상관</p></div><div class="para"><p>비겁이 년주 천간(丙, 겁재)에 있어요. 전통적으로 함께 가는 사람과 견주게 되는 사람이 가까이 있는 구성으로 읽어요. 관계에서 각자의 속도를 먼저 맞춰 두면 이 상징을 좋은 쪽으로 쓰기 쉬워요.</p><p class="evidence">근거 · 년주 천간(丙, 겁재)</p></div>
+    </section>
+    <section class="chapter">
+      <h2><span class="num">04</span>일</h2>
+      <div class="para"><p>월주는 전통적으로 사회 활동·일의 자리로 봐요. 이 사례의 월주에는 천간 辛(편재), 지장간 乙(편인)이 있어요.</p><p class="evidence">근거 · 월주 십성 辛=편재, 乙=편인</p></div><div class="para"><p>천간에 드러난 기운은 비겁·재성이고, 이들 사이에 전통적으로 이름 붙는 조합(식상생재·관인상생 등)은 천간에서 성립하지 않아요. 일에서의 흐름은 위 월주의 기운을 중심으로 보는 편이 맞아요.</p><p class="evidence">근거 · 천간 십성 그룹: 비겁, 재성</p></div>
+    </section>
+    <section class="chapter">
+      <h2><span class="num">05</span>실천 제안</h2>
+      <div class="para"><p>1. 새로 배우는 것을 자기 말로 한 줄 정리하는 습관을 들여 보세요. 받아들이는 바탕을 쓰임으로 바꾸는 가장 작은 방법이에요.</p><p class="evidence">근거 · 근거 규칙 T2-month-support</p></div><div class="para"><p>2. 함께 일하거나 가까운 사람에게 내가 편한 속도를 먼저 말로 알려 주세요.</p><p class="evidence">근거 · 근거 규칙 R2-bigeop</p></div>
+    </section></div>
+<div class="page limits"><h2>계산 기준과 한계</h2><ul>
+  <li>달력: 한국 표준시(KST) 기준, 절기 경계 보정. 1948~61·1987~88 서머타임과 1954~61 UTC+8:30은 오늘날 KST로 바꿔 계산해요.</li>
+  <li>교차 확인: 두 계산 엔진(lunar-javascript 기반, manseryeok 기반)의 년·월·일주가 일치했어요 (丙子 · 辛卯 · 丁巳).</li>
+  <li>출생 시간: 모름. 시주를 만들지 않고 년·월·일주 세 기둥만 사용했어요.</li>
+  <li>밤 11시대 출생 처리: 현재 구현값은 "시주 천간을 다음날 일간 기준"으로 계산해요. 상품의 확정 기준은 아직 정하지 않았어요. (이 리포트는 출생 시간 미상이라 해당 없음)</li>
+  <li>대운, 결혼·재물 시기, 특정 연도·나이 예측은 넣지 않았어요(검증되지 않았거나 계산으로 확인할 수 없는 내용).</li>
+  <li>강약(신강·신약)은 판단하지 않았어요. 오행 개수는 사실로만 보여 줘요.</li>
+  <li>이 리포트는 한국 표준시와 절기 경계를 기준으로 계산한 사주 원국을, 명리학의 전통적 상징에 따라 풀어 쓴 설명이에요. 성격이나 미래를 단정하지 않으며, 특정 시기·결과·수익을 보장하지 않아요. 대운 등 검증되지 않은 계산은 넣지 않았어요.</li>
+</ul></div>
+</body></html>
