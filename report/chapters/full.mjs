@@ -168,11 +168,11 @@ function ch8(chapters) {
     ['가까운 사람과 같은 문제로 자꾸 부딪힐 때', 'ch5', /갈등/],
     ['가족에게 부탁하거나 거리를 정해야 할 때', 'ch6', /거리/],
   ].map(([when, id, re]) => { const q = secQ(id, re); return q ? P('use', `${when}: ${find(id).title.split('.')[0]} "${q}"`, `NAV-${id}-${re.source}`, '이 리포트의 장 안내') : null; }).filter(Boolean);
-  const c7 = find('ch7'); if (c7 && c7.status === 'generated') nav.push(P('use', `고민한 선택을 다시 정해야 할 때: 7장 "${c7.sections[c7.topic === 'money' || c7.sections.length < 2 ? 0 : 1].q}"부터`, 'NAV-ch7', '이 리포트의 장 안내'));
+  const c7 = find('ch7'); if (c7 && c7.status === 'generated') nav.push(P('use', `${c7.topic === 'money' ? '돈 관리 순서를 다시 볼 때' : '고민한 선택을 다시 정해야 할 때'}: 7장 "${c7.sections[c7.topic === 'money' || c7.sections.length < 2 ? 0 : 1].q}"부터`, 'NAV-ch7', '이 리포트의 장 안내'));
   const items = [];
   const c2 = find('ch2'); const g2 = c2.sections[0].paras[0]; if (g2) items.push(P('use', `2장: 강점 "${g2.text.split(':')[0]}"이 지나칠 때 나오는 신호를 한 주 동안 기록해 보세요.`, 'ACT-ch2', '2장 근거'));
   items.push(P('use', '3장: 지금 하는 일을 "오래 버틸 수 있는 환경" 기준으로 1~5점 매겨 보세요.', 'ACT-ch3', '3장 근거'));
-  if (c7 && c7.status === 'generated') items.push(P('use', '7장: 현실 점검 항목 가운데 하나를 골라 이번 주 안에 숫자로 채우세요.', 'ACT-ch7', '7장 근거'));
+  if (c7 && c7.status === 'generated') items.push(P('use', c7.topic === 'money' ? '7장: 1단계(고정 지출과 결제 목록)를 이번 주 안에 한 장에 적어 보세요.' : '7장: 현실 점검 항목 가운데 하나를 골라 이번 주 안에 숫자로 채우세요.', c7.topic === 'money' ? 'ACT-ch7-money' : 'ACT-ch7', '7장 근거'));
   else items.push(P('use', '4장: "돈이 새기 쉬운 지점"의 활용 방법을 한 달 동안 해 보세요.', 'ACT-ch4', '4장 근거'));
   return { id: 'ch8', title: '8장. 이럴 때 다시 펼쳐 보세요', intro: '이 리포트는 한 번 읽고 끝내기보다, 상황이 생겼을 때 해당하는 곳을 다시 펼쳐 보도록 만들었어요.', sections: [{ q: '이럴 때는 이곳을', paras: nav }, { q: '이번 달 해 볼 세 가지', paras: items }] };
 }

@@ -123,6 +123,8 @@ export function renderReportHtml(project, { forPdf = false, density = 'normal', 
     const quoted = ch.quoted ? `<div class="quoted keep">${esc(ch.quoted)}</div>` : '';
     const summary = ch.summary ? `<div class="summary keep"><b>이 장의 한 줄 정리</b>${esc(textOf(project, `${ch.id}:summary`, ch.summary))}</div>` : '';
     const table = ch.id === 'basis' ? pillarTable(saju) : '';
+    // 부록은 제목과 명식표를 한 덩어리로 묶어, 제목만 쪽 끝에 남지 않게 한다.
+    if (table) return `<section class="chapter ch-${esc(ch.id)}"><div class="keep"><h2>${esc(ch.title)}</h2>${table}</div>${body}${summary}</section>`;
     return `<section class="chapter ch-${esc(ch.id)}"><h2>${esc(ch.title)}</h2>${quoted}${intro ? `<p class="intro keep">${esc(intro)}</p>` : ''}${table}${body}${summary}</section>`;
   }).join('');
   // 마지막 안내문은 본문 끝(8장 다음), 계산 부록 앞에 둔다.
