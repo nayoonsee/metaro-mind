@@ -95,13 +95,17 @@ function allParaIds(gen) {
 
 // ── 편집 화면 ──
 function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function metaHtml(edited, manual) {
+  if (manual) return edited ? '<span>직접 작성함</span><button class="ghost" data-revert="1">비우기</button>' : '<span>직접 작성 칸 · 비어 있으면 고객용 리포트에 나오지 않아요</span>';
+  return edited ? '<span>직접 수정함</span><button class="ghost" data-revert="1">생성 문장으로 되돌리기</button>' : '<span>생성 문장</span>';
+}
 function paraEditor(id, text, { manual = false, label = '' } = {}) {
   const edited = Object.prototype.hasOwnProperty.call(project.edits, id);
   const val = edited ? project.edits[id] : text;
   return `<div class="para ${edited ? 'edited' : ''}" data-id="${escapeHtml(id)}">
     ${label ? `<div class="hint">${escapeHtml(label)}</div>` : ''}
     <textarea data-id="${escapeHtml(id)}" data-orig="${escapeHtml(text)}" placeholder="${manual ? '이 칸은 직접 작성하는 칸이에요. 비워 두면 고객용 리포트에 나오지 않아요.' : ''}">${escapeHtml(val)}</textarea>
-    <div class="meta">${edited ? '<span>직접 수정함</span><button class="ghost" data-revert="1">생성 문장으로 되돌리기</button>' : '<span>생성 문장</span>'}</div></div>`;
+    <div class="meta" data-manual="${manual ? '1' : ''}">${metaHtml(edited, manual)}</div></div>`;
 }
 function renderEditor() {
   const g = project.generated;
@@ -123,7 +127,7 @@ function onEdit(e) {
   if (ta.value === ta.dataset.orig) delete project.edits[id]; else project.edits[id] = ta.value;
   const wrap = ta.closest('.para'); const edited = Object.prototype.hasOwnProperty.call(project.edits, id);
   wrap.classList.toggle('edited', edited);
-  wrap.querySelector('.meta').innerHTML = edited ? '<span>직접 수정함</span><button class="ghost" data-revert="1">생성 문장으로 되돌리기</button>' : '<span>생성 문장</span>';
+  const meta = wrap.querySelector('.meta'); meta.innerHTML = metaHtml(edited, meta.dataset.manual === '1');
   project.status.reviewed = false; $('reviewed').checked = false; lastPdf = null;
 }
 
