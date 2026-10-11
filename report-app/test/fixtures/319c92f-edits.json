@@ -1,0 +1,13 @@
+{
+  "source": "git commit 319c92f 로컬 서버 버전 화면에서 생성·수정·백업",
+  "result": {
+    "C": {
+      "edits": {
+        "ch4:EARNOUT-hidden:meaning:1": "[319c92f C 편집 ch4earn] 판매자가 이전 버전(v2)에서 직접 고친 문장이에요.",
+        "ch7:MONEY-focus-shown:meaning:1": "[319c92f C 편집 ch7focus] 판매자가 이전 버전(v2)에서 직접 고친 문장이에요.",
+        "ch7:MPLAN2-shown:use:1": "[319c92f C 편집 ch7plan] 판매자가 이전 버전(v2)에서 직접 고친 문장이에요.",
+        "ch3:AUTH-hidden:meaning:1": "[319c92f C 편집 ch3auth] 판매자가 이전 버전(v2)에서 직접 고친 문장이에요."
+      }
+    }
+  }
+}

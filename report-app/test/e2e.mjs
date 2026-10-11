@@ -422,7 +422,7 @@ console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]
   const finalText = async (file) => { await markReviewed(); return OUTPUT(file); };
   await step('1) 정상 백업 왕복: 본문 변경 안내 없음, 명시적 수정 유지', async () => {
     await importFile(JSON.parse(readFileSync(bk, 'utf8')), 'n1.json');
-    assert.doesNotMatch(await page.textContent('#globalMsg'), /현재 기준 본문으로 바꿨어요/);
+    assert.doesNotMatch(await page.textContent('#globalMsg'), /확인된 본문으로 바꿨어요/);
     await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
   });
   await step('2) 입력은 그대로, generated 문단만 바꾼 백업 → 현재 정규 본문으로 바꾸고 재검토 필요, 편집기 = 최종 출력', async () => {
@@ -430,7 +430,7 @@ console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]
     for (const c of j.generated.report.chapters) for (const s of c.sections) for (const p of s.paras) if (p.id === otherId) p.text = '변조된 본문 문장이에요.';
     j.status = { reviewed: true, reviewedHash: 'x'.repeat(64) };
     await importFile(j, 'n2.json');
-    assert.match(await page.textContent('#globalMsg'), /현재 기준 본문으로 바꿨어요.*다시 검토/);
+    assert.match(await page.textContent('#globalMsg'), /확인된 본문으로 바꿨어요.*다시 검토/);
     assert.equal((await proj()).status.reviewedHash, null);
     await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${otherId}"]`), canonOther);
     assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
@@ -444,7 +444,7 @@ console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]
     const s0 = j.generated.report.chapters[3].sections[0]; s0.paras[0].id = 'ch3:OLD-RULE:meaning:1';
     j.edits['ch3:OLD-RULE:meaning:1'] = '[이전 편집] 옛 문단에 했던 수정';
     await importFile(j, 'n3.json');
-    assert.match(await page.textContent('#globalMsg'), /현재 기준 본문으로 바꿨어요.*보존된 편집본/);
+    assert.match(await page.textContent('#globalMsg'), /확인된 본문으로 바꿨어요.*보존된 편집본/);
     await tab('edit'); assert.doesNotMatch(await page.textContent('#editor'), /이전 라이브러리 문장/);
     assert.match(await page.textContent('#orphanBox'), /\[이전 편집\] 옛 문단에 했던 수정/);
     assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
@@ -537,6 +537,17 @@ console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]
   });
   rmSync(bk, { force: true });
 }
+
+console.log('\n[이전 버전 프로젝트(로컬 서버): 실제 f3f6416 JSON의 편집 문장이 서버 PDF에 유지]');
+await step('f3f6416 A 가져오기 → v1 그대로, 서버가 만든 최종 PDF에 옛 3장·7장 편집 문장 포함', async () => {
+  const FIXD = join(here, 'fixtures'); const fx = JSON.parse(readFileSync(join(FIXD, 'f3f6416-edits.json'), 'utf8')).result.A.edits;
+  await page.click('#btnNew'); await page.setInputFiles('#fileImport', join(FIXD, 'f3f6416-A.json'));
+  await page.waitForFunction(() => /JSON 백업을 불러왔어요/.test(document.getElementById('globalMsg').textContent));
+  const p = await proj(); assert.equal(p.generated.generator, 'full-rule-v1'); assert.deepEqual(p.orphanEdits, []);
+  await tab('design'); await page.click('[data-design=study]');
+  await markReviewed(); const { path, state } = await downloadPdf('legacy-f3f6416-A-local.pdf'); assert.match(state, /최종본/);
+  const flat = pdfText(path).replace(/\s+/g, ''); for (const text of Object.values(fx)) assert.ok(flat.includes(text.replace(/\s+/g, '')), text);
+});
 
 console.log('\n[최종본 조건 · 전달 차단]');
 await step('브랜드명만 넣고 검토하지 않은 PDF는 "검토용(최종본 아님)"', async () => {

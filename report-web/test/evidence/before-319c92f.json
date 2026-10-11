@@ -1,0 +1,62 @@
+{
+  "A": {
+    "message": "저장된 생성 본문이 현재 생성 결과와 달라, 현재 기준 본문으로 바꿨어요(직접 고친 문장은 그대로 두었어요). 내용을 다시 검토해 주세요. 현재 본문에 같은 자리가 없는 편집 3개는 \"보존된 편집본\"으로 옮겼어요. JSON 백업을 불러왔어요. 검토 완료는 다시 확인해 주세요.",
+    "generator": "full-rule-v2",
+    "edits": {
+      "ch3:WORK-재성:meaning:1": {
+        "inEditor": false,
+        "inEdits": false,
+        "inOrphans": true,
+        "inPreview": false
+      },
+      "ch3:WGROW-재성:use:1": {
+        "inEditor": false,
+        "inEdits": false,
+        "inOrphans": true,
+        "inPreview": false
+      },
+      "ch7:W-keep-fit-재성:meaning:1": {
+        "inEditor": false,
+        "inEdits": false,
+        "inOrphans": true,
+        "inPreview": false
+      },
+      "ch2:STR-비겁:meaning:1": {
+        "inEditor": true,
+        "inEdits": true,
+        "inOrphans": false,
+        "inPreview": true
+      }
+    }
+  },
+  "B": {
+    "message": "저장된 생성 본문이 현재 생성 결과와 달라, 현재 기준 본문으로 바꿨어요(직접 고친 문장은 그대로 두었어요). 내용을 다시 검토해 주세요. 현재 본문에 같은 자리가 없는 편집 3개는 \"보존된 편집본\"으로 옮겼어요. JSON 백업을 불러왔어요. 검토 완료는 다시 확인해 주세요.",
+    "generator": "full-rule-v2",
+    "edits": {
+      "ch3:WORK-관성:meaning:1": {
+        "inEditor": false,
+        "inEdits": false,
+        "inOrphans": true,
+        "inPreview": false
+      },
+      "ch3:WGROW-관성:use:1": {
+        "inEditor": false,
+        "inEdits": false,
+        "inOrphans": true,
+        "inPreview": false
+      },
+      "ch7:W-keep-fit-관성:meaning:1": {
+        "inEditor": false,
+        "inEdits": false,
+        "inOrphans": true,
+        "inPreview": false
+      },
+      "ch2:STR-관성:meaning:1": {
+        "inEditor": true,
+        "inEdits": true,
+        "inOrphans": false,
+        "inPreview": true
+      }
+    }
+  }
+}

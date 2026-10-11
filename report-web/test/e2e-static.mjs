@@ -210,7 +210,7 @@ console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]
   const finalText = async (file) => { await markReviewed(); return OUTPUT(file); };
   await step('1) 정상 백업 왕복: 본문 변경 안내 없음, 명시적 수정 유지', async () => {
     await importFile(JSON.parse(readFileSync(bk, 'utf8')), 'n1.json');
-    assert.doesNotMatch(await page.textContent('#globalMsg'), /현재 기준 본문으로 바꿨어요/);
+    assert.doesNotMatch(await page.textContent('#globalMsg'), /확인된 본문으로 바꿨어요/);
     await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
   });
   await step('2) 입력은 그대로, generated 문단만 바꾼 백업 → 현재 정규 본문으로 바꾸고 재검토 필요, 편집기 = 최종 출력', async () => {
@@ -218,7 +218,7 @@ console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]
     for (const c of j.generated.report.chapters) for (const s of c.sections) for (const p of s.paras) if (p.id === otherId) p.text = '변조된 본문 문장이에요.';
     j.status = { reviewed: true, reviewedHash: 'x'.repeat(64) };
     await importFile(j, 'n2.json');
-    assert.match(await page.textContent('#globalMsg'), /현재 기준 본문으로 바꿨어요.*다시 검토/);
+    assert.match(await page.textContent('#globalMsg'), /확인된 본문으로 바꿨어요.*다시 검토/);
     assert.equal((await proj()).status.reviewedHash, null);
     await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${otherId}"]`), canonOther);
     assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
@@ -232,7 +232,7 @@ console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]
     const s0 = j.generated.report.chapters[3].sections[0]; s0.paras[0].id = 'ch3:OLD-RULE:meaning:1';
     j.edits['ch3:OLD-RULE:meaning:1'] = '[이전 편집] 옛 문단에 했던 수정';
     await importFile(j, 'n3.json');
-    assert.match(await page.textContent('#globalMsg'), /현재 기준 본문으로 바꿨어요.*보존된 편집본/);
+    assert.match(await page.textContent('#globalMsg'), /확인된 본문으로 바꿨어요.*보존된 편집본/);
     await tab('edit'); assert.doesNotMatch(await page.textContent('#editor'), /이전 라이브러리 문장/);
     assert.match(await page.textContent('#orphanBox'), /\[이전 편집\] 옛 문단에 했던 수정/);
     assert.equal(await page.inputValue(`textarea[data-id="${editId}"]`), EXPLICIT);
@@ -326,6 +326,69 @@ console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]
   rmSync(bk, { force: true });
 }
 
+console.log('\n[이전 버전 프로젝트: 실제 f3f6416·319c92f JSON의 편집 문장 유지]');
+{
+  const FIXD = join(HERE, '..', '..', 'report-app', 'test', 'fixtures');
+  const fx = { ...JSON.parse(readFileSync(join(FIXD, 'f3f6416-edits.json'), 'utf8')).result, ...JSON.parse(readFileSync(join(FIXD, '319c92f-edits.json'), 'utf8')).result };
+  const files = { A: 'f3f6416-A.json', B: 'f3f6416-B.json', C: '319c92f-C.json' };
+  const gens = { A: 'full-rule-v1', B: 'full-rule-v1', C: 'full-rule-v2' };
+  const importFix = async (file, mutate) => {
+    let pth = join(FIXD, file);
+    if (mutate) { const j = JSON.parse(readFileSync(pth, 'utf8')); mutate(j); pth = join(ART, `mut-${file}`); writeFileSync(pth, JSON.stringify(j)); }
+    await page.click('#btnNew'); await page.setInputFiles('#fileImport', pth);
+    await page.waitForFunction(() => /JSON 백업을 불러왔어요|불러올 수 없는|열지 않았어요/.test(document.getElementById('globalMsg').textContent));
+  };
+  const editsShown = async (edits) => { await tab('edit'); for (const [id, text] of Object.entries(edits)) assert.equal(await page.inputValue(`textarea[data-id="${id}"]`), text, id); };
+  for (const k of ['A', 'B', 'C']) {
+    await step(`${files[k]}: 가져오기 → 만든 버전(${gens[k]}) 그대로, 옛 문단 편집 ${Object.keys(fx[k].edits).length}개가 같은 자리에 표시, 보존된 편집본으로 옮기지 않음`, async () => {
+      await importFix(files[k]);
+      const p = await proj(); assert.equal(p.generated.generator, gens[k]); assert.deepEqual(p.orphanEdits, []);
+      for (const [id, text] of Object.entries(fx[k].edits)) assert.equal(p.edits[id], text, id);
+      await editsShown(fx[k].edits); assert.ok(await page.isVisible('#versionBox')); assert.match(await page.textContent('#versionBox'), /이전 풀이/);
+    });
+  }
+  await step('f3f6416 A: 디자인·글꼴 변경 → 저장 → 새로고침 → 이어서 하기/목록 열기 → 검토 → 인쇄까지 옛 편집 문장 유지(v1 본문)', async () => {
+    await importFix(files.A); await tab('design'); await page.click('[data-design=nature]'); await page.click('#headFontCards [data-head=nanum]'); await page.click('#bodyFontCards [data-body=gowun]');
+    let p = await proj(); assert.equal(p.generated.generator, 'full-rule-v1'); assert.equal(p.brand.cover, 'nature');
+    await page.click('#btnSave'); const pid = p.id; await page.reload();
+    await page.waitForSelector('#resumeBox', { state: 'visible' }); await page.click('#btnResume');
+    await page.waitForFunction(() => document.getElementById('clientName').value === '가상 사례 A');
+    await editsShown(fx.A.edits); p = await proj(); assert.equal(p.generated.generator, 'full-rule-v1'); assert.equal(p.id, pid);
+    await page.click('#btnNew'); await page.selectOption('#projectList', pid); await page.waitForFunction(() => /프로젝트를 열었어요/.test(document.getElementById('globalMsg').textContent));
+    await editsShown(fx.A.edits);
+    await markReviewed(); const r = await printToPdf('legacy-f3f6416-A.pdf'); const flat = r.text.replace(/\s+/g, '');
+    for (const text of Object.values(fx.A.edits)) assert.ok(flat.includes(text.replace(/\s+/g, '')), text);
+    assert.ok(r.info.final); assert.doesNotMatch(r.text, /한눈에 보는 핵심/, 'v1 본문으로 인쇄(새 풀이 장 없음)');
+  });
+  await step('319c92f C: 인쇄에도 4·7장 옛 편집 문장 유지(v2 본문)', async () => {
+    await importFix(files.C); await markReviewed(); const r = await printToPdf('legacy-319c92f-C.pdf'); const flat = r.text.replace(/\s+/g, '');
+    for (const text of Object.values(fx.C.edits)) assert.ok(flat.includes(text.replace(/\s+/g, '')), text);
+  });
+  await step('"새 풀이로 다시 만들기"는 명시적으로 누를 때만: 이전본 보관 → 새 풀이 적용 → "이전 풀이로 되돌리기"로 옛 본문·편집 그대로 복구', async () => {
+    await importFix(files.A); await tab('edit'); await page.click('#btnUpgrade');
+    await page.waitForFunction(() => /새 풀이로 다시 만들었어요/.test(document.getElementById('globalMsg').textContent));
+    let p = await proj(); assert.equal(p.generated.generator, 'full-rule-v3'); assert.equal(p.history[0].kind, 'upgrade'); assert.equal(p.history[0].generated.generator, 'full-rule-v1');
+    for (const [id, text] of Object.entries(fx.A.edits)) assert.ok(p.edits[id] === text || p.orphanEdits.some((o) => o.id === id && o.text === text), id);
+    assert.match(await page.textContent('#globalMsg'), /이전 풀이로 되돌리기/); assert.ok(await page.isVisible('#btnRestorePrev'));
+    await page.click('#btnRestorePrev'); await page.waitForFunction(() => /이전 풀이로 되돌렸어요/.test(document.getElementById('globalMsg').textContent));
+    p = await proj(); assert.equal(p.generated.generator, 'full-rule-v1'); assert.deepEqual(p.orphanEdits, []);
+    for (const [id, text] of Object.entries(fx.A.edits)) assert.equal(p.edits[id], text);
+    await editsShown(fx.A.edits);
+  });
+  await step('같은 버전 안에서 변조된 baseline은 그 버전 생성기로 다시 확인(새 버전으로 바꾸지 않음), 편집 유지, 재검토', async () => {
+    const workId = Object.keys(fx.A.edits).find((i) => i.startsWith('ch3:WORK'));
+    await importFix(files.A, (j) => { for (const c of j.generated.report.chapters) for (const s of c.sections) for (const p of s.paras) if (p.id === 'ch1:DM-丁:meaning:1') p.text = '변조된 v1 본문'; j.status = { reviewed: true, reviewedHash: 'z'.repeat(64) }; });
+    assert.match(await page.textContent('#globalMsg'), /같은 버전의 생성 결과와 달라/);
+    const p = await proj(); assert.equal(p.generated.generator, 'full-rule-v1'); assert.equal(p.status.reviewedHash, null); assert.equal(p.edits[workId], fx.A.edits[workId]);
+    await tab('edit'); assert.doesNotMatch(await page.textContent('#editor'), /변조된 v1 본문/);
+  });
+  await step('알 수 없는 생성 버전 라벨 → 확인 전 상태로 잠금(본문 미표시·출력 불가), 편집은 보존', async () => {
+    await importFix(files.A, (j) => { j.generated.generator = 'full-rule-v9'; });
+    const p = await proj(); assert.equal(p.generated.unverified, true); assert.equal(Object.keys(p.edits).length, 4);
+    await tab('preview'); assert.ok(await page.isDisabled('#btnPdf'));
+  });
+}
+
 console.log('\n[디자인·브랜드·화면 (v2)]');
 const DESIGN_IDS = ['plain', 'mystic', 'paper', 'study', 'nature'];
 const HEAD_FONT_PDF = { plain: 'NotoSansKR', mystic: 'GowunBatang', paper: 'NanumMyeongjo', study: 'NotoSerifKR', nature: 'GowunBatang' };
@@ -384,16 +447,13 @@ await step('브랜드 프로필: 저장 → 새 고객에 자동으로 채움, �
   pj.brand.cover = '"><script>'; writeFileSync(pf, JSON.stringify(pj)); await page.setInputFiles('#profileImport', pf);
   await page.waitForFunction(() => /불러올 수 없는 브랜드 프로필/.test(document.getElementById('globalMsg').textContent)); rmSync(pf);
 });
-await step('이전 버전 프로젝트(bright 표지·v1 본문·옛 문단 편집) 가져오기 → 현재 본문으로 정규화, 편집 보존, 이전 표지 그대로 출력', async () => {
-  await newClient('이전 버전 고객'); const ta = page.locator('#editor .chap').nth(2).locator('textarea').nth(1); const keepId = await ta.getAttribute('data-id'); await ta.fill('이전 버전에서 고친 문장');
-  const dl = page.waitForEvent('download'); await page.click('#btnExport'); const f = join(ART, 'legacy.json'); await (await dl).saveAs(f);
-  const j = JSON.parse(readFileSync(f, 'utf8'));
-  j.brand = { name: '달빛 상담소', accent: '#B4583A', cover: 'bright' }; j.generated.generator = 'full-rule-v1'; j.generated.fingerprint = 'a'.repeat(64);
-  j.edits['ch3:WORK-재성:meaning:1'] = '[옛 문단 편집] 이전 3장에 했던 수정'; writeFileSync(f, JSON.stringify(j));
+await step('이전 bright 표지 프로젝트(실제 f3f6416 JSON, 표지만 bright) 가져오기 → v1 본문·편집 유지, 이전 표지 그대로 출력', async () => {
+  const FIXD = join(HERE, '..', '..', 'report-app', 'test', 'fixtures'); const fx = JSON.parse(readFileSync(join(FIXD, 'f3f6416-edits.json'), 'utf8')).result.A.edits;
+  const j = JSON.parse(readFileSync(join(FIXD, 'f3f6416-A.json'), 'utf8')); j.brand = { name: '달빛 상담소', accent: '#B4583A', cover: 'bright' };
+  const f = join(ART, 'legacy-bright.json'); writeFileSync(f, JSON.stringify(j));
   await page.click('#btnNew'); await page.setInputFiles('#fileImport', f); rmSync(f);
   await page.waitForFunction(() => /JSON 백업을 불러왔어요/.test(document.getElementById('globalMsg').textContent));
-  assert.match(await page.textContent('#globalMsg'), /다시 검토|보존된 편집본/);
-  await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${keepId}"]`), '이전 버전에서 고친 문장'); assert.match(await page.textContent('#orphanBox'), /\[옛 문단 편집\]/);
+  const p = await proj(); assert.equal(p.generated.generator, 'full-rule-v1'); for (const [id, text] of Object.entries(fx)) assert.equal(p.edits[id], text);
   await tab('design'); assert.match(await page.textContent('#designCards'), /이전 표지/);
   await markReviewed(); const r = await printToPdf('legacy-bright.pdf'); assert.ok(r.info.final);
   assert.match(await page.evaluate(() => document.getElementById('printFrame').srcdoc), /cover-bright/);

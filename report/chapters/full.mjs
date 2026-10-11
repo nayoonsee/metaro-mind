@@ -5,7 +5,7 @@
 import { tenGod } from '../../api/_kst-solar-term-adapter.js';
 import { chartKeys, chapter1, chapter8, classifyWorkOption, STATUS_KO } from './generate.mjs';
 import { DAY_MASTER, SHOWN_GROUP, MONTH_RELATION } from './library.mjs';
-import { AUTH, COLLAB, ENV, ENV_LABEL, EARN_OUT, LEAK, MONEY_FOCUS } from './library5.mjs';
+import { AUTH, COLLAB, ENV, ENV_LABEL, LEAK, MONEY_FOCUS } from './library5.mjs';
 import { STRENGTH, POTENTIAL, WORK_COMBO } from './library2.mjs';
 import { LOVE_EXPRESS, PEOPLE_SCENE, FAMILY_TALK } from './library4.mjs';
 import { WORK, MONEY_SENSE, MONEY_TYPE, LOVE2, FAMILY2, PEOPLE, LOVE_EXTRA, FAMILY_EXTRA, STRENGTH_SCENE, STRENGTH_FEEDBACK, MONEY_DECISION, LOVE_BALANCE, HELP, TYPE_TIP, FRICTION_SCENE, ELDER } from './library3.mjs';
@@ -87,11 +87,15 @@ function ch4(saju, k) {
   const S = MONEY_SENSE[status]; const types = [...new Set(all.map((o) => TG_KO[o.tg]))];
   const typeText = types.length === 2 ? MONEY_TYPE.both : types.length ? MONEY_TYPE[types[0]] : '';
   const ev = all.length ? where(all) : '재성 없음';
-  const O = EARN_OUT[k.status['식상']]; const L = LEAK[k.status['비겁']];
+  const L = LEAK[k.status['비겁']];
   const evO = `식상 위치: ${whereGroup(saju, '식상')}`; const evL = `비겁 위치: ${whereGroup(saju, '비겁')}`;
-  return { id: 'ch4', title: '4장. 나는 돈을 어떻게 벌고, 쓰고, 지키나요?', intro: '이 장은 돈을 세 가지로 나눠 봐요. 일한 대가를 받는 방식은 만들어 내는 힘(식상)의 위치로, 돈을 대하는 감각은 재물 글자(재성)의 위치로, 새기 쉬운 지점은 나와 같은 기운(비겁)의 위치로 읽어요. 금액이나 재산의 많고 적음은 사주로 알 수 없어서 다루지 않아요.',
+  return { id: 'ch4', title: '4장. 나는 돈을 어떻게 벌고, 쓰고, 지키나요?', intro: '이 장은 돈을 세 가지로 나눠 봐요. 일한 대가는 실제로 따져 볼 항목 위주로(관련 풀이는 검토 중), 돈을 대하는 감각은 재물 글자(재성)의 위치로, 새기 쉬운 지점은 나와 같은 기운(비겁)의 위치로 읽어요. 금액이나 재산의 많고 적음은 사주로 알 수 없어서 다루지 않아요.',
     sections: [
-      { q: '일한 대가는 어떤 방식으로 받을 때 납득이 되나요?', paras: [P('meaning', O.meaning, `EARNOUT-${k.status['식상']}`, evO), P('caution', O.caution, `EARNOUT-${k.status['식상']}`, evO), P('use', O.use, `EARNOUT-${k.status['식상']}`, evO)] },
+      // 식상 위치 → "대가를 받는 방식" 풀이는 검증 전이라 단정하지 않는다(검토 대기). 전통 개념과 사실 확인 방법만 싣는다.
+      { q: '일한 대가는 어떻게 따져 보면 좋을까요?', paras: [
+        P('meaning', `만들어 내는 힘을 뜻하는 식상의 위치(${STATUS_KO[k.status['식상']]})는 전통적으로 재물(재성)로 이어지는 흐름, 곧 "식상생재"를 볼 때 쓰는 요소예요. 다만 이 위치를 "어떤 방식으로 대가를 받을 때 납득이 되는지"로 바로 잇는 풀이는 아직 검토 중이라, 이 리포트에서는 단정하지 않아요.`, 'EARNOUT-pending', evO),
+        P('use', '사주와 별개로, 지금 받는 대가가 시간 단위(월급·시급)인지 결과물 단위(건당·프로젝트)인지, 그리고 처음 정한 뒤 맡은 일이 얼마나 늘었는지를 한 번 적어 보세요. 대가를 다시 이야기할 때 기준이 돼요.', 'EARNOUT-check', '사주 해석 아님'),
+      ] },
       { q: '들어온 돈을 대하는 나의 기본 감각은 어떤가요?', paras: [
         P('meaning', `${S.meaning} ${typeText}`.trim(), `MONEY-${status}`, ev),
         P('example', S.scene, `MONEY-${status}`, ev),
@@ -142,7 +146,7 @@ function keyChapter(saju, k, c7, concern) {
   const D = DAY_MASTER[k.dm]; const S = SHOWN_GROUP[k.shownGroup]; const M = MONTH_RELATION[k.monthRel];
   const q = (concern?.question || '').trim(); const qs = q.length > 30 ? `${q.slice(0, 30)}…` : q;
   const third = c7.status === 'generated'
-    ? (c7.topic === 'work' ? `7장 · 적어 주신 고민("${qs}")을 선택지별로 나눠, 무엇이 다르고 무엇부터 확인할지 정리했어요.` : `7장 · 적어 주신 고민("${qs}")을 4장의 계산 요소에 맞춰 첫 석 달의 순서로 정리했어요.`)
+    ? (c7.topic === 'work' ? `7장 · 적어 주신 고민("${qs}")을 선택지별로 나눠, 무엇이 다르고 무엇부터 확인할지 정리했어요.` : `7장 · 적어 주신 고민("${qs}")을 알려 주신 상황을 기준으로 하나의 순서(지출 목록 → 저축 가능액 → 자동이체)로 정리했어요.`)
     : c7.status === 'review' ? `7장 · 적어 주신 질문("${qs}")에 대한 풀이는 상담 내용을 바탕으로 직접 정리했어요.`
       : `4장 · 돈은 "${MONEY_FOCUS[k.status['비겁']]}"부터 살펴보면 좋아요. 이번에는 고민을 적지 않아 7장은 비워 두었어요.`;
   return { id: 'key', title: '한눈에 보는 핵심', intro: '', sections: [{ q: '이 리포트의 핵심 세 가지', paras: [
@@ -164,7 +168,7 @@ function ch8(chapters) {
     ['가까운 사람과 같은 문제로 자꾸 부딪힐 때', 'ch5', /갈등/],
     ['가족에게 부탁하거나 거리를 정해야 할 때', 'ch6', /거리/],
   ].map(([when, id, re]) => { const q = secQ(id, re); return q ? P('use', `${when}: ${find(id).title.split('.')[0]} "${q}"`, `NAV-${id}-${re.source}`, '이 리포트의 장 안내') : null; }).filter(Boolean);
-  const c7 = find('ch7'); if (c7 && c7.status === 'generated') nav.push(P('use', `고민한 선택을 다시 정해야 할 때: 7장 "${c7.sections[c7.sections.length > 1 ? 1 : 0].q}"부터`, 'NAV-ch7', '이 리포트의 장 안내'));
+  const c7 = find('ch7'); if (c7 && c7.status === 'generated') nav.push(P('use', `고민한 선택을 다시 정해야 할 때: 7장 "${c7.sections[c7.topic === 'money' || c7.sections.length < 2 ? 0 : 1].q}"부터`, 'NAV-ch7', '이 리포트의 장 안내'));
   const items = [];
   const c2 = find('ch2'); const g2 = c2.sections[0].paras[0]; if (g2) items.push(P('use', `2장: 강점 "${g2.text.split(':')[0]}"이 지나칠 때 나오는 신호를 한 주 동안 기록해 보세요.`, 'ACT-ch2', '2장 근거'));
   items.push(P('use', '3장: 지금 하는 일을 "오래 버틸 수 있는 환경" 기준으로 1~5점 매겨 보세요.', 'ACT-ch3', '3장 근거'));
@@ -191,8 +195,7 @@ function linkedChecks(concern, topic) {
     const yr = /(\d+)\s*년\s*차/.exec(sit);
     if (yr) out.push(P('check', `알려 주신 ${yr[1]}년 차 경력 가운데, 어느 쪽을 골라도 가져갈 수 있는 것(포트폴리오, 거래처, 추천해 줄 사람)을 따로 적어 보세요.`, 'LINK-sit-years', '알려 주신 상황'));
   } else if (topic === 'money') {
-    if (/고정 지출|정리/.test(sit)) out.push(P('check', '알려 주신 상황에 고정 지출 정리가 들어 있으니, 첫 주에는 자동으로 빠져나가는 돈의 목록부터 만들어 보세요.', 'LINK-sit-fixed', '알려 주신 상황'));
-    if (/월급|직장/.test(sit + concern.question)) out.push(P('check', '월급날을 기준으로 저축이 먼저 빠져나가게 순서를 바꾸는 것이 첫 실행 항목이에요.', 'LINK-sit-salary', '알려 주신 상황'));
+    // 돈 고민은 7장의 "어떤 순서로 하면 될까요?" 한 가지 순서에 알려 주신 사실을 이미 반영했다(순서가 겹치지 않도록 여기서는 따로 넣지 않음).
   }
   return out.length ? [{ q: '알려 주신 사실에 따라 달라지는 판단', box: true, paras: out }] : [];
 }
@@ -232,6 +235,7 @@ export function generateFullReport(saju, { concern = null } = {}) {
   if (!saju.hourKnown) review.push({ type: 'hour', text: '출생 시간 모름: 시주 없이 생성했어요.' });
   for (const n of saju.notices || []) review.push({ type: n.type === 'jasi' ? 'jasi' : 'notice', text: n.type === 'jasi' ? '밤 11시대 출생: 시주 천간 처리 기준이 미확정이에요. 검토 대상이에요.' : `계산 안내: ${n.text}` });
   review.push({ type: 'library', text: '문단 라이브러리 v0은 명리 전문가 검수 전이에요. 해석 문장을 검토한 뒤 사용하세요.' });
+  review.push({ type: 'pending', text: '검토 대기: 4장 "일한 대가" 절에서 식상 위치를 대가 방식으로 잇는 풀이는 검증 전이라 본문에서 단정하지 않았어요.' });
   const reviewStrings = [];
   const c1 = chapter1(saju, k);
   c1.intro = c1.intro.replace(/ '예를 들면'[^.]*\.\s?/, ' ').replace(/ ?태어난 시간을 몰라서[^.]*\./, '').trim();
@@ -251,6 +255,6 @@ export function generateFullReport(saju, { concern = null } = {}) {
     const seen = {};
     ch.sections.forEach((s) => s.paras.forEach((p) => { const base = `${ch.id}:${p.rule}:${p.kind}`; seen[base] = (seen[base] || 0) + 1; p.id = `${base}:${seen[base]}`; }));
   }
-  return { generator: 'full-rule-v2', paidAiCalls: 0, keys: k, cover: { title: DAY_MASTER[k.dm].cover, subtitle: '성향 · 일 · 돈 · 관계 · 선택을 담은 종합 사주 리포트' },
+  return { generator: 'full-rule-v3', paidAiCalls: 0, keys: k, cover: { title: DAY_MASTER[k.dm].cover, subtitle: '성향 · 일 · 돈 · 관계 · 선택을 담은 종합 사주 리포트' },
     chapters, review, needsWriting: c7.status === 'review' };
 }

@@ -3,7 +3,7 @@
 // - 고객 정보를 외부로 보내는 요청은 없다(네트워크 요청은 같은 사이트의 글꼴·앱 파일뿐).
 // - 유료 AI 호출(_saju-core.js의 callClaude)은 가져오지 않는다. 빌드가 번들에 남지 않았는지 검사한다.
 // - 검토 해시는 상태 일치 확인용이며 변조 방지 인증이 아니다(브라우저 안 데이터는 사용자가 바꿀 수 있음).
-import { createCore, GENERATOR } from '../../report-app/lib/core.mjs';
+import { createCore, GENERATOR, GENERATORS } from '../../report-app/lib/core.mjs';
 import { renderReportHtml } from '../../report-app/lib/render.mjs';
 import { clientKey } from '../../report-app/public/schema.mjs';
 import { SUPPORTED_TOPICS, EXCLUDED } from '../../report/chapters/full.mjs';
@@ -20,11 +20,11 @@ const clone = (v) => (v === undefined ? v : JSON.parse(JSON.stringify(v))); // �
 export async function call(path, body) {
   try {
     body = clone(body) || {};
-    if (path === '/api/info') return ok({ pdf: false, print: true, mail: { transport: 'none', label: '자동 이메일 연결 준비 중', realSendAvailable: false }, supportedTopics: SUPPORTED_TOPICS, excluded: EXCLUDED });
+    if (path === '/api/info') return ok({ pdf: false, print: true, mail: { transport: 'none', label: '자동 이메일 연결 준비 중', realSendAvailable: false }, supportedTopics: SUPPORTED_TOPICS, generators: { latest: GENERATOR, labels: Object.fromEntries(Object.entries(GENERATORS).map(([k, v]) => [k, v.label])) }, excluded: EXCLUDED });
     if (path === '/api/generate') {
-      const g = await core.generateFromInput(body.client || {}, body.concern || {});
+      const g = await core.generateFromInput(body.client || {}, body.concern || {}, body.generator || GENERATOR);
       if (g.errors) return fail(400, g.errors);
-      return ok({ generated: { generator: GENERATOR, fingerprint: g.fingerprint, clientKey: clientKey(body.client, body.concern), generatedAt: new Date().toISOString(), saju: g.saju, report: g.report } });
+      return ok({ generated: { generator: g.generator, fingerprint: g.fingerprint, clientKey: clientKey(body.client, body.concern), generatedAt: new Date().toISOString(), saju: g.saju, report: g.report } });
     }
     if (['/api/preview', '/api/pdf', '/api/review'].includes(path)) {
       const v = await core.verifyProject(body.project);

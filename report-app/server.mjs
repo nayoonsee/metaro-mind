@@ -12,7 +12,7 @@ import { extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SUPPORTED_TOPICS, EXCLUDED } from '../report/chapters/full.mjs';
 import { renderReportHtml, DENSITIES } from './lib/render.mjs';
-import { createCore, GENERATOR } from './lib/core.mjs';
+import { createCore, GENERATOR, GENERATORS } from './lib/core.mjs';
 import { htmlToPdf, qaPdf, loadPlaywright } from './lib/pdf.mjs';
 import { validateMail, createTestTransport } from './lib/mail.mjs';
 import { clientKey } from './public/schema.mjs';
@@ -68,13 +68,13 @@ export function createServer({ port }) {
       if (bad) return send(res, 403, { error: '허용되지 않은 요청이에요.' });
       const url = new URL(req.url, 'http://x');
       if (req.method === 'GET' && url.pathname === '/api/info') {
-        return send(res, 200, { pdf: !!loadPlaywright(), mail: { transport: transport.kind, label: transport.label, realSendAvailable: false }, supportedTopics: SUPPORTED_TOPICS, excluded: EXCLUDED });
+        return send(res, 200, { pdf: !!loadPlaywright(), mail: { transport: transport.kind, label: transport.label, realSendAvailable: false }, supportedTopics: SUPPORTED_TOPICS, generators: { latest: GENERATOR, labels: Object.fromEntries(Object.entries(GENERATORS).map(([k, v]) => [k, v.label])) }, excluded: EXCLUDED });
       }
       if (req.method === 'POST' && url.pathname === '/api/generate') {
-        const { client, concern } = await readJson(req);
-        const g = await generateFromInput(client || {}, concern || {});
+        const { client, concern, generator } = await readJson(req);
+        const g = await generateFromInput(client || {}, concern || {}, generator || GENERATOR);
         if (g.errors) return send(res, 400, { errors: g.errors });
-        return send(res, 200, { generated: { generator: GENERATOR, fingerprint: g.fingerprint, clientKey: clientKey(client, concern), generatedAt: new Date().toISOString(), saju: g.saju, report: g.report } });
+        return send(res, 200, { generated: { generator: g.generator, fingerprint: g.fingerprint, clientKey: clientKey(client, concern), generatedAt: new Date().toISOString(), saju: g.saju, report: g.report } });
       }
       if (req.method === 'POST' && ['/api/preview', '/api/pdf', '/api/review', '/api/mail/queue'].includes(url.pathname)) {
         const body = await readJson(req);

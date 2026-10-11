@@ -1,0 +1,23 @@
+{
+  "source": "git commit f3f6416 로컬 서버 버전 화면에서 생성·수정·백업",
+  "result": {
+    "A": {
+      "file": "/home/user/metaro-mind/report-app/test/fixtures/f3f6416-A.json",
+      "edits": {
+        "ch3:WORK-재성:meaning:1": "[f3f6416 A 편집 work] 판매자가 이전 버전에서 직접 고친 문장이에요.",
+        "ch3:WGROW-재성:use:1": "[f3f6416 A 편집 wgrow] 판매자가 이전 버전에서 직접 고친 문장이에요.",
+        "ch7:W-keep-fit-재성:meaning:1": "[f3f6416 A 편집 ch7] 판매자가 이전 버전에서 직접 고친 문장이에요.",
+        "ch2:STR-비겁:meaning:1": "[f3f6416 A 편집 ch2] 판매자가 이전 버전에서 직접 고친 문장이에요."
+      }
+    },
+    "B": {
+      "file": "/home/user/metaro-mind/report-app/test/fixtures/f3f6416-B.json",
+      "edits": {
+        "ch3:WORK-관성:meaning:1": "[f3f6416 B 편집 work] 판매자가 이전 버전에서 직접 고친 문장이에요.",
+        "ch3:WGROW-관성:use:1": "[f3f6416 B 편집 wgrow] 판매자가 이전 버전에서 직접 고친 문장이에요.",
+        "ch7:W-keep-fit-관성:meaning:1": "[f3f6416 B 편집 ch7] 판매자가 이전 버전에서 직접 고친 문장이에요.",
+        "ch2:STR-관성:meaning:1": "[f3f6416 B 편집 ch2] 판매자가 이전 버전에서 직접 고친 문장이에요."
+      }
+    }
+  }
+}

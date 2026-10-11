@@ -14,6 +14,10 @@ const STORE = 'reportApp.projects.v1';
 const PROFILE = 'reportApp.brandProfile.v1'; // 판매자 브랜드 프로필(이 브라우저에만 저장)
 let project = null; let dirty = false; let generating = 0;
 let selBody = 'noto-sans'; let selHead = 'gowun'; // 디자인 화면에서 고른 글꼴
+// 생성기 버전: 프로젝트는 만든 버전으로 계속 쓰고, 최신 버전은 "새 풀이로 다시 만들기"로만 적용한다.
+let GEN = { latest: 'full-rule-v3', labels: { 'full-rule-v1': '이전 풀이(v1)', 'full-rule-v2': '이전 풀이(v2)', 'full-rule-v3': '새 풀이(v3)' } }; // 서버·브라우저 서비스의 /api/info 값으로 덮어씀
+const knownGen = (g) => Object.prototype.hasOwnProperty.call(GEN.labels, g);
+const genOf = (p) => (p.generated && knownGen(p.generated.generator) ? p.generated.generator : GEN.latest);
 // epoch: 프로젝트를 바꿀 때마다 증가. rev: 입력·편집·브랜드·검토 해제 등 내용이 바뀔 때마다 증가.
 let epoch = 0; let rev = 0; const busy = { pdf: false, queue: false, review: false };
 const snapshot = () => ({ id: project.id, epoch, rev, brandName: project.brand.name, clientName: project.client.name });
@@ -125,13 +129,14 @@ function setProject(p, note) { project = p; epoch++; bump(); dirty = false; proj
 // 결과: { p, note } 또는 { error }. 편집기·미리보기·검토·PDF가 모두 같은 정규 본문 + edits를 쓰게 된다.
 async function normalizeBaseline(p) {
   if (!p.generated) return { p, note: '' };
-  if (p.generated.clientKey !== clientKey(p.client, p.concern)) {
+  if (p.generated.clientKey !== clientKey(p.client, p.concern) || !knownGen(p.generated.generator)) {
     // 입력이 달라 현재 생성기로 대조할 수 없다: 본문을 확인 전 상태로 묶어 두고(편집기에 표시·검토·출력 안 함),
     // 편집본(edits)은 그대로 보존한다. 입력을 되돌려도 다시 생성하기 전까지는 풀리지 않는다.
     p.generated.unverified = true; p.status = { reviewed: false, reviewedHash: null };
     return { p, note: '저장된 결과가 지금 입력과 달라 현재 생성기로 확인할 수 없어요. 본문은 확인 전 상태로 두고 검토·미리보기·PDF를 막았어요. 입력을 확인한 뒤 "다시 생성"해 주세요(직접 고친 문장은 보존돼요). ', changed: true };
   }
-  const r = await api('/api/generate', { client: p.client, concern: p.concern });
+  // 저장된 본문은 믿지 않고, 그 프로젝트를 만든 버전의 생성기로 다시 만들어 대조한다(최신 버전으로 몰래 바꾸지 않음).
+  const r = await api('/api/generate', { client: p.client, concern: p.concern, generator: p.generated.generator });
   if (!r.ok) return { error: `저장된 입력으로 본문을 다시 만들지 못해 열지 않았어요: ${(r.data.errors || ['오류'])[0]}` };
   const canon = r.data.generated;
   const same = canon.fingerprint === p.generated.fingerprint && JSON.stringify(canon.report) === JSON.stringify(p.generated.report);
@@ -140,7 +145,7 @@ async function normalizeBaseline(p) {
   if (same && !moved.length && p.generated.unverified !== true) return { p, note: '' };
   canon.identityKey = identityKey(p.client);
   p.generated = canon; p.status = { reviewed: false, reviewedHash: null };
-  let note = same ? '' : '저장된 생성 본문이 현재 생성 결과와 달라, 현재 기준 본문으로 바꿨어요(직접 고친 문장은 그대로 두었어요). 내용을 다시 검토해 주세요. ';
+  let note = same ? '' : '저장된 생성 본문이 같은 버전의 생성 결과와 달라, 확인된 본문으로 바꿨어요(직접 고친 문장은 그대로 두었어요). 내용을 다시 검토해 주세요. ';
   if (moved.length) note += `현재 본문에 같은 자리가 없는 편집 ${moved.length}개는 "보존된 편집본"으로 옮겼어요. `;
   return { p, note, changed: true };
 }
@@ -193,14 +198,17 @@ async function generate() {
   const reqId = project.id; const reqRev = project.inputRev; const reqEpoch = epoch; const reqClient = structuredClone(project.client); const reqConcern = structuredClone(project.concern);
   generating++; refreshState();
   let res;
-  try { res = await api('/api/generate', { client: reqClient, concern: reqConcern }); } finally { generating--; refreshState(); }
+  // 같은 고객을 다시 만들 때는 같은 버전을 쓴다. 다른 고객으로 바뀌면(편집본은 이전 기록으로 옮김) 최신 버전으로 만든다.
+  const sameClient = !project.generated || !project.generated.identityKey || project.generated.identityKey === identityKey(reqClient);
+  const reqGen = sameClient ? genOf(project) : GEN.latest;
+  try { res = await api('/api/generate', { client: reqClient, concern: reqConcern, generator: reqGen }); } finally { generating--; refreshState(); }
   // 응답이 오는 동안 프로젝트가 바뀌었거나 입력이 바뀌었으면 적용하지 않는다.
   if (project.id !== reqId || epoch !== reqEpoch || project.inputRev !== reqRev) { msg('생성 응답이 늦게 도착했지만, 그사이 프로젝트나 입력이 바뀌어 적용하지 않았어요. 필요하면 다시 생성해 주세요.'); return; }
   if (!res.ok) { $('inputErrors').textContent = (res.data.errors || ['생성하지 못했어요.']).join('\n'); $('inputErrors').style.display = 'block'; return; }
   const gen = res.data.generated; let note = '리포트를 생성했어요. 내용을 확인하고 필요한 문장을 고쳐 주세요.';
   if (project.generated) {
     const prevIdentity = project.generated.identityKey; const nowIdentity = identityKey(project.client);
-    project.history = [{ at: project.generated.generatedAt, clientName: project.client.name, edits: project.edits, generated: { fingerprint: project.generated.fingerprint, clientKey: project.generated.clientKey, generatedAt: project.generated.generatedAt } }, ...project.history].slice(0, 5);
+    project.history = [{ kind: 'regenerate', at: project.generated.generatedAt, clientName: project.client.name, edits: { ...project.edits }, generated: { fingerprint: project.generated.fingerprint, clientKey: project.generated.clientKey, generatedAt: project.generated.generatedAt, generator: project.generated.generator || '' } }, ...project.history].slice(0, 5);
     if (prevIdentity && prevIdentity !== nowIdentity && Object.keys(project.edits).length) {
       // 다른 고객으로 바뀐 경우: 이전 고객의 편집본을 새 고객 결과에 붙이지 않는다(이전 기록에 보관).
       project.edits = {}; project.orphanEdits = [];
@@ -229,6 +237,7 @@ function paraEditor(id, text, { manual = false, label = '' } = {}) {
 }
 function renderEditor() {
   const g = project.generated;
+  renderVersionBox();
   if (!g) { $('editor').innerHTML = '<p class="hint">먼저 2단계에서 리포트를 만들어 주세요.</p>'; $('reviewBox').innerHTML = ''; $('orphanBox').style.display = 'none'; renderChapNav(); return; }
   if (g.unverified === true) {
     // 확인 전 본문은 보여 주지 않는다(검토 대상 제외). 편집본은 프로젝트·백업에 그대로 남는다.
@@ -236,6 +245,7 @@ function renderEditor() {
     $('editor').innerHTML = `<p class="hint">가져온 본문을 현재 생성기로 확인하지 못해 표시하지 않아요. 입력을 확인하고 2단계에서 "리포트 다시 만들기"를 누르면 현재 기준 본문으로 만들고, 직접 고친 문장 ${n}개는 같은 자리에 다시 적용해요(자리가 없으면 "보존된 편집본"으로 옮겨요).</p>`;
     $('reviewBox').innerHTML = ''; $('orphanBox').style.display = 'none'; renderChapNav(); return;
   }
+  renderVersionBox();
   $('reviewBox').innerHTML = `<b>검토 항목 (고객용 리포트에는 나오지 않아요)</b><ul>${g.report.review.map((r) => `<li>${esc(r.text)}${r.type === 'needs-writing' ? ' <span class="badge">직접 작성 필요</span>' : ''}${r.type === 'jasi' ? ' <span class="badge">검토 대상</span>' : ''}</li>`).join('')}</ul>`;
   const o = project.orphanEdits;
   $('orphanBox').style.display = o.length ? 'block' : 'none';
@@ -360,6 +370,52 @@ async function queueMail() {
   $('mailMsg').textContent = `${label} · 첨부 ${r.data.fileName} (${Math.round(r.data.bytes / 1024)}KB)\n실제 메일 계정이 연결되지 않아 고객에게는 아무것도 전송되지 않았어요.`;
   renderOutbox(); dirty = true; save({ quiet: true });
 }
+
+// ── 생성 버전: 새 풀이로 다시 만들기 · 이전 풀이로 되돌리기 ──
+function renderVersionBox() {
+  const g = project.generated; const box = $('versionBox');
+  if (!g || g.unverified) { box.style.display = 'none'; return; }
+  const ver = g.generator; const h = project.history[0];
+  if (ver !== GEN.latest) {
+    box.innerHTML = `이 리포트는 <b>${esc(GEN.labels[ver] || ver)}</b>로 만들었어요. 고친 문장과 함께 그 본문 그대로 유지돼요. 새 풀이를 쓰고 싶을 때만 눌러 주세요. <button class="ghost" id="btnUpgrade">새 풀이로 다시 만들기</button>`;
+    box.style.display = 'block';
+  } else if (h && h.kind === 'upgrade' && h.generated && knownGen(h.generated.generator) && h.generated.clientKey === g.clientKey) {
+    box.innerHTML = `${esc(GEN.labels[h.generated.generator])}에서 새 풀이로 바꿨어요. 바꾸기 전 본문과 고친 문장은 그대로 보관되어 있어요. <button class="ghost" id="btnRestorePrev">이전 풀이로 되돌리기</button>`;
+    box.style.display = 'block';
+  } else box.style.display = 'none';
+}
+// 버전이 바뀌는 생성(새 풀이 적용·되돌리기): 요청 당시 프로젝트·입력·내용과 같을 때만 적용한다.
+async function regenerateAs(generator) {
+  const s = snapshot(); const reqRev = project.inputRev;
+  generating++; refreshState();
+  let r; try { r = await api('/api/generate', { client: structuredClone(project.client), concern: structuredClone(project.concern), generator }); } finally { generating--; refreshState(); }
+  if (!current(s) || project.inputRev !== reqRev) { msg('응답이 오는 사이 프로젝트나 내용이 바뀌어 적용하지 않았어요. 다시 눌러 주세요.'); return null; }
+  if (!r.ok) { msg((r.data.errors || ['다시 만들지 못했어요.']).join(' ')); return null; }
+  const gen = r.data.generated; gen.identityKey = identityKey(project.client); return gen;
+}
+async function upgradeToLatest() {
+  const g = project.generated; if (!g || isStale() || g.generator === GEN.latest) return;
+  if (!window.confirm('새 풀이로 다시 만들까요?\n\n지금 본문과 고친 문장은 그대로 보관되고, "이전 풀이로 되돌리기"로 언제든 돌아올 수 있어요.\n새 풀이에 같은 자리가 없는 고친 문장은 "보존된 편집본"으로 옮겨져요.')) return;
+  formToProject();
+  const snap = { kind: 'upgrade', at: new Date().toISOString(), clientName: project.client.name, edits: { ...project.edits }, orphanEdits: project.orphanEdits.map((o) => ({ ...o })), generated: { fingerprint: g.fingerprint, clientKey: g.clientKey, generatedAt: g.generatedAt, generator: g.generator } };
+  const gen = await regenerateAs(GEN.latest); if (!gen) return;
+  const ids = new Set(allParaIds(gen)); const kept = []; const moved = [];
+  for (const [id, text] of Object.entries(project.edits)) { if (ids.has(id)) kept.push(id); else { moved.push(id); project.orphanEdits.push({ id, text, at: new Date().toISOString() }); delete project.edits[id]; } }
+  project.history = [snap, ...project.history].slice(0, 5);
+  project.generated = gen; markUnreviewed(); bump(); dirty = true; renderEditor(); save({ quiet: true });
+  msg(`새 풀이로 다시 만들었어요. 고친 문장 ${kept.length}개는 같은 자리에 그대로 있고, 새 풀이에 같은 자리가 없는 ${moved.length}개는 "보존된 편집본"에 있어요. "이전 풀이로 되돌리기"로 바꾸기 전 상태로 돌아갈 수 있어요.`);
+}
+async function restorePrevious() {
+  const h = project.history[0]; if (!h || h.kind !== 'upgrade' || !knownGen(h.generated?.generator)) return;
+  if (h.generated.clientKey !== project.generated?.clientKey) return msg('입력이 바뀌어 이전 풀이로 되돌릴 수 없어요.');
+  formToProject();
+  const gen = await regenerateAs(h.generated.generator); if (!gen) return;
+  if (gen.fingerprint !== h.generated.fingerprint) return msg('보관된 이전 풀이를 같은 본문으로 다시 만들지 못해 되돌리지 않았어요.');
+  project.edits = { ...h.edits }; project.orphanEdits = (h.orphanEdits || []).map((o) => ({ ...o }));
+  project.history = project.history.slice(1); project.generated = gen; markUnreviewed(); bump(); dirty = true; renderEditor(); save({ quiet: true });
+  msg('이전 풀이로 되돌렸어요. 바꾸기 전 본문과 고친 문장이 그대로 돌아왔어요. 검토 완료만 다시 확인해 주세요.');
+}
+$('versionBox').addEventListener('click', (e) => { if (e.target.id === 'btnUpgrade') upgradeToLatest(); if (e.target.id === 'btnRestorePrev') restorePrevious(); });
 
 // ── 디자인·브랜드 ──
 const DESIGN_CHOICES = Object.entries(DESIGNS);
@@ -518,6 +574,7 @@ setProject(emptyProject(), '');
 showResume();
 try {
   const info = (await call('/api/info')).data;
+  if (info.generators) GEN = info.generators;
   $('topicHint').textContent = `자동 집중 풀이가 가능한 고민: ${info.supportedTopics.join(', ')}. 그 밖의 질문은 근거 없이 풀지 않고, 7장에 직접 작성 칸으로 남겨요(직접 작성해야 최종본이 돼요).`;
   $('transportInfo').textContent = `현재 전송기: ${info.mail.label}. 실제 메일 계정은 아직 연결되지 않았어요.`;
   if (caps.mail === 'unavailable') {

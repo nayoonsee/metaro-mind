@@ -2,7 +2,7 @@
 // 입력: calcSaju() 결과 + 선택 입력(concern). 출력: 고객용 본문, 사용 규칙 목록, 상담자 검토 항목(분리).
 import { tenGod } from '../../api/_kst-solar-term-adapter.js';
 import { DAY_MASTER, SHOWN_GROUP, MONTH_RELATION, ROOT_GROUP, DAY_BRANCH, WORK_CHOICE, MONEY } from './library.mjs';
-import { AUTH, ENV, ENV_LABEL, OPTION_KIND, DRIVE_USE, MONEY_FOCUS, MONEY_PLAN2 } from './library5.mjs';
+import { AUTH, ENV, ENV_LABEL, OPTION_KIND, DRIVE_USE } from './library5.mjs';
 
 const GAN_EL = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
 const ZHI_EL = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
@@ -134,7 +134,9 @@ export function chapter8(saju, k, concern, review) {
     return { ...base, status: 'review', quoted, intro: '이 질문은 이 리포트의 자동 풀이 범위(일·진로 선택, 돈 관리) 밖이라, 근거 없이 답을 만들지 않기 위해 이 장에는 풀이를 싣지 않았어요.', sections: [] };
   }
   const M = MONTH_RELATION[k.monthRel];
-  const intro = '먼저 분명히 해 둘게요. 사주는 선택의 결과를 알려 주지 않아요. 이 장은 선택지마다 구조가 무엇이 다른지 정리하고, 앞 장에서 본 계산 요소에 비추어 무엇을 먼저 확인하면 좋을지 적었어요. 위의 질문과 상황은 사주로 알아낸 것이 아니라 직접 적어 주신 내용이에요.';
+  const intro = topic === 'money'
+    ? '먼저 분명히 해 둘게요. 사주는 지금의 소비 내역이나 돈의 결과를 알려 주지 않아요. 이 장은 알려 주신 상황을 기준으로 할 일의 순서를 하나로 정리하고, 사주에서 본 내용은 실제 기록을 본 뒤에 참고하도록 적었어요. 위의 질문과 상황은 사주로 알아낸 것이 아니라 직접 적어 주신 내용이에요.'
+    : '먼저 분명히 해 둘게요. 사주는 선택의 결과를 알려 주지 않아요. 이 장은 선택지마다 구조가 무엇이 다른지 정리하고, 앞 장에서 본 계산 요소에 비추어 무엇을 먼저 확인하면 좋을지 적었어요. 위의 질문과 상황은 사주로 알아낸 것이 아니라 직접 적어 주신 내용이에요.';
   const sections = [];
   if (topic === 'work') {
     const AU = AUTH[k.status['관성']]; const EN = ENV[k.monthRel];
@@ -163,17 +165,20 @@ export function chapter8(saju, k, concern, review) {
     const checks = [...new Set(kinds.flatMap(([, kd]) => OPTION_KIND[kd].checks))];
     sections.push({ q: '사주와 별개로, 현실적으로 확인할 것', box: true, paras: checks.map((r) => P('check', r, 'W-reality', '사주 해석 아님')) });
   } else {
-    const f = k.status['비겁']; const w = k.status['재성'];
-    sections.push({ q: '돈이 모이지 않는다면 어디부터 볼까요?', paras: [
-      P('meaning', `4장에서 본 것처럼 ${w === f ? `재물을 뜻하는 글자(재성)와 사람 사이의 지출과 연결해 읽는 비겁이 모두 ${STATUS_END[w]}` : `재물을 뜻하는 글자(재성)는 ${STATUS_MID[w]}, 사람 사이의 지출과 연결해 읽는 비겁은 ${STATUS_END[f]}`}. 그래서 이 질문에서는 "${MONEY_FOCUS[f]}"부터 한 달 동안 따로 적어 보는 것을 첫 순서로 권해요.`, `MONEY-focus-${f}`, `재성 위치: ${STATUS_KO[w]}, 비겁 위치: ${STATUS_KO[f]}`),
-      P('caution', `주의할 점: ${MONEY.caution[k.monthRel]}`, `MONEY-caution-${k.monthRel}`, `월지 ${k.monthZhi}와 일간의 관계`),
+    // 하나의 순서만 둔다: 고정 지출·결제 목록 → 실제 잔액·필수 지출로 저축 가능액 결정 → 그다음 자동이체.
+    // 순서는 알려 주신 사실(예: 고정 지출 미정리)을 우선하고, 사주 요소는 실제 기록을 본 뒤 참고하는 조건부 안내로만 쓴다.
+    const f = k.status['비겁'];
+    const sit = String(concern.situation || ''); const fixedUnsorted = /고정 ?지출|정리/.test(sit);
+    const payday = /월급|급여/.test(`${concern.question} ${sit}`) ? '월급날' : '수입이 들어온 날';
+    sections.push({ q: '어떤 순서로 하면 될까요?', paras: [
+      P('use', `1단계 · 고정 지출과 결제 목록 확인: ${fixedUnsorted ? '알려 주신 대로 고정 지출이 아직 정리되어 있지 않다면 여기부터 시작해요. ' : ''}통장과 카드에서 매달 빠져나가는 돈(월세·통신비·보험·구독·할부)과 자주 쓰는 결제 수단을 한 장에 모두 적어요.`, 'MONEY-step-1', fixedUnsorted ? '알려 주신 상황' : '일반 순서(사주 해석 아님)'),
+      P('use', `2단계 · 실제 잔액과 필수 지출 확인 후 저축 가능액 결정: ${payday}과 다음 ${payday} 전날의 잔액을 적고, 1단계 목록 중 꼭 필요한 지출을 뺀 나머지에서 매달 무리 없이 남길 수 있는 금액을 정해요.`, 'MONEY-step-2', '일반 순서(사주 해석 아님)'),
+      P('use', `3단계 · 그다음 자동이체: 2단계에서 정한 금액만큼 ${payday}에 저축 계좌로 자동이체를 걸어요. 금액을 정하기 전에 자동이체부터 걸면 중간에 다시 빼서 쓰게 되기 쉬워요.`, 'MONEY-step-3', '일반 순서(사주 해석 아님)'),
     ] });
-    const EARN_SHORT = { shown: '만든 결과물 목록을 근거로', hidden: '내가 만든 것의 바깥 가격을 견줘 본 숫자를 근거로', none: '처음 계약 때보다 늘어난 업무를 근거로' };
-    const salary = /월급|급여|직장/.test(`${concern.question} ${concern.situation || ''}`);
-    sections.push({ q: '들어오는 돈을 늘릴까, 새는 돈을 먼저 막을까요?', paras: [
-      P('meaning', `방향은 두 가지예요. 들어오는 쪽은 4장 "일한 대가" 절에서 본 방식대로, ${EARN_SHORT[k.status['식상']]} 대가를 다시 이야기해 보는 것이에요. 새는 쪽은 위에서 정한 첫 순서를 지키는 것이에요. ${salary ? '월급처럼 들어오는 돈이 정해져 있다고 적어 주셨으니, 석 달 동안은 새는 쪽을 먼저 막는 편이 결과가 빨리 보여요.' : '들어오는 돈이 일정한지 아닌지에 따라 순서가 달라지니, 지난 석 달 수입이 매달 같았는지부터 확인해 보세요.'}`, `MONEY-dir-${k.status['식상']}`, `식상 위치: ${STATUS_KO[k.status['식상']]}`),
+    sections.push({ q: '사주에서 본 돈 습관은 언제 참고하면 될까요?', paras: [
+      P('meaning', `4장에서 본 비겁의 위치(${STATUS_KO[f]})는 전통적으로 사람 사이의 지출과 연결해 읽는 요소예요. 다만 사주로 지금의 소비 내역을 알 수는 없어요. 1단계에서 적은 실제 기록에서 모임비·선물·대신 낸 돈 같은 항목이 크게 나온다면, 그때 4장 "돈이 새기 쉬운 지점은 어디일까요?"를 다시 펼쳐 보세요.`, `MONEY-ref-${f}`, `비겁 위치: ${STATUS_KO[f]}`),
+      P('caution', `주의할 점: ${MONEY.caution[k.monthRel]} 단계마다 끝낼 날짜를 정해 두면 도움이 돼요.`, `MONEY-caution-${k.monthRel}`, `월지 ${k.monthZhi}와 일간의 관계`),
     ] });
-    sections.push({ q: '앞으로 석 달, 어떻게 시작할까요?', paras: [P('use', MONEY_PLAN2[w], `MPLAN2-${w}`, `재성 위치: ${STATUS_KO[w]}`)] });
     if ((concern.options || []).filter(Boolean).length) review.push('돈 관리 유형은 선택지별 풀이를 아직 지원하지 않아요. 선택지는 상담자가 검토하세요.');
   }
   const n = periodMonths(concern.period);
@@ -182,12 +187,12 @@ export function chapter8(saju, k, concern, review) {
     const span = (x, y) => (n === 1 ? (x === 1 && y === 1 && !span.used ? (span.used = true, '처음 2주') : '마지막 2주') : x === y ? `${x}개월 차` : `${x}~${y}개월 차`);
     const last = topic === 'work'
       ? '처음 적은 숫자와 시험해 본 결과를 나란히 놓고 다시 골라요. 3장에서 매긴 환경 점수도 함께 놓고 보세요.'
-      : '처음 적은 숫자와 지금 숫자를 비교해 관리 방식을 조정해요. 첫 달에 따로 적은 항목이 줄었는지부터 보세요.';
+      : (n >= 3 ? '3단계 자동이체를 걸고, 첫 달에 적은 목록과 지금을 비교해 금액을 조정해요.' : '2·3단계(저축 가능액을 정한 뒤 자동이체)를 이어서 해요.');
     const deadline = topic === 'work' ? '실제로 정해진 마감(계약 만료, 제안 기한 등)이 있다면 그 날짜에 맞춰 구간을 앞당겨 쓰세요.' : '큰 지출이 예정된 달이 있다면 그 달을 피해 구간을 조정해 쓰세요.';
     sections.push({ q: `앞으로 ${n}개월, 이렇게 점검해 보세요`, paras: [
       P('meaning', '어느 달이 좋은 시기인지 같은 시기 판단은 이 리포트에서 하지 않아요. 계산 기준이 검증된 범위가 아니기 때문이에요. 대신 정해 주신 기간을 점검 구간으로 나눴어요.', 'PERIOD', `입력 기간 ${n}개월`),
-      P('use', `${span(1, a)}: ${topic === 'work' ? '위의 현실 점검 항목을 숫자로 채워요.' : '4장 끝의 현실 점검 항목을 숫자로 채워요.'}`, 'PERIOD', `입력 기간 ${n}개월`),
-      ...(n >= 3 ? [P('use', `${span(a + 1, b)}: 작게 시험해 보는 구간이에요. 위의 활용 방법을 실제로 해 보는 기간이에요.`, 'PERIOD-mid', `입력 기간 ${n}개월`)] : []),
+      P('use', `${span(1, a)}: ${topic === 'work' ? '위의 현실 점검 항목을 숫자로 채워요.' : '위의 1단계(고정 지출·결제 목록)를 마쳐요.'}`, 'PERIOD', `입력 기간 ${n}개월`),
+      ...(n >= 3 ? [P('use', `${span(a + 1, b)}: ${topic === 'work' ? '작게 시험해 보는 구간이에요. 위의 활용 방법을 실제로 해 보는 기간이에요.' : '2단계(실제 잔액·필수 지출 확인, 저축 가능액 결정)를 해요.'}`, 'PERIOD-mid', `입력 기간 ${n}개월`)] : []),
       P('use', `${span(n >= 3 ? b + 1 : n, n)}: ${last}`, 'PERIOD-last', `입력 기간 ${n}개월`),
       P('caution', deadline, 'PERIOD', '마감 정보 미입력'),
     ] });

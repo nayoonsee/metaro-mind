@@ -61,7 +61,9 @@ export function validateProjectSchema(p) {
   if (!Array.isArray(p.history) || p.history.length > 5) e.push('history 형식 오류');
   else p.history.forEach((h, i) => {
     if (!isObj(h)) return e.push(`history[${i}] 형식 오류`);
-    onlyKeys(h, ['at', 'clientName', 'edits', 'generated'], `history[${i}]`, e);
+    onlyKeys(h, ['at', 'clientName', 'edits', 'generated', 'kind', 'orphanEdits'], `history[${i}]`, e);
+    if (h.kind != null && !['regenerate', 'upgrade'].includes(h.kind)) e.push(`history[${i}].kind 값 오류`);
+    if (h.orphanEdits != null && (!Array.isArray(h.orphanEdits) || h.orphanEdits.length > 300 || !h.orphanEdits.every((o) => isObj(o) && str(o.id, 100) && str(o.text, 4000) && str(o.at || '', 40)))) e.push(`history[${i}].orphanEdits 형식 오류`);
     if (!str(h.at ?? '', 40) || !str(h.clientName ?? '', 30) || !isObj(h.edits) || !Object.entries(h.edits).every(([k, v]) => EDIT_ID_RE.test(k) && str(v, 4000))) e.push(`history[${i}] 항목 형식 오류`);
     if (h.generated != null && (!isObj(h.generated) || !Object.values(h.generated).every((v) => str(v ?? '', 5000)))) e.push(`history[${i}].generated 형식 오류`);
   });

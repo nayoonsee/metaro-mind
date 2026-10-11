@@ -102,5 +102,35 @@ for (const [id, r] of Object.entries(R)) {
   check(`${id}: 단락마다 면책 반복 없음(검수 전 안내는 1회)`, () => assert.ok((all.match(/검수/g) || []).length <= 1));
   check(`${id}: 고객 본문에 테스트 문구 없음`, () => assert.doesNotMatch(all, /고유 편집|case-[a-z]|edge-/));
 }
+
+console.log('\n[C 돈 고민: 하나의 순서 · 검증 전 통변 제거]');
+{
+  const r = R['case-c']; const t7 = chText(r, 'ch7'); const flat = t7.replace(/\s+/g, '');
+  check('C 7장: 순서는 하나(고정 지출·결제 목록 → 잔액·필수 지출로 저축 가능액 → 그다음 자동이체)', () => {
+    const i1 = flat.indexOf('1단계·고정지출과결제목록확인'); const i2 = flat.indexOf('2단계·실제잔액과필수지출확인후저축가능액결정'); const i3 = flat.indexOf('3단계·그다음자동이체');
+    assert.ok(i1 >= 0 && i2 > i1 && i3 > i2, `${i1} ${i2} ${i3}`);
+    assert.equal(r.chapters.find((c) => c.id === 'ch7').sections.filter((s) => /순서|석 달, 어떻게 시작/.test(s.q)).length, 1);
+  });
+  check('C 7장: 다른 "첫 순서·첫 실행"(사람 지출부터, 저축 자동이체 먼저, 2개월 차 자동이체 계획)과 겹치지 않음', () => {
+    assert.doesNotMatch(t7, /부터 한 달 동안 따로 적어 보는 것을 첫 순서|첫 실행 항목|둘째 달에는 월급날 저축이 먼저/);
+    const rules = r.chapters.find((c) => c.id === 'ch7').sections.flatMap((s) => s.paras.map((p) => p.rule));
+    assert.ok(!rules.some((x) => /MPLAN|LINK-sit-(fixed|salary)|MONEY-focus|MONEY-dir/.test(x)), rules.join(','));
+  });
+  check('C 7장: 입력 사실(고정 지출 미정리)을 1단계에 반영', () => assert.match(t7, /알려 주신 대로 고정 지출이 아직 정리되어 있지 않다면/));
+  check('C 7장: 사람 관련 지출은 실제 기록을 본 뒤의 조건부 안내(사주가 소비 내역을 아는 것처럼 쓰지 않음)', () => {
+    assert.match(t7, /사주로 지금의 소비 내역을 알 수는 없어요/); assert.match(t7, /실제 기록에서[^.]*크게 나온다면/);
+  });
+  check('C 기간 계획: 1개월 1단계 · 2개월 2단계 · 3개월 3단계 자동이체로 같은 순서', () => {
+    assert.match(t7, /1개월 차: 위의 1단계/); assert.match(t7, /2개월 차: 2단계/); assert.match(t7, /3개월 차: 3단계 자동이체/);
+  });
+  for (const id of ['case-a', 'case-b', 'case-c']) check(`${id} 4장: 식상 위치→대가 방식 단정 문장 없음, 검토 대기로 표시`, () => {
+    const t4 = chText(R[id], 'ch4'); assert.doesNotMatch(t4, /맡은 역할과 시간 단위로 대가를 받는 구조가 더 익숙|결과물 단위로 대가가 정해질 때 납득하기 쉬운|대가를 받는 편이 마음이 편한/);
+    assert.match(t4, /아직 검토 중이라, 이 리포트에서는 단정하지 않아요/); assert.ok(R[id].review.some((x) => x.type === 'pending'));
+  });
+  check('A·C: 같은 명식이면 1~6장 동일, 7장만 다름(수정 후에도)', () => {
+    for (const id of ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6']) assert.equal(chText(R['case-a'], id), chText(R['case-c'], id), id);
+    assert.notEqual(chText(R['case-a'], 'ch7'), chText(R['case-c'], 'ch7'));
+  });
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

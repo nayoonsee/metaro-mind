@@ -1,0 +1,62 @@
+{
+  "A": {
+    "message": "JSON 백업을 불러왔어요. 검토 완료는 다시 확인해 주세요.",
+    "generator": "full-rule-v1",
+    "edits": {
+      "ch3:WORK-재성:meaning:1": {
+        "inEditor": true,
+        "inEdits": true,
+        "inOrphans": false,
+        "inPreview": true
+      },
+      "ch3:WGROW-재성:use:1": {
+        "inEditor": true,
+        "inEdits": true,
+        "inOrphans": false,
+        "inPreview": true
+      },
+      "ch7:W-keep-fit-재성:meaning:1": {
+        "inEditor": true,
+        "inEdits": true,
+        "inOrphans": false,
+        "inPreview": true
+      },
+      "ch2:STR-비겁:meaning:1": {
+        "inEditor": true,
+        "inEdits": true,
+        "inOrphans": false,
+        "inPreview": true
+      }
+    }
+  },
+  "B": {
+    "message": "JSON 백업을 불러왔어요. 검토 완료는 다시 확인해 주세요.",
+    "generator": "full-rule-v1",
+    "edits": {
+      "ch3:WORK-관성:meaning:1": {
+        "inEditor": true,
+        "inEdits": true,
+        "inOrphans": false,
+        "inPreview": true
+      },
+      "ch3:WGROW-관성:use:1": {
+        "inEditor": true,
+        "inEdits": true,
+        "inOrphans": false,
+        "inPreview": true
+      },
+      "ch7:W-keep-fit-관성:meaning:1": {
+        "inEditor": true,
+        "inEdits": true,
+        "inOrphans": false,
+        "inPreview": true
+      },
+      "ch2:STR-관성:meaning:1": {
+        "inEditor": true,
+        "inEdits": true,
+        "inOrphans": false,
+        "inPreview": true
+      }
+    }
+  }
+}
