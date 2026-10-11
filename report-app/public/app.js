@@ -2,15 +2,24 @@
 // 안전 규칙
 // - 생성 결과는 생성 당시 입력(clientKey)에 묶인다. 입력이 바뀌면 "이전 정보 기준 결과"로 표시하고 미리보기·PDF·발송을 막는다.
 // - 생성 요청은 (프로젝트 id, 입력 revision)을 기억하고, 응답이 왔을 때 둘 중 하나라도 바뀌었으면 적용하지 않는다.
-// - 다른 프로젝트로 넘어가기 전에 저장하지 않은 변경은 자동으로 보관한다.
+// - 미리보기·PDF·검토·발송 대기도 요청 당시 스냅샷(프로젝트 id, 전환 세대, 내용 revision)을 기억하고,
+//   응답이 왔을 때 현재 프로젝트·내용이 그대로일 때만 화면·프로젝트에 적용한다.
+// - 다른 프로젝트로 넘어가기 전에 저장하지 않은 변경은 자동으로 보관한다. 저장에 실패하면 넘어가지 않는다.
 import { validateProjectSchema, clientKey, identityKey } from './schema.mjs';
 
 const $ = (id) => document.getElementById(id);
 const STORE = 'reportApp.projects.v1';
 let project = null; let dirty = false; let generating = 0;
+// epoch: 프로젝트를 바꿀 때마다 증가. rev: 입력·편집·브랜드·검토 해제 등 내용이 바뀔 때마다 증가.
+let epoch = 0; let rev = 0; const busy = { pdf: false, queue: false, review: false };
+const snapshot = () => ({ id: project.id, epoch, rev, brandName: project.brand.name, clientName: project.client.name });
+const owns = (s) => project.id === s.id && epoch === s.epoch;
+const current = (s) => owns(s) && rev === s.rev;
+const bump = () => { rev++; };
 
 const loadAll = () => { try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch { return {}; } };
 const saveAll = (all) => { try { localStorage.setItem(STORE, JSON.stringify(all)); return true; } catch { return false; } };
+const safeName = (s) => String(s || '').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_');
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
 const msg = (t) => { $('globalMsg').textContent = t; };
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -34,7 +43,7 @@ function markUnreviewed() { project.status.reviewed = false; project.status.revi
 function refreshState() {
   const stale = isStale(); const has = !!project.generated;
   for (const id of ['staleEdit', 'stalePreview', 'staleDeliver']) $(id).style.display = stale ? 'block' : 'none';
-  $('btnPdf').disabled = !has || stale; $('btnQueue').disabled = !has || stale; $('reviewed').disabled = !has || stale;
+  $('btnPdf').disabled = !has || stale || busy.pdf; $('btnQueue').disabled = !has || stale || busy.queue; $('reviewed').disabled = !has || stale;
   $('btnPreview').disabled = !has || stale;
   $('btnGenerate').disabled = generating > 0;
   $('btnGenerate').textContent = generating ? '생성 중…' : project.generated ? '다시 생성' : '리포트 생성';
@@ -78,29 +87,38 @@ function refreshList() {
 function save({ quiet = false } = {}) {
   formToProject(); project.updatedAt = new Date().toISOString();
   const all = loadAll(); all[project.id] = project;
-  if (!saveAll(all)) { msg('저장하지 못했어요(브라우저 저장 공간). JSON 백업을 받아 두세요.'); return false; }
+  if (!saveAll(all)) { dirty = true; refreshState(); msg('저장하지 못했어요(브라우저 저장 공간 부족 등). 작업 내용은 화면에 그대로 있어요. "JSON 백업"으로 파일을 받아 두세요.'); return false; }
   dirty = false; refreshList(); refreshState();
   if (!quiet) msg('이 브라우저에 저장했어요. 다른 기기로 옮기려면 JSON 백업을 받아 두세요.');
   return true;
 }
 // 다른 프로젝트로 넘어가기 전: 저장하지 않은 변경이 있으면 자동으로 보관한다(조용히 버리지 않음).
+// 결과: { ok: true, note } 또는 { ok: false }. 저장에 실패하면 호출한 쪽은 프로젝트 교체를 멈춰야 한다.
 function keepCurrentBeforeSwitch() {
-  if (!dirty) return '';
+  if (!dirty) return { ok: true, note: '' };
   formToProject();
   const hasContent = project.generated || project.client.name || Object.keys(project.edits).length;
-  if (!hasContent) return '';
-  return save({ quiet: true }) ? `저장하지 않았던 "${project.client.name || '이름 없음'}" 프로젝트를 자동으로 저장해 두었어요. ` : '';
+  if (!hasContent) return { ok: true, note: '' };
+  if (!save({ quiet: true })) {
+    msg(`저장하지 않은 "${project.client.name || '이름 없음'}" 프로젝트를 저장하지 못해 다른 프로젝트로 넘어가지 않았어요. 먼저 "JSON 백업"으로 파일을 받아 두거나, 저장 공간을 비운 뒤 다시 시도해 주세요.`);
+    return { ok: false };
+  }
+  return { ok: true, note: `저장하지 않았던 "${project.client.name || '이름 없음'}" 프로젝트를 자동으로 저장해 두었어요. ` };
 }
-function setProject(p, note) { project = p; dirty = false; projectToForm(); refreshList(); msg(note); }
+function setProject(p, note) { project = p; epoch++; bump(); dirty = false; projectToForm(); refreshList(); msg(note); }
 function openProject(id) {
-  const p = loadAll()[id]; if (!p) return;
-  const errs = validateProjectSchema(p); if (errs.length) return msg(`저장된 프로젝트 형식이 올바르지 않아 열지 않았어요: ${errs[0]}`);
-  const kept = keepCurrentBeforeSwitch(); setProject(p, `${kept}프로젝트를 열었어요.`);
+  // 지금 열려 있는 프로젝트를 다시 고르면, 저장된(더 오래된) 사본으로 덮어쓰지 않고 그대로 둔다.
+  if (project && id === project.id) { msg('이미 열려 있는 프로젝트예요. 화면의 내용이 가장 최신이에요.'); return; }
+  const kept = keepCurrentBeforeSwitch(); if (!kept.ok) return;
+  // 현재 프로젝트를 저장한 뒤에 읽는다(저장 전에 읽어 둔 오래된 객체를 쓰지 않음).
+  const p = loadAll()[id]; if (!p) return msg('저장된 프로젝트를 찾지 못했어요.');
+  const errs = validateProjectSchema(p); if (errs.length) return msg(`${kept.note}저장된 프로젝트 형식이 올바르지 않아 열지 않았어요: ${errs[0]}`);
+  setProject(p, `${kept.note}프로젝트를 열었어요.`);
 }
 function exportJson() {
   formToProject();
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `report-project-${(project.client.name || 'unnamed').replace(/[\\/:*?"<>|]/g, '_')}.json`; a.click();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `report-project-${safeName(project.client.name || 'unnamed')}.json`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 async function importJson(file) {
@@ -108,9 +126,9 @@ async function importJson(file) {
   try { p = JSON.parse(await file.text()); } catch { return msg('JSON 파일을 읽을 수 없어요.'); }
   const errs = validateProjectSchema(p);
   if (errs.length) return msg(`불러올 수 없는 파일이에요. 형식 검사에 실패했어요: ${errs.slice(0, 3).join(' / ')}`);
-  const kept = keepCurrentBeforeSwitch();
+  const kept = keepCurrentBeforeSwitch(); if (!kept.ok) return;
   p.status = { reviewed: false, reviewedHash: null }; // 가져온 파일의 검토 표시는 다시 확인해야 한다.
-  setProject(p, `${kept}JSON 백업을 불러왔어요. 검토 완료는 다시 확인해 주세요.`); dirty = true; refreshState();
+  setProject(p, `${kept.note}JSON 백업을 불러왔어요. 검토 완료는 다시 확인해 주세요.`); dirty = true; refreshState();
 }
 
 // ── 생성·재생성 ──
@@ -121,12 +139,12 @@ async function generate() {
   if (generating) return; // 중복 클릭 방지
   formToProject();
   $('inputErrors').style.display = 'none';
-  const reqId = project.id; const reqRev = project.inputRev; const reqClient = structuredClone(project.client); const reqConcern = structuredClone(project.concern);
+  const reqId = project.id; const reqRev = project.inputRev; const reqEpoch = epoch; const reqClient = structuredClone(project.client); const reqConcern = structuredClone(project.concern);
   generating++; refreshState();
   let res;
   try { res = await api('/api/generate', { client: reqClient, concern: reqConcern }); } finally { generating--; refreshState(); }
   // 응답이 오는 동안 프로젝트가 바뀌었거나 입력이 바뀌었으면 적용하지 않는다.
-  if (project.id !== reqId || project.inputRev !== reqRev) { msg('생성 응답이 늦게 도착했지만, 그사이 프로젝트나 입력이 바뀌어 적용하지 않았어요. 필요하면 다시 생성해 주세요.'); return; }
+  if (project.id !== reqId || epoch !== reqEpoch || project.inputRev !== reqRev) { msg('생성 응답이 늦게 도착했지만, 그사이 프로젝트나 입력이 바뀌어 적용하지 않았어요. 필요하면 다시 생성해 주세요.'); return; }
   if (!res.ok) { $('inputErrors').textContent = (res.data.errors || ['생성하지 못했어요.']).join('\n'); $('inputErrors').style.display = 'block'; return; }
   const gen = res.data.generated; let note = '리포트를 생성했어요. 내용을 확인하고 필요한 문장을 고쳐 주세요.';
   if (project.generated) {
@@ -143,7 +161,7 @@ async function generate() {
     }
   }
   gen.identityKey = identityKey(project.client);
-  project.generated = gen; markUnreviewed(); dirty = true;
+  project.generated = gen; markUnreviewed(); bump(); dirty = true;
   renderEditor(); save({ quiet: true }); switchTab('edit'); msg(note);
 }
 
@@ -178,27 +196,32 @@ function onEdit(e) {
   const wrap = ta.closest('.para'); const edited = Object.prototype.hasOwnProperty.call(project.edits, id);
   wrap.classList.toggle('edited', edited);
   const meta = wrap.querySelector('.meta'); meta.innerHTML = metaHtml(edited, meta.dataset.manual === '1');
-  markUnreviewed(); dirty = true; refreshState();
+  markUnreviewed(); bump(); dirty = true; refreshState();
 }
 function onInputChange(e) {
-  if (e.target.closest('#tab-deliver')) { dirty = true; refreshState(); return; }
-  syncFormState(); formToProject(); project.inputRev = (project.inputRev || 0) + 1; markUnreviewed(); dirty = true; refreshState();
+  if (e.target.closest('#tab-deliver')) { dirty = true; refreshState(); return; } // 메일 칸은 리포트 내용이 아니다.
+  syncFormState(); formToProject(); project.inputRev = (project.inputRev || 0) + 1; markUnreviewed(); bump(); dirty = true; refreshState();
   if (isStale()) msg('입력 정보가 바뀌었어요. 이전 결과는 미검토 상태가 되었고, 다시 생성해야 미리보기·PDF·전달을 할 수 있어요.');
 }
 
 // ── 미리보기·PDF ──
 async function preview() {
   if (!project.generated || isStale()) { $('previewFrame').srcdoc = ''; return; }
-  formToProject();
+  formToProject(); const s = snapshot();
   const r = await api('/api/preview', { project });
+  if (!current(s)) return; // 그사이 프로젝트나 내용이 바뀌었으면 이전 미리보기를 보여 주지 않는다.
   $('previewFrame').srcdoc = r.ok ? r.data : '';
   if (!r.ok) msg((r.data.errors || []).join(' '));
 }
 async function makePdf() {
   if (!project.generated || isStale()) return msg('입력이 바뀌어 이전 정보 기준 결과예요. 다시 생성한 뒤 PDF를 만들어 주세요.');
-  formToProject();
+  if (busy.pdf) return;
+  formToProject(); const s = snapshot();
   $('pdfState').textContent = 'PDF를 만드는 중…'; $('qaBox').innerHTML = '';
-  const r = await api('/api/pdf', { project });
+  busy.pdf = true; $('btnPdf').disabled = true;
+  let r; try { r = await api('/api/pdf', { project }); } finally { busy.pdf = false; refreshState(); }
+  if (!owns(s)) return msg(`"${s.clientName}" 프로젝트의 PDF 응답이 다른 프로젝트로 바뀐 뒤에 도착해 저장하지 않았어요. 해당 프로젝트를 열어 다시 만들어 주세요.`);
+  if (rev !== s.rev) { $('pdfState').textContent = 'PDF를 만드는 동안 내용이 바뀌어, 받은 PDF는 버렸어요. 다시 만들어 주세요.'; return; }
   if (!r.ok) {
     $('pdfState').textContent = (r.data.errors || ['PDF를 만들지 못했어요.'])[0];
     $('qaBox').innerHTML = `<ul class="qa">${(r.data.errors || []).slice(1).map((p) => `<li>${esc(p)}</li>`).join('')}</ul>`; return;
@@ -206,16 +229,19 @@ async function makePdf() {
   const { pdfBase64, qa, final, blockers } = r.data;
   const bytes = Uint8Array.from(atob(pdfBase64), (c) => c.charCodeAt(0));
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-  a.download = `${final ? project.brand.name : '검토용'}_${project.client.name}_사주리포트.pdf`.replace(/[\\/:*?"<>|]/g, '_'); a.click();
+  a.download = safeName(`${final ? s.brandName : '검토용'}_${s.clientName}_사주리포트.pdf`); a.click(); // 이름은 요청 당시 스냅샷 기준
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
   $('pdfState').textContent = `${final ? '최종본' : '검토용 PDF(최종본 아님)'}을 받았어요 · ${qa.available ? `${qa.pageCount}쪽, 자동 검사 통과` : '자동 검사 도구 없음 — 직접 확인 필요'}`;
   $('qaBox').innerHTML = final ? '' : `<p class="hint">최종본이 아닌 이유:</p><ul class="qa">${blockers.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
 }
 
 // ── 검토 완료 · 전달 ──
 async function onReviewed() {
-  if (!$('reviewed').checked) { markUnreviewed(); dirty = true; refreshState(); return; }
-  formToProject();
+  if (!$('reviewed').checked) { markUnreviewed(); bump(); dirty = true; refreshState(); return; }
+  formToProject(); const s = snapshot();
   const r = await api('/api/review', { project });
+  // 응답 전에 프로젝트·내용이 바뀌었거나 체크를 해제했으면 검토 완료를 기록하지 않는다.
+  if (!current(s) || !$('reviewed').checked) { if (owns(s)) { markUnreviewed(); refreshState(); } return; }
   if (!r.ok) { $('reviewed').checked = false; return msg((r.data.errors || ['검토 완료를 기록하지 못했어요.']).join(' ')); }
   project.status.reviewed = true; project.status.reviewedHash = r.data.reviewedHash; dirty = true; refreshState();
   msg(r.data.manualDone ? '현재 내용으로 검토 완료를 기록했어요. 내용·브랜드를 바꾸면 다시 확인해야 해요.' : '검토 완료를 기록했지만, 7장 직접 작성 칸이 비어 있어 최종본으로 내보낼 수 없어요.');
@@ -227,10 +253,21 @@ function renderOutbox() {
 async function queueMail() {
   formToProject(); $('mailErrors').style.display = 'none'; $('mailMsg').textContent = '';
   if (!project.generated || isStale()) return msg('입력이 바뀌어 이전 정보 기준 결과예요. 다시 생성해 주세요.');
-  const r = await api('/api/mail/queue', { project, to: project.mail.to, subject: project.mail.subject, body: project.mail.body });
+  if (busy.queue) return;
+  const s = snapshot(); const to = project.mail.to;
+  busy.queue = true; $('btnQueue').disabled = true;
+  let r; try { r = await api('/api/mail/queue', { project, to, subject: project.mail.subject, body: project.mail.body }); } finally { busy.queue = false; refreshState(); }
+  if (!owns(s)) {
+    // 다른 프로젝트로 바뀐 뒤 도착한 결과: 현재 프로젝트는 건드리지 않고, 요청한 프로젝트의 저장본에만 기록한다.
+    if (r.ok) {
+      const all = loadAll(); const p = all[s.id];
+      if (p && p.mail && Array.isArray(p.mail.queue)) { p.mail.queue.push({ at: new Date().toISOString(), to, id: String(r.data.id), status: String(r.data.status), realSent: r.data.realSent === true, label: '테스트 대기열에 기록됨 (실제 발송 아님)' }); saveAll(all); }
+    }
+    return msg(`"${s.clientName}" 프로젝트의 발송 대기 응답이 다른 프로젝트로 바뀐 뒤 도착했어요. 결과는 그 프로젝트에만 기록했어요(실제 발송 아님).`);
+  }
   if (!r.ok) { $('mailErrors').textContent = (r.data.errors || ['발송 대기에 넣지 못했어요.']).join('\n'); $('mailErrors').style.display = 'block'; return; }
   const label = r.data.realSent === true ? '발송됨' : '테스트 대기열에 기록됨 (실제 발송 아님)';
-  project.mail.queue = [...project.mail.queue, { at: new Date().toISOString(), to: project.mail.to, id: r.data.id, status: r.data.status, realSent: r.data.realSent === true, label }];
+  project.mail.queue = [...project.mail.queue, { at: new Date().toISOString(), to, id: String(r.data.id), status: String(r.data.status), realSent: r.data.realSent === true, label }];
   $('mailMsg').textContent = `${label} · 첨부 ${r.data.fileName} (${Math.round(r.data.bytes / 1024)}KB)\n실제 메일 계정이 연결되지 않아 고객에게는 아무것도 전송되지 않았어요.`;
   renderOutbox(); dirty = true; save({ quiet: true });
 }
@@ -247,7 +284,7 @@ for (const sel of ['#tab-input input', '#tab-input select', '#tab-input textarea
   document.querySelectorAll(sel).forEach((el) => el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', onInputChange));
 }
 $('btnGenerate').addEventListener('click', generate); $('btnSave').addEventListener('click', () => save()); $('btnExport').addEventListener('click', exportJson);
-$('btnNew').addEventListener('click', () => { const kept = keepCurrentBeforeSwitch(); setProject(emptyProject(), `${kept}새 프로젝트를 시작했어요.`); switchTab('input'); });
+$('btnNew').addEventListener('click', () => { const kept = keepCurrentBeforeSwitch(); if (!kept.ok) return; setProject(emptyProject(), `${kept.note}새 프로젝트를 시작했어요.`); switchTab('input'); });
 $('projectList').addEventListener('change', (e) => { if (e.target.value) openProject(e.target.value); e.target.value = ''; });
 $('fileImport').addEventListener('change', (e) => { if (e.target.files[0]) importJson(e.target.files[0]); e.target.value = ''; });
 $('editor').addEventListener('input', onEdit);

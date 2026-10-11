@@ -3,7 +3,7 @@
 // 결과 PDF·스크린샷·로그는 report-app/test/artifacts/ 에 남는다.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, mkdtempSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, mkdtempSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -273,6 +273,135 @@ await step('형식은 맞지만 본문·이름에 공격 문자열 → 화면·�
   assert.equal(await page.locator('#previewFrame').getAttribute('sandbox'), '');
 });
 
+console.log('\n[모든 비동기 응답의 프로젝트 소유권]');
+async function delay(path, ms) {
+  await page.route(`**${path}`, async (route) => { const r = await route.fetch(); await new Promise((x) => setTimeout(x, ms)); await route.fulfill({ response: r }); });
+}
+// 저장된 프로젝트 2개(A·B)를 준비하고 A를 연 상태로 만든다.
+async function twoProjects() {
+  await freshA('소유권 B'); await page.click('#btnSave'); const b = (await proj()).id;
+  await freshA('소유권 A'); await markReviewed(); await page.click('#btnSave'); const a = (await proj()).id;
+  return { a, b };
+}
+await step('PDF 생성 중 다른 프로젝트(B)를 열면 A의 PDF를 B 이름으로 받지 않음', async () => {
+  const { b } = await twoProjects();
+  let downloads = 0; const onDl = () => downloads++; page.on('download', onDl);
+  await delay('/api/pdf', 2500);
+  await tab('preview'); await page.click('#btnPdf');
+  await page.selectOption('#projectList', b);
+  await page.waitForFunction(() => /PDF 응답이 다른 프로젝트로 바뀐 뒤/.test(document.getElementById('globalMsg').textContent), null, { timeout: 90000 });
+  await page.unroute('**/api/pdf'); page.off('download', onDl);
+  assert.equal(downloads, 0); assert.equal(await page.inputValue('#clientName'), '소유권 B');
+  assert.equal(await page.textContent('#pdfState'), '');
+});
+await step('PDF 생성 중 같은 프로젝트의 내용을 고치면 받은 PDF를 버림, 정상 PDF 이름은 요청 당시 고객·브랜드', async () => {
+  await freshA('이름 스냅샷'); await markReviewed();
+  await delay('/api/pdf', 2500);
+  let downloads = 0; const onDl = () => downloads++; page.on('download', onDl);
+  await tab('preview'); await page.click('#btnPdf');
+  await tab('edit'); await page.locator('#editor .chap').nth(2).locator('textarea').nth(1).fill('PDF 생성 중 수정');
+  await page.waitForFunction(() => /받은 PDF는 버렸어요/.test(document.getElementById('pdfState').textContent), null, { timeout: 90000 });
+  await page.unroute('**/api/pdf'); page.off('download', onDl); assert.equal(downloads, 0);
+  await markReviewed();
+  // 이 환경의 headless Chromium은 한글 파일명을 suggestedFilename에서 "download"로 바꾸므로, 앱이 지정한 download 속성을 직접 기록한다.
+  await page.evaluate(() => { const orig = HTMLAnchorElement.prototype.click; window.__dlNames = []; HTMLAnchorElement.prototype.click = function () { window.__dlNames.push(this.download); return orig.call(this); }; });
+  await tab('input'); await page.fill('#brandName', '달빛 상담소'); await markReviewed();
+  await tab('preview'); const dl = page.waitForEvent('download', { timeout: 90000 }); await page.click('#btnPdf'); await dl;
+  assert.deepEqual(await page.evaluate(() => window.__dlNames), ['달빛 상담소_이름 스냅샷_사주리포트.pdf']);
+});
+await step('미리보기 응답이 늦게 오는 사이 다른 프로젝트를 열면 이전 미리보기를 표시하지 않음', async () => {
+  const { b } = await twoProjects();
+  await delay('/api/preview', 1500);
+  await tab('preview'); await page.selectOption('#projectList', b);
+  await page.waitForTimeout(2500); await page.unroute('**/api/preview');
+  const html = await page.locator('#previewFrame').getAttribute('srcdoc');
+  assert.ok(!html || !/소유권 A/.test(html), '이전 프로젝트 미리보기 표시');
+});
+await step('검토 응답 전에 체크를 해제하면 검토 완료가 기록되지 않음', async () => {
+  await freshA('검토 해제');
+  await delay('/api/review', 1500);
+  await tab('deliver'); await page.setChecked('#reviewed', true); await page.setChecked('#reviewed', false);
+  await page.waitForTimeout(2500); await page.unroute('**/api/review');
+  assert.equal((await proj()).status.reviewedHash, null); assert.equal(await page.isChecked('#reviewed'), false);
+});
+await step('검토 응답 전에 다른 프로젝트를 열면 그 프로젝트에 검토 완료가 붙지 않음', async () => {
+  const { b } = await twoProjects();
+  await tab('deliver'); await page.setChecked('#reviewed', false);
+  await delay('/api/review', 1500);
+  await page.setChecked('#reviewed', true); await page.selectOption('#projectList', b);
+  await page.waitForTimeout(2500); await page.unroute('**/api/review');
+  const p = await proj(); assert.equal(p.client.name, '소유권 B'); assert.equal(p.status.reviewedHash, null);
+});
+await step('발송 대기 응답 전에 다른 프로젝트를 열면 결과는 요청한 프로젝트 저장본에만 기록(실제 발송 아님)', async () => {
+  const { a, b } = await twoProjects();
+  const before = readdirSync(OUTBOX).length;
+  await tab('deliver'); await page.fill('#mailTo', 'client@example.com'); await page.fill('#mailSubject', '제목');
+  await delay('/api/mail/queue', 1500);
+  await page.click('#btnQueue'); await page.selectOption('#projectList', b);
+  await page.waitForFunction(() => /발송 대기 응답이 다른 프로젝트로 바뀐 뒤/.test(document.getElementById('globalMsg').textContent), null, { timeout: 90000 });
+  await page.unroute('**/api/mail/queue');
+  assert.equal((await proj()).mail.queue.length, 0, 'B에 기록되면 안 됨');
+  const stored = await page.evaluate((id) => JSON.parse(localStorage.getItem('reportApp.projects.v1'))[id], a);
+  assert.equal(stored.mail.queue.length, 1); assert.equal(stored.mail.queue[0].realSent, false);
+  const files = readdirSync(OUTBOX); assert.equal(files.length, before + 1);
+  assert.ok(files.every((f) => JSON.parse(readFileSync(join(OUTBOX, f), 'utf8')).realSent === false));
+});
+
+console.log('\n[저장 실패 · 같은 프로젝트 다시 열기]');
+await step('저장 공간 초과: 새 프로젝트 전환을 멈추고 편집본 유지, JSON 백업은 가능', async () => {
+  await freshA('용량 초과'); await page.click('#btnSave');
+  const ta = page.locator('#editor .chap').nth(2).locator('textarea').nth(1); const id = await ta.getAttribute('data-id');
+  await page.evaluate(() => { window.__origSet = Storage.prototype.setItem; Storage.prototype.setItem = function () { throw new DOMException('full', 'QuotaExceededError'); }; });
+  try {
+    await ta.fill('용량 초과 중 편집');
+    await page.click('#btnNew');
+    assert.match(await page.textContent('#globalMsg'), /저장하지 못해 다른 프로젝트로 넘어가지 않았어요/);
+    assert.equal(await page.inputValue('#clientName'), '용량 초과');
+    assert.equal(await page.inputValue(`textarea[data-id="${id}"]`), '용량 초과 중 편집');
+    const other = (await page.locator('#projectList option').evaluateAll((os) => os.map((o) => o.value))).find((v) => v && v !== '');
+    await page.selectOption('#projectList', other);
+    assert.equal(await page.inputValue('#clientName'), '용량 초과', '열기도 멈춤');
+    await page.click('#btnSave'); assert.match(await page.textContent('#globalMsg'), /JSON 백업/);
+    const dl = page.waitForEvent('download'); await page.click('#btnExport');
+    const pth = join(ART, 'quota-backup.json'); await (await dl).saveAs(pth);
+    assert.equal(JSON.parse(readFileSync(pth, 'utf8')).edits[id], '용량 초과 중 편집');
+    rmSync(pth);
+  } finally { await page.evaluate(() => { Storage.prototype.setItem = window.__origSet; }); }
+  await page.click('#btnSave');
+});
+await step('저장하지 않은 편집이 있는 상태에서 같은 프로젝트를 다시 열어도 편집이 사라지지 않음', async () => {
+  await freshA('같은 프로젝트'); await page.click('#btnSave'); const pid = (await proj()).id;
+  const ta = page.locator('#editor .chap').nth(2).locator('textarea').nth(1); const id = await ta.getAttribute('data-id');
+  await ta.fill('저장 전 편집');
+  await page.selectOption('#projectList', pid);
+  assert.equal(await page.inputValue(`textarea[data-id="${id}"]`), '저장 전 편집');
+  assert.match(await page.textContent('#globalMsg'), /이미 열려 있는 프로젝트/);
+});
+
+console.log('\n[잘못된 중첩 JSON]');
+for (const [label, mutate] of [
+  ['chapters가 비어 있고 review 없음', (j) => { j.generated.report.chapters = []; delete j.generated.report.review; }],
+  ['review 없음', (j) => { delete j.generated.report.review; }],
+  ['mail.queue에 null', (j) => { j.mail.queue = [null]; }],
+  ['sections 항목이 null', (j) => { j.generated.report.chapters[1].sections = [null]; }],
+  ['paras 항목에 id 없음', (j) => { delete j.generated.report.chapters[1].sections[0].paras[0].id; }],
+  ['paras text가 숫자', (j) => { j.generated.report.chapters[1].sections[0].paras[0].text = 123; }],
+  ['장 id에 HTML', (j) => { j.generated.report.chapters[1].id = '"><img src=x onerror=window.__pwned=1>'; }],
+  ['history 항목이 문자열', (j) => { j.history = ['x']; }],
+  ['generated.clientKey 없음', (j) => { delete j.generated.clientKey; }],
+]) {
+  await step(`거절하고 기존 프로젝트 유지: ${label}`, async () => {
+    const j = JSON.parse(readFileSync(backupPath, 'utf8')); mutate(j);
+    const pth = join(ART, 'nested.json'); writeFileSync(pth, JSON.stringify(j));
+    const before = (await proj()).id; const beforeName = await page.inputValue('#clientName');
+    await page.setInputFiles('#fileImport', pth);
+    await page.waitForFunction(() => /불러올 수 없는 파일/.test(document.getElementById('globalMsg').textContent));
+    assert.equal((await proj()).id, before); assert.equal(await page.inputValue('#clientName'), beforeName);
+    rmSync(pth);
+  });
+}
+await step('중첩 JSON 시험 중 실행된 스크립트 없음', async () => assert.equal(await page.evaluate(() => window.__pwned), undefined));
+
 console.log('\n[최종본 조건 · 전달 차단]');
 await step('브랜드명만 넣고 검토하지 않은 PDF는 "검토용(최종본 아님)"', async () => {
   await freshA('최종본 조건');
@@ -307,11 +436,14 @@ await step('잘못된 주소는 거절', async () => {
   await page.fill('#mailTo', 'not-an-email'); await page.click('#btnQueue');
   await page.waitForSelector('#mailErrors', { state: 'visible' }); assert.match(await page.textContent('#mailErrors'), /이메일 주소/);
 });
+let outboxBefore = 0;
 await step('조건을 모두 갖추면 테스트 대기열에 기록, "실제 발송 아님", realSent false', async () => {
+  outboxBefore = readdirSync(OUTBOX).length;
   await page.fill('#mailTo', 'client@example.com'); await page.fill('#mailSubject', '사주 리포트를 보내 드려요');
   await page.click('#btnQueue'); await page.waitForSelector('#mailMsg:has-text("실제 발송 아님")', { timeout: 90000 });
-  const files = readdirSync(OUTBOX); assert.equal(files.length, 1);
-  const rec = JSON.parse(readFileSync(join(OUTBOX, files[0]), 'utf8'));
+  const files = readdirSync(OUTBOX).map((f) => [f, statSync(join(OUTBOX, f)).mtimeMs]).sort((x, y) => x[1] - y[1]).map((x) => x[0]);
+  assert.equal(files.length, outboxBefore + 1);
+  const rec = JSON.parse(readFileSync(join(OUTBOX, files.at(-1)), 'utf8'));
   assert.equal(rec.realSent, false); assert.equal(rec.status, 'queued-test'); assert.ok(rec.attachment.bytes > 10000);
   assert.ok(!('pdf' in rec) && !JSON.stringify(rec).includes('1996'), '첨부 본문·생년월일 미기록');
   assert.match(await page.textContent('#outbox'), /실제 발송 아님/);
