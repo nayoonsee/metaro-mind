@@ -367,7 +367,7 @@ console.log('\n[이전 버전 프로젝트: 실제 f3f6416·319c92f JSON의 편�
   await step('"새 풀이로 다시 만들기"는 명시적으로 누를 때만: 이전본 보관 → 새 풀이 적용 → "이전 풀이로 되돌리기"로 옛 본문·편집 그대로 복구', async () => {
     await importFix(files.A); await tab('edit'); await page.click('#btnUpgrade');
     await page.waitForFunction(() => /새 풀이로 다시 만들었어요/.test(document.getElementById('globalMsg').textContent));
-    let p = await proj(); assert.equal(p.generated.generator, 'full-rule-v3'); assert.equal(p.history[0].kind, 'upgrade'); assert.equal(p.history[0].generated.generator, 'full-rule-v1');
+    let p = await proj(); assert.equal(p.generated.generator, 'full-rule-v4'); assert.equal(p.history[0].kind, 'upgrade'); assert.equal(p.history[0].generated.generator, 'full-rule-v1');
     for (const [id, text] of Object.entries(fx.A.edits)) assert.ok(p.edits[id] === text || p.orphanEdits.some((o) => o.id === id && o.text === text), id);
     assert.match(await page.textContent('#globalMsg'), /이전 풀이로 되돌리기/); assert.ok(await page.isVisible('#btnRestorePrev'));
     await page.click('#btnRestorePrev'); await page.waitForFunction(() => /이전 풀이로 되돌렸어요/.test(document.getElementById('globalMsg').textContent));
@@ -499,6 +499,51 @@ await step('새로고침 → "마지막 작업 이어서 하기"로 같은 프�
 await step('화면 캡처: 정보 입력·디자인·편집·확인 단계', async () => {
   for (const tb of ['input', 'design', 'edit', 'preview']) { await tab(tb); await page.waitForTimeout(300); await page.screenshot({ path: join(ART, `ui-${tb}.png`), fullPage: tb !== 'edit' }); }
 });
+console.log('\n[최종 보완: 로고 비동기 소유권 · 생년월일 한 칸 · v3 프로젝트 보존]');
+await step('로고: A에 올린 이미지를 디코딩하는 사이 B로 바꾸면, 완료돼도 B 로고는 바뀌지 않음(A에도 몰래 적용 안 함)', async () => {
+  await newClient('로고 B 고객'); await page.click('#btnSave'); const bId = (await proj()).id;
+  await newClient('로고 A 고객'); await page.click('#btnSave'); const aId = (await proj()).id;
+  await page.evaluate(() => { window.__origBitmap = window.createImageBitmap; window.createImageBitmap = async (...a) => { await new Promise((r) => setTimeout(r, 1500)); return window.__origBitmap(...a); }; });
+  try {
+    await tab('design'); await page.setInputFiles('#logoFile', logoPng);
+    await page.selectOption('#projectList', bId); await page.waitForFunction(() => document.getElementById('clientName').value === '로고 B 고객');
+    await page.waitForFunction(() => /다른 고객으로 바뀐 뒤 준비돼 적용하지 않았어요/.test(document.getElementById('globalMsg').textContent), null, { timeout: 10000 });
+  } finally { await page.evaluate(() => { window.createImageBitmap = window.__origBitmap; }); }
+  const p = await proj(); assert.equal(p.id, bId); assert.ok(!p.brand.logo, 'B 로고 변경 없음');
+  const storedA = await page.evaluate((id) => JSON.parse(localStorage.getItem('reportApp.projects.v1'))[id], aId); assert.ok(!storedA.brand.logo, 'A에도 몰래 저장 안 됨');
+  assert.equal(await page.isVisible('#logoPreview'), false);
+});
+await step('생년월일: 기본 화면에는 한 칸만 보이고(연·월·일 칸은 접힌 대체 입력), 서로 동기화', async () => {
+  await page.click('#btnNew'); await page.click('nav button[data-tab=input]'); // 접힌 칸을 열지 않는 기본 화면
+  await page.evaluate(() => { document.getElementById('birthAlt').open = false; });
+  assert.ok(await page.isVisible('#birthDate')); assert.equal(await page.isVisible('#year'), false); assert.equal(await page.isVisible('#month'), false);
+  await page.fill('#birthDate', '1996-0'); let b = (await proj()).client.birth; assert.deepEqual([b.year, b.month, b.day], ['', '', ''], '입력 중에는 이전 값이 남지 않음');
+  await page.fill('#birthDate', '19960321'); b = (await proj()).client.birth; assert.deepEqual([String(b.year), String(b.month), String(b.day)], ['1996', '3', '21']);
+  await page.evaluate(() => { document.getElementById('birthAlt').open = true; }); await page.fill('#day', '22');
+  assert.equal(await page.inputValue('#birthDate'), '1996-03-22');
+});
+await step('실제 f3f6416 프로젝트 날짜: 가져오기 → 저장 → 새로고침 → 다시 열기에서 그대로(입력 변경으로 처리되지 않음)', async () => {
+  const FIXD = join(HERE, '..', '..', 'report-app', 'test', 'fixtures'); const orig = JSON.parse(readFileSync(join(FIXD, 'f3f6416-A.json'), 'utf8')).client.birth;
+  await page.click('#btnNew'); await page.setInputFiles('#fileImport', join(FIXD, 'f3f6416-A.json'));
+  await page.waitForFunction(() => /JSON 백업을 불러왔어요/.test(document.getElementById('globalMsg').textContent));
+  assert.equal(await page.inputValue('#birthDate'), `${orig.year}-${String(orig.month).padStart(2, '0')}-${String(orig.day).padStart(2, '0')}`);
+  await page.click('#btnSave'); const pid = (await proj()).id; await page.reload();
+  await page.selectOption('#projectList', pid); await page.waitForFunction(() => /프로젝트를 열었어요/.test(document.getElementById('globalMsg').textContent));
+  const p = await proj(); assert.deepEqual([String(p.client.birth.year), String(p.client.birth.month), String(p.client.birth.day)], [String(orig.year), String(orig.month), String(orig.day)]);
+  assert.equal(p.generated.generator, 'full-rule-v1'); await tab('preview'); assert.ok(!(await page.isVisible('#stalePreview'))); assert.ok(!(await page.isDisabled('#btnPdf')));
+});
+await step('실제 2da4d2e(v3) 프로젝트: 가져오기 → v3 본문 그대로, 3장·7장·8장 편집 유지, 인쇄 포함 / 새 풀이(v4)에는 점수 임계값 결론 없음', async () => {
+  const FIXD = join(HERE, '..', '..', 'report-app', 'test', 'fixtures'); const fx = JSON.parse(readFileSync(join(FIXD, '2da4d2e-edits.json'), 'utf8')).result.A3.edits;
+  await page.click('#btnNew'); await page.setInputFiles('#fileImport', join(FIXD, '2da4d2e-A.json'));
+  await page.waitForFunction(() => /JSON 백업을 불러왔어요/.test(document.getElementById('globalMsg').textContent));
+  const p = await proj(); assert.equal(p.generated.generator, 'full-rule-v3'); assert.deepEqual(p.orphanEdits, []);
+  await tab('edit'); for (const [id, text] of Object.entries(fx)) assert.equal(await page.inputValue(`textarea[data-id="${id}"]`), text);
+  await markReviewed(); const r = await printToPdf('legacy-2da4d2e-A.pdf'); const flat = r.text.replace(/\s+/g, '');
+  for (const text of Object.values(fx)) assert.ok(flat.includes(text.replace(/\s+/g, '')), text);
+  await newClient('v4 고객'); assert.equal((await proj()).generated.generator, 'full-rule-v4'); await tab('edit');
+  assert.doesNotMatch(await page.textContent('#editor'), /점 이하|점수가 낮다면|1~5점/);
+});
+
 await step('네트워크: 같은 사이트의 정적 파일 GET만 있고, 외부 요청·POST·고객 정보가 담긴 요청 없음', async () => {
   const bad = requests.filter((r) => !(r.url.startsWith(BASE) || r.url.startsWith('about:') || r.url.startsWith('data:') || r.url.startsWith('blob:' + BASE.slice(0, -1))));
   assert.deepEqual(bad, []);

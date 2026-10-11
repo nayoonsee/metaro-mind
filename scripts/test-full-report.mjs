@@ -100,6 +100,7 @@ for (const [id, r] of Object.entries(R)) {
   });
   check(`${id}: 검증 안 된 조합 가설·대운·올해 장식 문장 없음`, () => { assert.doesNotMatch(all, /편인[^.]*편재[^.]*(속도|긴장)|군겁쟁재|비겁과 재성이 함께/); assert.doesNotMatch(all.replace(/이번 리포트에서 다루지 않은 것:[^\n]*/, ''), /대운|올해 (운|흐름)|재회/); });
   check(`${id}: 단락마다 면책 반복 없음(검수 전 안내는 1회)`, () => assert.ok((all.match(/검수/g) || []).length <= 1));
+  check(`${id}: 근거 없는 점수 임계값 결론 없음("N점 이하이면 …")`, () => assert.doesNotMatch(all, /\d점 이하|점수가 낮다면|1~5점/));
   check(`${id}: 고객 본문에 테스트 문구 없음`, () => assert.doesNotMatch(all, /고유 편집|case-[a-z]|edge-/));
 }
 

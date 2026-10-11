@@ -15,8 +15,8 @@ await new Promise((r) => srv.listen(0, '127.0.0.1', r)); const BASE = `http://12
 const { chromium } = createRequire(import.meta.url)('playwright'); const b = await chromium.launch(); const page = await b.newPage();
 page.on('dialog', (d) => d.accept());
 await page.goto(BASE);
-const fixtures = { ...JSON.parse(readFileSync(join(FIX, 'f3f6416-edits.json'), 'utf8')).result, ...JSON.parse(readFileSync(join(FIX, '319c92f-edits.json'), 'utf8')).result };
-const FILES = { A: 'f3f6416-A.json', B: 'f3f6416-B.json', C: '319c92f-C.json' };
+const fixtures = { ...JSON.parse(readFileSync(join(FIX, 'f3f6416-edits.json'), 'utf8')).result, ...JSON.parse(readFileSync(join(FIX, '319c92f-edits.json'), 'utf8')).result, ...JSON.parse(readFileSync(join(FIX, '2da4d2e-edits.json'), 'utf8')).result };
+const FILES = { A: 'f3f6416-A.json', B: 'f3f6416-B.json', C: '319c92f-C.json', A3: '2da4d2e-A.json' };
 const out = {};
 for (const key of Object.keys(FILES).filter((k) => fixtures[k])) {
   await page.click('#btnNew'); await page.setInputFiles('#fileImport', join(FIX, FILES[key]));

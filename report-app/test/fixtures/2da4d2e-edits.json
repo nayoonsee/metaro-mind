@@ -1,0 +1,12 @@
+{
+  "source": "git commit 2da4d2e 로컬 서버 버전 화면에서 생성·수정·백업",
+  "result": {
+    "A3": {
+      "edits": {
+        "ch7:W-lens-env-support-stay:use:1": "[2da4d2e A 편집 ch7stay] 판매자가 이전 버전(v3)에서 직접 고친 문장이에요.",
+        "ch8:ACT-ch3:use:1": "[2da4d2e A 편집 ch8act] 판매자가 이전 버전(v3)에서 직접 고친 문장이에요.",
+        "ch3:ENV-support:use:1": "[2da4d2e A 편집 ch3env] 판매자가 이전 버전(v3)에서 직접 고친 문장이에요."
+      }
+    }
+  }
+}

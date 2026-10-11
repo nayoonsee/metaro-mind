@@ -15,7 +15,7 @@ const PROFILE = 'reportApp.brandProfile.v1'; // 판매자 브랜드 프로필(�
 let project = null; let dirty = false; let generating = 0;
 let selBody = 'noto-sans'; let selHead = 'gowun'; // 디자인 화면에서 고른 글꼴
 // 생성기 버전: 프로젝트는 만든 버전으로 계속 쓰고, 최신 버전은 "새 풀이로 다시 만들기"로만 적용한다.
-let GEN = { latest: 'full-rule-v3', labels: { 'full-rule-v1': '이전 풀이(v1)', 'full-rule-v2': '이전 풀이(v2)', 'full-rule-v3': '새 풀이(v3)' } }; // 서버·브라우저 서비스의 /api/info 값으로 덮어씀
+let GEN = { latest: 'full-rule-v4', labels: { 'full-rule-v1': '이전 풀이(v1)', 'full-rule-v2': '이전 풀이(v2)', 'full-rule-v3': '이전 풀이(v3)', 'full-rule-v4': '새 풀이(v4)' } }; // 서버·브라우저 서비스의 /api/info 값으로 덮어씀
 const knownGen = (g) => Object.prototype.hasOwnProperty.call(GEN.labels, g);
 const genOf = (p) => (p.generated && knownGen(p.generated.generator) ? p.generated.generator : GEN.latest);
 // epoch: 프로젝트를 바꿀 때마다 증가. rev: 입력·편집·브랜드·검토 해제 등 내용이 바뀔 때마다 증가.
@@ -79,7 +79,7 @@ function projectToForm() {
   const D = DESIGNS[p.brand.cover] || LEGACY_DESIGNS[p.brand.cover] || DESIGNS.mystic;
   selBody = FONTS[p.brand.bodyFont]?.body ? p.brand.bodyFont : D.bodyFont; selHead = FONTS[p.brand.headFont]?.head ? p.brand.headFont : D.headFont;
   $('greeting').value = p.brand.greeting || ''; $('closing').value = p.brand.closing || '';
-  renderDesignUi(); syncBirthDate();
+  renderDesignUi();
   $('clientName').value = p.client.name; $('isSample').checked = !!p.client.isSample;
   $('calendar').value = b.calendar; $('leapMonth').value = b.leapMonth ? '1' : ''; $('year').value = b.year; $('month').value = b.month; $('day').value = b.day;
   $('hour').value = b.hour; $('minute').value = b.minute; $('hourUnknown').checked = !!b.hourUnknown;
@@ -88,7 +88,7 @@ function projectToForm() {
   $('period').value = p.concern.period;
   $('reviewed').checked = !!p.status.reviewedHash; $('mailTo').value = p.mail.to; $('mailSubject').value = p.mail.subject; $('mailBody').value = p.mail.body;
   $('previewFrame').srcdoc = ''; $('sidePreview').srcdoc = ''; $('qaBox').innerHTML = ''; $('pdfState').textContent = '';
-  syncFormState(); renderEditor(); renderOutbox(); refreshState();
+  syncFormState(); syncBirthDate(); renderEditor(); renderOutbox(); refreshState(); // 연·월·일을 채운 뒤 보이는 생년월일 칸을 맞춘다
 }
 function syncFormState() {
   $('leapWrap').style.display = $('calendar').value === 'lunar' ? '' : 'none';
@@ -269,7 +269,8 @@ function onEdit(e) {
 function onInputChange(e) {
   if (e.target.closest('#mailDetails')) { dirty = true; refreshState(); return; } // 메일 칸은 리포트 내용이 아니다.
   if (e.target.closest('#tab-design')) return onDesignChange();
-  if (e.target.id === 'birthDate') { if (!parseBirthDate()) return; } else if (['year', 'month', 'day'].includes(e.target.id)) syncBirthDate();
+  // 보이는 생년월일은 한 칸뿐이다. 다 입력하지 않은 동안에는 숨은 연·월·일도 비워 두어, 화면과 다른 날짜로 만들어지지 않게 한다.
+  if (e.target.id === 'birthDate') { if (!parseBirthDate()) { $('year').value = ''; $('month').value = ''; $('day').value = ''; } } else if (['year', 'month', 'day'].includes(e.target.id)) syncBirthDate();
   syncFormState(); formToProject(); project.inputRev = (project.inputRev || 0) + 1; markUnreviewed(); bump(); dirty = true; refreshState();
   if (isStale()) msg('입력 정보가 바뀌었어요. 이전 결과는 미검토 상태가 되었고, 다시 생성해야 미리보기·PDF·전달을 할 수 있어요.');
 }
@@ -451,7 +452,10 @@ $('headFontCards').addEventListener('click', (e) => { const b = e.target.closest
 async function onLogoFile(file) {
   if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) return msg('로고는 PNG·JPEG·WEBP 이미지만 올릴 수 있어요.');
   if (file.size > 2 * 1024 * 1024) return msg('로고 파일이 너무 커요(2MB 이하).');
-  let bmp; try { bmp = await createImageBitmap(file); } catch { return msg('이미지를 읽지 못했어요. 다른 파일을 골라 주세요.'); }
+  // 디코딩을 기다리는 사이 다른 고객으로 바뀌면 결과를 버린다(요청 당시 프로젝트·전환 세대 확인).
+  const s = snapshot();
+  let bmp; try { bmp = await createImageBitmap(file); } catch { return owns(s) ? msg('이미지를 읽지 못했어요. 다른 파일을 골라 주세요.') : undefined; }
+  if (!owns(s)) { bmp.close?.(); return msg(`"${s.clientName || '이전 고객'}"에 올리던 로고는 다른 고객으로 바뀐 뒤 준비돼 적용하지 않았어요.`); }
   const k = Math.min(1, 600 / Math.max(bmp.width, bmp.height)); const c = document.createElement('canvas');
   c.width = Math.max(1, Math.round(bmp.width * k)); c.height = Math.max(1, Math.round(bmp.height * k)); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
   let url = c.toDataURL('image/png'); if (url.length > LOGO_MAX_CHARS) url = c.toDataURL('image/jpeg', 0.85);

@@ -6,6 +6,7 @@ import { calcSaju } from '../../api/_saju-core.js';
 import { generateFullReport } from '../../report/chapters/full.mjs';
 import { generateFullReport as generateV1 } from '../../report/chapters/v1/full.mjs';
 import { generateFullReport as generateV2 } from '../../report/chapters/v2/full.mjs';
+import { generateFullReport as generateV3 } from '../../report/chapters/v3/full.mjs';
 import { validateInput } from './validate.mjs';
 import { isBrandSet } from './render.mjs';
 import { validateProjectSchema, EDIT_ID_RE } from '../public/schema.mjs';
@@ -15,9 +16,10 @@ import { validateProjectSchema, EDIT_ID_RE } from '../public/schema.mjs';
 export const GENERATORS = {
   'full-rule-v1': { label: '이전 풀이(v1)', generate: generateV1 }, // f3f6416 고정본
   'full-rule-v2': { label: '이전 풀이(v2)', generate: generateV2 }, // 319c92f 고정본: 3·4·7장 재구성, 핵심 요약·다시 펼칠 곳
-  'full-rule-v3': { label: '새 풀이(v3)', generate: generateFullReport }, // 현재: 돈 고민 순서 하나로 정리, 검증 전 식상 풀이 제거
+  'full-rule-v3': { label: '이전 풀이(v3)', generate: generateV3 }, // 2da4d2e 고정본: 돈 고민 순서 하나로 정리, 검증 전 식상 풀이 제거
+  'full-rule-v4': { label: '새 풀이(v4)', generate: generateFullReport }, // 현재: 3장 "남는 쪽" 문장에서 점수 임계값 결론을 확인 질문으로 바꿈
 };
-export const GENERATOR = 'full-rule-v3'; // 새로 만드는 리포트의 기본(최신) 버전
+export const GENERATOR = 'full-rule-v4'; // 새로 만드는 리포트의 기본(최신) 버전
 export const isKnownGenerator = (g) => Object.prototype.hasOwnProperty.call(GENERATORS, g);
 
 export function createCore(sha) {

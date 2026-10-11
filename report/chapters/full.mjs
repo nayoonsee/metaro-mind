@@ -171,7 +171,7 @@ function ch8(chapters) {
   const c7 = find('ch7'); if (c7 && c7.status === 'generated') nav.push(P('use', `${c7.topic === 'money' ? '돈 관리 순서를 다시 볼 때' : '고민한 선택을 다시 정해야 할 때'}: 7장 "${c7.sections[c7.topic === 'money' || c7.sections.length < 2 ? 0 : 1].q}"부터`, 'NAV-ch7', '이 리포트의 장 안내'));
   const items = [];
   const c2 = find('ch2'); const g2 = c2.sections[0].paras[0]; if (g2) items.push(P('use', `2장: 강점 "${g2.text.split(':')[0]}"이 지나칠 때 나오는 신호를 한 주 동안 기록해 보세요.`, 'ACT-ch2', '2장 근거'));
-  items.push(P('use', '3장: 지금 하는 일을 "오래 버틸 수 있는 환경" 기준으로 1~5점 매겨 보세요.', 'ACT-ch3', '3장 근거'));
+  items.push(P('use', '3장: "어떤 환경에서 오래 버틸 수 있나요?"의 활용 방법에 적힌 질문을 지금 일에 대해 한 번 답해 보세요.', 'ACT-ch3', '3장 근거'));
   if (c7 && c7.status === 'generated') items.push(P('use', c7.topic === 'money' ? '7장: 1단계(고정 지출과 결제 목록)를 이번 주 안에 한 장에 적어 보세요.' : '7장: 현실 점검 항목 가운데 하나를 골라 이번 주 안에 숫자로 채우세요.', c7.topic === 'money' ? 'ACT-ch7-money' : 'ACT-ch7', '7장 근거'));
   else items.push(P('use', '4장: "돈이 새기 쉬운 지점"의 활용 방법을 한 달 동안 해 보세요.', 'ACT-ch4', '4장 근거'));
   return { id: 'ch8', title: '8장. 이럴 때 다시 펼쳐 보세요', intro: '이 리포트는 한 번 읽고 끝내기보다, 상황이 생겼을 때 해당하는 곳을 다시 펼쳐 보도록 만들었어요.', sections: [{ q: '이럴 때는 이곳을', paras: nav }, { q: '이번 달 해 볼 세 가지', paras: items }] };
@@ -255,6 +255,6 @@ export function generateFullReport(saju, { concern = null } = {}) {
     const seen = {};
     ch.sections.forEach((s) => s.paras.forEach((p) => { const base = `${ch.id}:${p.rule}:${p.kind}`; seen[base] = (seen[base] || 0) + 1; p.id = `${base}:${seen[base]}`; }));
   }
-  return { generator: 'full-rule-v3', paidAiCalls: 0, keys: k, cover: { title: DAY_MASTER[k.dm].cover, subtitle: '성향 · 일 · 돈 · 관계 · 선택을 담은 종합 사주 리포트' },
+  return { generator: 'full-rule-v4', paidAiCalls: 0, keys: k, cover: { title: DAY_MASTER[k.dm].cover, subtitle: '성향 · 일 · 돈 · 관계 · 선택을 담은 종합 사주 리포트' },
     chapters, review, needsWriting: c7.status === 'review' };
 }

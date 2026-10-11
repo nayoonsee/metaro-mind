@@ -128,10 +128,15 @@
       </div>
       <div class="row">
         <div class="wide"><label for="birthDate">생년월일 <span class="req">*</span> <span class="hint" style="display:inline">예: 1990-05-17 또는 19900517</span></label><input type="text" id="birthDate" inputmode="numeric" maxlength="10" placeholder="1990-05-17" autocomplete="off"></div>
-        <div><label for="year">년</label><input type="number" id="year" min="1900" max="2099" inputmode="numeric"></div>
-        <div><label for="month">월</label><input type="number" id="month" min="1" max="12" inputmode="numeric"></div>
-        <div><label for="day">일</label><input type="number" id="day" min="1" max="31" inputmode="numeric"></div>
       </div>
+      <details id="birthAlt" style="border:0;padding:0;margin:4px 0 0"><summary style="font-weight:400;font-size:13px;color:var(--muted);padding:4px 0">연·월·일을 따로 입력하기(대체 입력)</summary>
+        <div class="row">
+          <div><label for="year">년</label><input type="number" id="year" min="1900" max="2099" inputmode="numeric"></div>
+          <div><label for="month">월</label><input type="number" id="month" min="1" max="12" inputmode="numeric"></div>
+          <div><label for="day">일</label><input type="number" id="day" min="1" max="31" inputmode="numeric"></div>
+        </div>
+        <p class="hint">여기서 바꾸면 위의 생년월일 칸도 같이 바뀌어요.</p>
+      </details>
       <div class="row" style="align-items:end">
         <div><label for="hour">태어난 시 (0~23)</label><input type="number" id="hour" min="0" max="23" inputmode="numeric"></div>
         <div><label for="minute">분</label><input type="number" id="minute" min="0" max="59" inputmode="numeric"></div>

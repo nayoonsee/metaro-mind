@@ -186,7 +186,7 @@ export function chapter8(saju, k, concern, review) {
     const a = n >= 3 ? Math.max(1, Math.round(n / 3)) : 1; const b = n >= 3 ? Math.max(a + 1, Math.min(n - 1, Math.round((2 * n) / 3))) : 1;
     const span = (x, y) => (n === 1 ? (x === 1 && y === 1 && !span.used ? (span.used = true, '처음 2주') : '마지막 2주') : x === y ? `${x}개월 차` : `${x}~${y}개월 차`);
     const last = topic === 'work'
-      ? '처음 적은 숫자와 시험해 본 결과를 나란히 놓고 다시 골라요. 3장에서 매긴 환경 점수도 함께 놓고 보세요.'
+      ? '처음 적은 숫자와 시험해 본 결과를 나란히 놓고 다시 골라요. 3장 "오래 버틸 환경"에서 확인한 역할·권한·배울 조건도 함께 놓고 보세요.'
       : (n >= 3 ? '3단계 자동이체를 걸고, 첫 달에 적은 목록과 지금을 비교해 금액을 조정해요.' : '2·3단계(저축 가능액을 정한 뒤 자동이체)를 이어서 해요.');
     const deadline = topic === 'work' ? '실제로 정해진 마감(계약 만료, 제안 기한 등)이 있다면 그 날짜에 맞춰 구간을 앞당겨 쓰세요.' : '큰 지출이 예정된 달이 있다면 그 달을 피해 구간을 조정해 쓰세요.';
     sections.push({ q: `앞으로 ${n}개월, 이렇게 점검해 보세요`, paras: [
