@@ -50,6 +50,7 @@
 node scripts/test-kst-solar-terms.mjs
 node scripts/test-cost-and-privacy.mjs
 node scripts/test-brand-report.mjs
+node --test vendor/jeomjjik/tests/accuracy.test.mjs
 ```
 
 ## 브랜드 사주 리포트 (규칙 기반 원고, 실험 단계)
