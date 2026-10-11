@@ -1,0 +1,91 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600&family=Cormorant+Garamond:ital,wght@0,500;1,400&display=swap" rel="stylesheet"><style>
+  @page { size: A4; margin: 20mm 20mm 22mm; } @page :first { margin: 0; }
+  body { margin: 0; background: #FFFFFF; color: #24212B; font-family: 'Noto Sans KR', sans-serif; font-size: 10.8pt; line-height: 1.85; word-break: keep-all; orphans: 2; widows: 2; }
+  
+  .cover { width: 210mm; height: 297mm; position: relative; overflow: hidden; break-after: page; margin: 0; }
+  .cover-mystic { background: radial-gradient(120% 80% at 50% 38%, #3A2E4A 0%, #1B1626 55%, #0F0C16 100%); color: #F3EEF7; }
+  .cm-note, .cb-note { position: absolute; top: 6mm; right: 8mm; font-size: 8.5pt; padding: 1.5mm 3mm; border-radius: 2mm; }
+  .cm-note { background: rgba(255,255,255,.12); color: #F3EEF7; } .cb-note { background: #E9DFD0; color: #4A4038; }
+  .cm-kicker { position: absolute; top: 26mm; width: 100%; text-align: center; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 13pt; letter-spacing: .22em; color: #D3C4E0; }
+  .cm-art { position: absolute; top: 48mm; left: 50%; transform: translateX(-50%); width: 104mm; height: 104mm; }
+  .cm-title { position: absolute; top: 166mm; width: 100%; text-align: center; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 32pt; line-height: 1.3; margin: 0; color: #FFFFFF; }
+  .cm-sub { position: absolute; top: 196mm; left: 20mm; right: 20mm; text-align: center; font-family: 'Noto Sans KR', sans-serif; font-size: 12.5pt; color: #E6DCEE; }
+  .cm-divider { position: absolute; top: 216mm; left: 50%; transform: translateX(-50%); width: 44mm; height: 1px; background: linear-gradient(90deg, transparent, #E3C595, transparent); }
+  .cm-client { position: absolute; top: 224mm; width: 100%; text-align: center; font-family: 'Nanum Myeongjo', serif; font-size: 17pt; letter-spacing: .06em; color: #FFFFFF; }
+  .cm-brand { position: absolute; bottom: 20mm; width: 100%; text-align: center; font-family: 'Cormorant Garamond', 'Noto Sans KR', serif; font-size: 14pt; font-weight: 500; letter-spacing: .3em; color: #E8CB9A; }
+  .cover-bright { background: #F6F1E8; color: #2B2622; }
+  .cb-series { position: absolute; top: 24mm; left: 22mm; font-size: 9.5pt; letter-spacing: .3em; color: #6E6458; font-family: 'Noto Sans KR'; }
+  .cb-art { position: absolute; top: 48mm; left: 50%; transform: translateX(-50%); width: 110mm; height: 110mm; }
+  .cb-rule { position: absolute; left: 22mm; width: 18mm; top: 172mm; height: 1.4mm; background: #B4583A; }
+  .cb-title { position: absolute; left: 22mm; right: 22mm; top: 178mm; font-family: 'Nanum Myeongjo', serif; font-weight: 800; font-size: 32pt; line-height: 1.25; margin: 0; }
+  .cb-sub { position: absolute; left: 22mm; right: 22mm; top: 206mm; font-family: 'Noto Sans KR'; font-size: 12.5pt; color: #4A4038; }
+  .cb-client { position: absolute; left: 22mm; bottom: 24mm; font-family: 'Gowun Batang', serif; font-size: 16pt; }
+  .cb-client span { display: block; font-family: 'Noto Sans KR'; font-size: 9pt; letter-spacing: .2em; color: #6E6458; margin-bottom: 2mm; }
+  .cb-brand { position: absolute; right: 22mm; bottom: 24mm; font-family: 'Cormorant Garamond', 'Noto Sans KR', serif; font-size: 14pt; font-weight: 500; letter-spacing: .14em; color: #9C4529; }
+
+  h2 { font-family: 'Gowun Batang', serif; font-size: 20pt; color: #3A2E4A; margin: 0 0 5mm; padding-bottom: 3mm; border-bottom: 1px solid #D9CFE3; break-after: avoid; }
+  h3 { font-family: 'Noto Serif KR', serif; font-size: 13pt; color: #3A2E4A; margin: 8mm 0 3mm; break-after: avoid; }
+  .page { break-before: page; } .chapter { break-before: page; }
+  p { margin: 0 0 3mm; } .intro { color: #4E4858; background: #F7F4FA; padding: 4mm 5mm; border-radius: 2mm; }
+  .k-example { color: #4E4858; padding-left: 4mm; border-left: 2px solid #E3C595; }
+  .k-caution::first-line, .k-use::first-line { }
+  .quoted { font-size: 10pt; color: #5B4F6B; background: #FBF7EF; border: 1px solid #EADDC6; padding: 3mm 4mm; margin-bottom: 4mm; border-radius: 2mm; break-inside: avoid; }
+  .box { background: #FBF7EF; border: 1px solid #EADDC6; border-radius: 2mm; padding: 2mm 6mm 4mm; margin: 6mm 0; break-inside: avoid; }
+  .box h3 { margin-top: 3mm; } .boxnote { font-size: 9pt; color: #7A6E5E; }
+  .summary { margin-top: 8mm; padding: 4mm 5mm; background: #F2EDF7; border-radius: 2mm; break-inside: avoid; } .summary b { display: block; color: #3A2E4A; margin-bottom: 1mm; }
+  .guide li, .basis li { margin-bottom: 2mm; }
+  table { width: 100%; border-collapse: collapse; break-inside: avoid; margin: 4mm 0 6mm; }
+  th, td { border: 1px solid #DDD6E5; padding: 2.2mm; text-align: center; } thead th { background: #3A2E4A; color: #fff; font-weight: 500; }
+  tbody th { background: #F7F4FA; font-weight: 500; width: 22mm; } .gz { font-size: 16pt; font-family: 'Noto Serif KR', serif; } .gz small { display: block; font-size: 8.5pt; color: #6B6478; font-family: 'Noto Sans KR'; }
+  .unknown { color: #8A8296; font-size: 9.5pt; }
+  .sample { font-size: 9pt; color: #6B6478; border-top: 1px solid #E5DFEC; padding-top: 3mm; margin-top: 8mm; }
+  </style></head><body>
+  <section class="cover cover-mystic">
+    <div class="cm-note">가상 사례 · 실제 내담자 아님</div>
+    <div class="cm-kicker">a reading of one's nature</div>
+    <svg class="cm-art" viewBox="0 0 200 200" aria-hidden="true">
+      <defs><radialGradient id="cmg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#F4D6A0" stop-opacity=".5"/><stop offset=".6" stop-color="#C98A5A" stop-opacity=".1"/><stop offset="1" stop-color="#C98A5A" stop-opacity="0"/></radialGradient></defs>
+      <circle cx="100" cy="98" r="96" fill="url(#cmg)"/>
+      <circle cx="100" cy="100" r="74" fill="none" stroke="#D9B98A" stroke-width=".5" opacity=".6"/>
+      <path d="M100 62 C 108 76, 114 88, 111 101 C 109 111, 104 116, 100 116 C 95 116, 89 111, 88 101 C 87 92, 93 85, 96 76 C 98 81, 100 84, 102 85 C 103 78, 102 70, 100 62 Z" fill="#F0C987"/>
+         <path d="M100 88 C 103 94, 105 99, 103 104 C 102 107, 101 108, 100 108 C 98 108, 96 105, 96 102 C 97 98, 99 95, 100 88 Z" fill="#FFF3DA"/>
+    </svg>
+    <h1 class="cm-title">오래 비추는 불빛</h1>
+    <div class="cm-sub">성향 · 일 · 돈 · 관계 · 선택을 담은 종합 사주 리포트</div>
+    <div class="cm-divider"></div>
+    <div class="cm-client">가상 사례 D 님</div>
+    <div class="cm-brand">○○ STUDIO</div>
+  </section>
+  <section class="guide"><h2>이 리포트를 읽는 법</h2><ul>
+    <li>이 리포트는 태어난 날짜로 계산한 사주의 글자를, 오래 이어져 온 상징에 따라 생활 언어로 풀어 쓴 것이에요. 성격 검사나 미래 예측이 아니에요.</li>
+    <li>'예를 들면'으로 시작하는 문단은 이렇게 나타날 수 있다는 가능성의 예시예요. 당신의 과거를 알아맞힌 것이 아니에요.</li>
+    <li>건강, 재산, 결혼, 합격 같은 결과나 특정 시기를 확정하지 않아요.</li>
+    <li>이번 시험 출력에는 1장(기본 성향)과 8장(고민 집중 풀이)만 들어 있어요. 나머지 장은 아직 만들지 않았어요.</li>
+  </ul>
+  <p class="sample">가상 사례 D는 시험용 가상 인물이에요. 실제 사람의 정보가 아니에요.</p></section>
+  <section class="chapter">
+    <h2>1장. 나는 어떤 사람인가요?</h2>
+    
+    <p class="intro">이 장에서는 태어난 해·달·날의 글자로 성향을 읽어요. 사주의 해석은 오래 이어져 온 상징을 생활에 맞게 풀어낸 것이에요. 성격 검사처럼 측정한 결과가 아니라, 나를 비춰 보는 거울로 읽어 주세요. &#39;예를 들면&#39;으로 시작하는 문단은 이렇게 나타날 수 있다는 가능성의 예시예요. 태어난 시간을 몰라서, 시간에 해당하는 글자는 빼고 읽었어요.</p>
+    <h3>사람들은 나를 어떻게 보고, 실제 나는 어떤가요?</h3><p class="k-meaning">사주에서 &#39;나 자신&#39;을 대표하는 글자는 태어난 날의 첫 글자예요(일간, 日干). 당신의 글자는 등불·촛불에 비유되는 정화(丁火)예요. 가까이 있는 것을 오래, 따뜻하게 비추는 기운이에요. 넓고 얕게보다 마음을 둔 몇 가지에 시간을 오래 쓰는 쪽에 가까워요.</p><p class="k-example">예를 들면, 여러 모임에 두루 얼굴을 비추기보다 몇 사람과 깊은 이야기를 나누는 쪽이 편하거나, 일을 넓게 벌리기보다 하나를 끝까지 다듬을 때 만족이 큰 장면이에요.</p><p class="k-meaning">한편 태어난 달의 겉면에는 辛(신)이 드러나 있어요. 당신에게 이 글자는 현실의 조건과 기회를 알아보는 감각(편재)을 뜻해요. 현실의 조건, 기회, 결과물을 다루는 기운이 겉에 드러나 있어요. 남에게는 현실 감각이 있고 계산이 빠른 사람으로 먼저 보일 수 있어요.</p><p class="k-example">예를 들면, 처음 만난 사람이 &quot;현실적이다&quot;라고 말하는데, 스스로는 마음이 먼저 붙어야 움직인다고 느끼는 장면이에요.</p><p class="k-caution">주의할 점: 마음을 둔 대상에 오래 머무는 만큼, 이미 식은 일이나 관계를 정리하는 데 시간이 걸릴 수 있어요. 조건을 잘 보는 모습이 먼저 보이면, 남들이 기대하는 역할(정리, 협상, 계산)을 떠맡았다가 속으로 지칠 수 있어요.</p><p class="k-use">활용 방법: 분기마다 &quot;지금 내 불빛이 머무는 곳&quot; 세 가지를 적어 보세요. 목록에서 빠진 것은 정리해도 되는 신호예요. 역할을 맡기 전에 &quot;조건 정리는 할 수 있지만, 실제 몰입에는 시간이 필요해요&quot;처럼 내 방식을 먼저 말해 두세요.</p><h3>나는 무엇에서 힘을 얻나요?</h3><p class="k-meaning">당신이 태어난 달은 봄(묘월, 卯月)이고, 이 달의 기운은 나무예요. 당신의 기운인 불과 견주면 태어난 달이 나를 받쳐 주는 구성(월지가 일간을 생함)이에요. 태어난 달의 기운이 당신의 기운을 키워 주는 쪽에 있어요. 바탕 자체가 배우고 흡수하며 힘을 얻는 쪽에 놓여 있다고 읽어요.</p><p class="k-meaning">태어난 달 속 중심 글자 乙(을)은 당신에게 편인이에요. 태어난 달 속에는 정해진 답보다 자기 방식으로 이해하고 해석하는 기운이 들어 있어요. 배우고 소화해서 내 것으로 만드는 과정에서 힘이 나는 쪽이에요.</p><p class="k-example">예를 들면, 남이 정리해 준 요약보다 원래 자료를 직접 읽어야 손에 잡히고, 내 말로 다시 정리해 봐야 &quot;알았다&quot;는 느낌이 드는 장면이에요.</p><p class="k-caution">주의할 점: 받쳐 주는 바탕이 있는 만큼, 준비와 흡수에 머무는 시간이 길어질 수 있어요.</p><p class="k-use">활용 방법: 배우는 시간에 끝을 정하세요. 조사와 정리는 사흘, 그다음엔 작게라도 첫 결과를 낸다는 식으로요.</p><h3>내가 편하게 머무는 자리는 어떤 모습인가요?</h3><p class="k-meaning">태어난 날의 아래 글자(일지, 日支)는 생활의 기반이나 가장 가까운 자리를 상징해요. 당신은 이 자리에 巳(사), 즉 불의 기운이 놓여 있어요. 생활의 기반을 뜻하는 자리에 당신과 같은 기운이 놓여 있어요. 기반이 바깥에서 주어지기보다 스스로 데운 자리에 가깝다고 읽어요.</p><p class="k-example">예를 들면, 남이 꾸며 준 환경보다 내가 직접 고르고 정돈한 공간과 하루의 순서에서 마음이 놓이는 장면이에요.</p><p class="k-caution">주의할 점: 스스로 만든 자리가 편한 만큼, 함께 사는 사람이나 팀이 리듬을 바꾸면 일보다 리듬이 깨진 것에 더 지칠 수 있어요.</p><p class="k-use">활용 방법: 꼭 지키고 싶은 생활 조건을 두세 가지로 좁혀 말로 정해 두세요. 핵심만 분명하면 나머지는 유연하게 양보할 수 있어요.</p>
+    <div class="summary"><b>이 장의 한 줄 정리</b>당신은 등불·촛불에 비유되는 사람이고, 겉으로는 현실의 조건과 기회를 알아보는 감각이 먼저 보일 수 있어요. 힘은 &#39;태어난 달이 나를 받쳐 주는 구성&#39;에서 나오고, 생활의 기반은 &#39;스스로 데운 자리&#39;에 가까워요. 이 장의 활용 방법 세 가지를 하나씩 시험해 보세요.</div>
+  </section><section class="chapter">
+    <h2>8장. 지금 내 고민, 어떻게 볼까요?</h2>
+    
+    <p class="intro">이번 리포트에는 따로 적어 주신 고민이 없어서, 이 장은 비워 두었어요. 궁금한 질문이 생기면 상담자에게 알려 주세요. 그 질문을 중심으로 이 장을 다시 써 드려요.</p>
+    
+    
+  </section>
+  <section class="page basis"><h2>명식과 계산 기준</h2><table class="pillars"><thead><tr><th></th><th>시주</th><th>일주</th><th>월주</th><th>년주</th></tr></thead><tbody>
+    <tr><th>천간</th><td class="gz"><span class="unknown">모름</span></td><td class="gz">丁<small>정</small></td><td class="gz">辛<small>신</small></td><td class="gz">丙<small>병</small></td></tr>
+    <tr><th>지지</th><td class="gz"><span class="unknown">모름</span></td><td class="gz">巳<small>사</small></td><td class="gz">卯<small>묘</small></td><td class="gz">子<small>자</small></td></tr>
+    <tr><th>천간 십성</th><td><span class="unknown">모름</span></td><td>나(일간)</td><td>편재</td><td>겁재</td></tr>
+    <tr><th>지장간</th><td><span class="unknown">모름</span></td><td>丙 庚 戊</td><td>乙</td><td>癸</td></tr>
+  </tbody></table><ul>
+    <li>한국 표준시(KST) 기준, 절기 경계 보정. 1948~61·1987~88 서머타임과 1954~61 UTC+8:30은 오늘날 KST로 바꿔 계산했어요.</li>
+    <li>출생 시간: 모름. 시주를 만들지 않고 년·월·일주 세 기둥만 사용했어요.</li>
+    
+    <li>밤 11시대 출생 처리: 현재 구현값은 시주 천간을 다음날 일간 기준으로 계산해요. 상품의 확정 기준은 아직 정하지 않았어요.</li>
+    <li>대운과 월별 시기 판단은 계산 기준이 검증되지 않아 넣지 않았어요.</li>
+  </ul></section>
+  </body></html>

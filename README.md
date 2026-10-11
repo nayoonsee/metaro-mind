@@ -51,6 +51,7 @@ node scripts/test-kst-solar-terms.mjs
 node scripts/test-cost-and-privacy.mjs
 node scripts/test-brand-report.mjs
 node --test vendor/jeomjjik/tests/accuracy.test.mjs
+node scripts/test-chapters.mjs
 ```
 
 ## 브랜드 사주 리포트 (규칙 기반 원고, 실험 단계)
@@ -59,3 +60,10 @@ node --test vendor/jeomjjik/tests/accuracy.test.mjs
   판단 근거는 일간, 월지와 일간의 생극 관계, 일지, 십성의 **자리**(천간/지장간, 년·월·일·시)뿐이다. 개수로 강약을 판단하지 않는다.
 - 고객 본문(`customer`)과 상담자 검토 항목(`review`)을 분리해서 돌려준다. 직업·관계·경험은 입력받지 않으므로 쓰지 않는다.
 - 가상 사례 3건 출력: `node report/run-cases.mjs` → `report/output/*.md`, `*.review.md`
+
+## 종합 리포트 시험 생성 (1장 + 8장 + 표지, 실험 단계)
+
+- `report/chapters/library.mjs`: 문단 라이브러리 v0 (Claude 초안, 전문가 검수 전). 키는 일간·월간 십성 그룹·월지 관계·월지 본기 그룹·일지 관계.
+- `report/chapters/generate.mjs`: 계산 결과 + 선택 입력(질문·상황·선택지·기간) → 1장·8장. 8장 지원 유형은 일·진로 선택, 돈 관리뿐이고 그 밖의 질문은 "검토 필요"로 비워 둔다.
+- `report/covers/templates.mjs`: 표지 2종(`mystic` 기본, `bright`). 확정 아님.
+- 실행: `node report/chapters/build.mjs` → `report/output/chapters/*.pdf`, `*.review.md`(상담자용). 표지 교체: `COVER=bright node report/chapters/build.mjs case-a`
