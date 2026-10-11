@@ -4,6 +4,22 @@ import { coverHtml, COVER_CSS } from '../../report/covers/templates.mjs';
 import { FONTS, designOf, DESIGNS, LEGACY_DESIGNS, LOGO_RE, LOGO_MAX_CHARS, inkOf } from '../../report/design/designs.mjs';
 
 export const DEFAULT_BRAND = '○○ STUDIO';
+// 고객용 표시 방식이 바뀌면 올린다. 검토 hash에 들어가므로 이전 검토 확인은 다시 해야 한다(생성 데이터·편집은 그대로).
+export const RENDER_REV = 'customer-2';
+const GUIDE_BASIS_CUSTOMER = '본문 풀이는 사주 글자에 대한 전통적인 상징 해석을 생활 언어로 옮긴 것이고, 명리 전문가의 검수를 아직 거치지 않은 초안이에요. 계산에 쓴 글자는 맨 뒤 "나의 명식"에 실었어요.';
+const CH3_BASIS_SENTENCE = ' 각 절 끝의 근거는 다시 계산해 확인할 수 있어요.';
+// 고객용에 짧게 남기는 실제 해당 한계.
+export function customerLimits(saju) {
+  const types = new Set((saju.notices || []).map((n) => n.type));
+  return [
+    saju.hourKnown ? '' : '출생 시간을 몰라 시주 없이 년·월·일 세 기둥으로 읽었어요.',
+    types.has('jieqi-unknown') ? '절기가 바뀌는 날 출생이라, 태어난 시간에 따라 월주가 달라질 수 있어요.' : '',
+    types.has('clock') ? '출생 당시 한국의 시계 기준(옛 표준시·서머타임)이 지금과 달라, 오늘날 한국 표준시로 바꿔 계산했어요.' : '',
+    types.has('clock-edge') ? '서머타임이 바뀌던 날의 시각이라, 출생 기록을 한 번 확인해 주세요.' : '',
+    types.has('jasi') ? '밤 11시대 출생은 보는 방식에 따라 시주가 달라질 수 있어요.' : '',
+    '이 리포트는 미래를 확정하는 자료가 아니에요. 나를 돌아보는 참고 자료로 읽어 주세요.',
+  ].filter(Boolean);
+}
 const GAN_EL = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
 const GAN_KO = { 甲: '갑', 乙: '을', 丙: '병', 丁: '정', 戊: '무', 己: '기', 庚: '경', 辛: '신', 壬: '임', 癸: '계' };
 const ZHI_KO = { 子: '자', 丑: '축', 寅: '인', 卯: '묘', 辰: '진', 巳: '사', 午: '오', 未: '미', 申: '신', 酉: '유', 戌: '술', 亥: '해' };
@@ -30,29 +46,31 @@ function pillarTable(saju) {
   <p class="tablenote">오행 표는 겉으로 드러난 글자 개수예요${saju.hourKnown ? '' : '(시주 제외)'}. 개수만으로 어떤 기운이 강하거나 약하다고 판단하지 않아요.</p>`;
 }
 
-function paraHtml(project, p) {
-  const t = textOf(project, p.id, p.text);
+function paraHtml(project, p, customer = false) {
+  let t = textOf(project, p.id, p.text);
+  // 고객용: 숨긴 "근거"·부록을 가리키는 생성 문장만 표시 때 바꾼다(편집한 문장은 그대로).
+  if (customer && p.rule === 'GUIDE-basis' && t === p.text) t = GUIDE_BASIS_CUSTOMER;
   if (!t || !t.trim()) return '';
   if (p.kind === 'check') return `<li>${esc(t)}</li>`;
   return `<p class="k-${p.kind}">${esc(t)}</p>`;
 }
 
 const NON_EVIDENCE = /생활 예시|고정 안내|사주 해석 아님|한계 안내|장 안내|계산 결과|계산 기준|알려 주신|입력 기간|선택지 구조|판매자|장 근거|마감 정보|시간 모름|4장 참조/;
-function sectionHtml(project, s) {
-  const paras = s.paras.map((p) => paraHtml(project, p)).filter(Boolean);
+function sectionHtml(project, s, customer = false) {
+  const paras = s.paras.map((p) => paraHtml(project, p, customer)).filter(Boolean);
   if (!paras.length) return '';
   if (s.box) return `<div class="box keep"><h3>${esc(s.q)}</h3><p class="boxnote">아래는 사주 해석이 아니라 누구에게나 필요한 현실 점검이에요.</p><ul>${paras.join('')}</ul></div>`;
   // 제목+첫 문단을 함께 묶고, 주의할 점과 활용 방법은 앞 문단과 떨어지지 않게 묶는다.
   const blocks = []; let cur = [];
   s.paras.forEach((p, i) => {
-    const h = paraHtml(project, p); if (!h) return;
+    const h = paraHtml(project, p, customer); if (!h) return;
     if ((p.kind === 'caution' || p.kind === 'use') && cur.length) cur.push(h);
     else { if (cur.length) blocks.push(cur); cur = [h]; }
   });
   if (cur.length) blocks.push(cur);
   // 절 끝 "근거": 다시 계산해 확인할 수 있는 사실만 보여 준다(안내·예시·입력 내용은 제외).
   const ev = [...new Set(s.paras.filter((p) => textOf(project, p.id, p.text)?.trim()).map((p) => p.evidence || ''))].filter((e) => e && !NON_EVIDENCE.test(e));
-  const note = ev.length ? `<p class="basis-note">근거 · ${ev.map(esc).join(' · ')}</p>` : '';
+  const note = ev.length && !customer ? `<p class="basis-note">근거 · ${ev.map(esc).join(' · ')}</p>` : '';
   const last = blocks.length - 1;
   return `<div class="sec"><div class="keep"><h3>${esc(s.q)}</h3>${blocks[0].join('')}${last === 0 ? note : ''}</div>${blocks.slice(1).map((b, i) => `<div class="keep">${b.join('')}${i + 1 === last ? note : ''}</div>`).join('')}</div>`;
 }
@@ -106,20 +124,26 @@ function designCss(B) {
 
 export const DENSITIES = { normal: { lh: 1.85, fs: 10.8 }, compact: { lh: 1.75, fs: 10.6 }, loose: { lh: 1.95, fs: 11 }, tight: { lh: 1.7, fs: 10.4 }, airy: { lh: 2.0, fs: 11.2 } };
 // fontHref: 글꼴 CSS 주소. 로컬 서버는 Google Fonts, 정적 배포본은 함께 넣은 글꼴(fonts/fonts.css)을 쓴다.
-export function renderReportHtml(project, { forPdf = false, density = 'normal', final = false, fontHref = null } = {}) {
+export function renderReportHtml(project, { forPdf = false, density = 'normal', final = false, fontHref = null, audience = 'customer' } = {}) {
+  const customer = audience !== 'counselor';
   const D = DENSITIES[density] || DENSITIES.normal;
   const g = project.generated; const saju = g.saju; const brandOk = isBrandSet(project);
   const brand = brandOk ? project.brand.name.trim() : DEFAULT_BRAND;
   const B = brandStyle(project.brand); const accent = B.ink;
-  const testMark = final ? '' : (brandOk ? '검토용 · 최종본 아님' : '검토용 · 브랜드 미설정');
+  const testMark = !customer ? '상담자 검토용 · 고객에게 보내지 마세요' : final ? '' : (brandOk ? '검토용 · 최종본 아님' : '검토용 · 브랜드 미설정');
   const sampleNote = [project.client?.isSample ? '가상 사례 · 실제 내담자 아님' : '', testMark].filter(Boolean).join(' · ');
   const chapters = g.report.chapters.map((ch) => {
     const manual = ch.sections.find((s) => s.manual);
     const manualText = manual ? textOf(project, manual.paras[0].id, '') : '';
     // 직접 작성 칸이 채워졌으면 "풀이를 싣지 않았어요" 안내 대신 중립 문장을 쓴다(편집한 도입이 있으면 그것을 우선).
     const defaultIntro = manual && manualText.trim() ? '알려 주신 질문에 대한 풀이예요.' : ch.intro;
-    const intro = textOf(project, `${ch.id}:intro`, defaultIntro);
-    const body = ch.sections.map((s) => sectionHtml(project, s)).join('');
+    let intro = textOf(project, `${ch.id}:intro`, defaultIntro);
+    if (customer && intro === ch.intro) intro = intro.replace(CH3_BASIS_SENTENCE, '');
+    if (customer && ch.id === 'basis') {
+      // 고객용 부록: 명식·오행표와 실제 해당 한계만. 계산 요소·계산 기준(편집 포함)은 상담자 검토에서 본다.
+      return `<section class="chapter ch-basis"><div class="keep"><h2>나의 명식</h2>${pillarTable(saju)}</div><div class="limits keep">${customerLimits(saju).map((t) => `<p>${esc(t)}</p>`).join('')}</div></section>`;
+    }
+    const body = ch.sections.map((s) => sectionHtml(project, s, customer)).join('');
     const quoted = ch.quoted ? `<div class="quoted keep">${esc(ch.quoted)}</div>` : '';
     const summary = ch.summary ? `<div class="summary keep"><b>이 장의 한 줄 정리</b>${esc(textOf(project, `${ch.id}:summary`, ch.summary))}</div>` : '';
     const table = ch.id === 'basis' ? pillarTable(saju) : '';
@@ -150,11 +174,13 @@ export function renderReportHtml(project, { forPdf = false, density = 'normal', 
   th, td { border: 1px solid #DDD6E5; padding: 2mm; text-align: center; } thead th { background: ${accent}; color: #fff; font-weight: 500; }
   tbody th { background: #F7F4FA; font-weight: 500; width: 22mm; } .gz { font-size: 15pt; font-family: 'Noto Serif KR', 'Noto Sans KR', serif; } .gz small { display: block; font-size: 8.5pt; color: #6B6478; font-family: 'Noto Sans KR'; }
   .unknown { color: #8A8296; font-size: 9.5pt; } .tablenote { font-size: 9pt; color: #6B6478; }
+  .limits p { font-size: 9pt; color: #5E5868; margin: 0 0 1.5mm; } .counselor-bar { background: #FFF3E6; color: #8A4B1E; border: 1px solid #E8C9A6; padding: 3mm 5mm; margin: 0 auto 6mm; max-width: 170mm; font-size: 9.5pt; }
   .basis-note { font-size: 8.3pt; color: #7A7484; margin: -1mm 0 3mm; } 
   .greeting, .closing { padding: 5mm 7mm; margin: 0 0 8mm; border-radius: 2mm; white-space: pre-line; } .closing { margin-top: 10mm; } .sign { text-align: right; color: var(--ink); margin: 0; } .closing-logo { display: block; max-height: 12mm; max-width: 36mm; margin: 0 auto 3mm; object-fit: contain; }
   ${designCss(B)}
   </style></head><body>
   ${coverHtml({ template: B.id, title: g.report.cover.title, subtitle: g.report.cover.subtitle, clientName: project.client.name, brand, element: GAN_EL[saju.dayMaster], sampleNote, logo: B.logo, accent: B.accent, ink: B.ink })}
+  ${customer ? '' : '<div class="counselor-bar">상담자 검토용 화면이에요. 단락별 근거와 계산 기준(편집 포함)을 보여 줘요. 고객에게는 고객용 미리보기·인쇄본을 보내 주세요.</div>'}
   ${B.greeting ? `<div class="greeting keep"><p>${esc(B.greeting)}</p><p class="sign">${esc(brand)}</p></div>` : ''}
   ${chapters.replace('<section class="chapter ch-basis">', `${closing}<section class="chapter ch-basis">`)}
   </body></html>`;

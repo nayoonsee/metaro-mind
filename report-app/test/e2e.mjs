@@ -548,6 +548,12 @@ await step('f3f6416 A 가져오기 → v1 그대로, 서버가 만든 최종 PDF
   await markReviewed(); const { path, state } = await downloadPdf('legacy-f3f6416-A-local.pdf'); assert.match(state, /최종본/);
   const flat = pdfText(path).replace(/\s+/g, ''); for (const text of Object.values(fx)) assert.ok(flat.includes(text.replace(/\s+/g, '')), text);
 });
+await step('서버 PDF는 고객용("나의 명식", 근거 각주·계산 기준 없음), 상담자 검토 보기에는 근거·계산 기준', async () => {
+  const flat = pdfText(join(ART, 'legacy-f3f6416-A-local.pdf')).replace(/\s+/g, '');
+  assert.ok(flat.includes('나의명식')); assert.ok(!flat.includes('근거·')); assert.ok(!flat.includes('명식과계산기준')); assert.ok(flat.includes('미래를확정하는자료가아니에요'));
+  await tab('preview'); await page.click('#btnCounselor'); await page.waitForFunction(() => (document.getElementById('previewFrame').getAttribute('srcdoc') || '').includes('상담자 검토용'));
+  const k = await page.locator('#previewFrame').getAttribute('srcdoc'); assert.match(k, /class="basis-note"/); assert.match(k, /명식과 계산 기준/);
+});
 
 console.log('\n[최종본 조건 · 전달 차단]');
 await step('브랜드명만 넣고 검토하지 않은 PDF는 "검토용(최종본 아님)"', async () => {

@@ -30,7 +30,7 @@ export async function call(path, body) {
       const v = await core.verifyProject(body.project);
       if (v.errors) return fail(v.status, v.errors, { stale: !!v.stale });
       if (path === '/api/review') return ok({ reviewedHash: v.reviewHash, manualDone: v.manualDone });
-      if (path === '/api/preview') return ok(renderReportHtml(v.trusted, { final: v.final, fontHref: fontHref() }));
+      if (path === '/api/preview') return ok(renderReportHtml(v.trusted, { final: v.final, fontHref: fontHref(), audience: body.audience === 'counselor' ? 'counselor' : 'customer' }));
       return ok({ html: renderReportHtml(v.trusted, { forPdf: true, final: v.final, fontHref: fontHref() }), final: v.final, blockers: v.blockers });
     }
     if (path === '/api/mail/queue') return fail(501, ['자동 이메일은 연결 준비 중이에요. PDF로 저장한 파일을 직접 첨부해 보내 주세요.']);

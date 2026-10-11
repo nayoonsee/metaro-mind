@@ -38,8 +38,8 @@ export function qaPdf(buf, headings = []) {
     const body = lines.filter((l) => !/^\d+$/.test(l) && !/^(시험본|검토용)/.test(l));
     const chars = body.join('').replace(/\s/g, '').length;
     if (i === 0) { if (lines.some((l) => /^\d+$/.test(l))) problems.push('표지에 쪽 번호가 있음'); return; }
-    // 마지막 페이지가 제목으로 시작하는 완결된 짧은 절(부록 계산 기준 등)이면 120자까지 허용한다.
-    const isLastSection = i === pages.length - 1 && headings.some((h) => h && (body[0] || '') === h.trim());
+    // 마지막 페이지가 제목으로 시작하는(또는 짧은 안내문 바로 뒤에 제목이 오는) 완결된 짧은 절(부록 계산 기준 등)이면 120자까지 허용한다.
+    const isLastSection = i === pages.length - 1 && headings.some((h) => h && body.slice(0, 4).some((l) => l === h.trim())); // 마지막 안내문 다음 바로 부록이 오는 경우 포함
     if (chars < (isLastSection ? 120 : 300)) problems.push(`p${i + 1}: 내용이 ${chars}자뿐인 페이지`);
     const first = body[0] || ''; const last = body[body.length - 1] || '';
     if (/^(활용 방법|주의할 점|이 선택을 고른다면)/.test(first)) problems.push(`p${i + 1}: 설명과 떨어진 문장으로 시작("${first.slice(0, 20)}…")`);

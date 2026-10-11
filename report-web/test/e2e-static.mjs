@@ -428,7 +428,7 @@ await step('로고: PNG는 다시 그려 넣고, SVG·2MB 초과는 거절, 인�
 await step('인사말·마지막 안내문: 공격 문자열도 글자로만 표시, 표지 다음 첫 쪽과 본문 끝(부록 앞)에 들어감', async () => {
   await tab('design'); await page.fill('#greeting', '<img src=x onerror=window.__pwned=1>안녕하세요, 상담 내용을 정리했어요.'); await page.fill('#closing', '궁금한 점은 편하게 물어봐 주세요.');
   await markReviewed(); const r = await printToPdf('greeting.pdf'); const pages = r.text.split('\f');
-  assert.match(pages[1], /안녕하세요, 상담 내용을 정리했어요/); assert.match(pages[1], /&lt;|<img src=x/); const flatAll = r.text.replace(/\s+/g, ''); assert.ok(flatAll.indexOf('궁금한점은편하게') > flatAll.indexOf('이번달해볼세가지') && flatAll.indexOf('궁금한점은편하게') < flatAll.indexOf('부록.명식과계산기준'), '마지막 안내문은 8장 뒤·부록 앞');
+  assert.match(pages[1], /안녕하세요, 상담 내용을 정리했어요/); assert.match(pages[1], /&lt;|<img src=x/); const flatAll = r.text.replace(/\s+/g, ''); assert.ok(flatAll.indexOf('궁금한점은편하게') > flatAll.indexOf('이번달해볼세가지') && flatAll.indexOf('궁금한점은편하게') < flatAll.lastIndexOf('나의명식'), '마지막 안내문은 8장 뒤·부록 앞');
   assert.equal(await page.evaluate(() => window.__pwned), undefined);
 });
 await step('브랜드 프로필: 저장 → 새 고객에 자동으로 채움, 기존 고객 프로젝트는 몰래 바뀌지 않음, "적용"을 눌렀을 때만 바뀜', async () => {
@@ -543,6 +543,63 @@ await step('실제 2da4d2e(v3) 프로젝트: 가져오기 → v3 본문 그대�
   await newClient('v4 고객'); assert.equal((await proj()).generated.generator, 'full-rule-v4'); await tab('edit');
   assert.doesNotMatch(await page.textContent('#editor'), /점 이하|점수가 낮다면|1~5점/);
 });
+
+console.log('\n[고객용/상담자 검토 분리 · 인사말 예시 · 기본 브랜드 상태]');
+{
+  const FIXD = join(HERE, '..', '..', 'report-app', 'test', 'fixtures');
+  const srcdoc = () => page.locator('#previewFrame').getAttribute('srcdoc');
+  const BASIS_EDIT = '상담자 메모: 서머타임 보정 기준을 다시 확인함';
+  const BODY_EDIT = '고객용 본문에 남아야 하는 고친 문장이에요.';
+  await step('실제 f3f6416 B(v1·옛 표준시 출생): 계산 기준·본문 편집 → 고객용은 "나의 명식"·명식/오행표·실제 해당 한계만, 근거 각주·계산 기준 숨김 / 상담자 검토에서 계산 기준 편집·근거 보임 / 생성 데이터·문단 ID 그대로', async () => {
+    await page.click('#btnNew'); await page.setInputFiles('#fileImport', join(FIXD, 'f3f6416-B.json'));
+    await page.waitForFunction(() => /JSON 백업을 불러왔어요/.test(document.getElementById('globalMsg').textContent));
+    const before = await proj(); const ids = before.generated.report.chapters.flatMap((c) => c.sections.flatMap((s) => s.paras.map((x) => x.id)));
+    const basisId = ids.find((i) => i.startsWith('basis:BASIS')); const bodyId = ids.find((i) => i.startsWith('ch1:'));
+    await tab('edit'); await page.fill(`textarea[data-id="${basisId}"]`, BASIS_EDIT); await page.fill(`textarea[data-id="${bodyId}"]`, BODY_EDIT);
+    await tab('preview'); await page.click('#btnPreview'); await page.waitForFunction(() => (document.getElementById('previewFrame').getAttribute('srcdoc') || '').includes('나의 명식'));
+    const c = await srcdoc();
+    assert.match(c, /<h2>나의 명식<\/h2>/); assert.match(c, /class="pillars"/); assert.match(c, /class="elements"/);
+    assert.doesNotMatch(c, /class="basis-note"|근거 ·|명식과 계산 기준|계산 기준<\/h3>/); assert.ok(!c.includes(BASIS_EDIT)); assert.ok(c.includes(BODY_EDIT));
+    assert.match(c, /옛 표준시·서머타임/); assert.match(c, /미래를 확정하는 자료가 아니에요/); assert.doesNotMatch(c, /출생 시간을 몰라 시주 없이/, '시간을 아는 고객에게 없는 한계는 넣지 않음');
+    await page.click('#btnCounselor'); await page.waitForFunction(() => (document.getElementById('previewFrame').getAttribute('srcdoc') || '').includes('상담자 검토용'));
+    const k = await srcdoc(); assert.ok(k.includes(BASIS_EDIT)); assert.match(k, /근거 ·/); assert.match(k, /명식과 계산 기준/); assert.ok(k.includes(BODY_EDIT));
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btnCounselorExport')]);
+    const txt = readFileSync(await dl.path(), 'utf8'); assert.ok(txt.includes(BASIS_EDIT)); // 파일명: 이 환경의 headless Chromium은 한글 이름을 "download"로 바꾸므로 내용만 확인한다.
+    const after = await proj(); assert.deepEqual(after.generated, before.generated, '생성 데이터 그대로(재생성 없음)'); assert.equal(after.edits[basisId], BASIS_EDIT);
+    await page.click('#btnSave'); await page.reload(); await page.selectOption('#projectList', after.id);
+    await page.waitForFunction(() => /프로젝트를 열었어요/.test(document.getElementById('globalMsg').textContent));
+    const re = await proj(); assert.equal(re.edits[basisId], BASIS_EDIT); assert.equal(re.edits[bodyId], BODY_EDIT); assert.equal(re.generated.generator, 'full-rule-v1');
+    await markReviewed(); const r = await printToPdf('customer-vs-counselor-B.pdf'); const flat = r.text.replace(/\s+/g, '');
+    assert.ok(flat.includes('나의명식')); assert.ok(!flat.includes(BASIS_EDIT.replace(/\s+/g, ''))); assert.ok(flat.includes(BODY_EDIT.replace(/\s+/g, ''))); assert.ok(!/근거·/.test(flat), '인쇄본도 미리보기와 같이 근거 각주 없음');
+  });
+  await step('렌더러 revision이 검토 hash에 포함: 옛 검토 확인(reviewedHash)은 무효로 처리', async () => {
+    await page.click('#btnNew'); await page.setInputFiles('#fileImport', join(FIXD, '2da4d2e-A.json'));
+    await page.waitForFunction(() => /JSON 백업을 불러왔어요/.test(document.getElementById('globalMsg').textContent));
+    const p = await proj(); assert.ok(!p.status.reviewedHash || !p.status.reviewed, '이전 렌더러로 한 검토는 다시 확인해야 함');
+    await tab('preview'); const c = await (async () => { await page.click('#btnPreview'); await page.waitForFunction(() => (document.getElementById('previewFrame').getAttribute('srcdoc') || '').includes('나의 명식')); return srcdoc(); })();
+    assert.doesNotMatch(c, /각 절 끝의/, '숨긴 근거를 가리키는 생성 안내 문장은 고객용에서 바뀜'); assert.match(c, /출생 시간을 몰라 시주 없이/);
+  });
+  await step('인사말 예시: 고르기 전에는 기존 문장 그대로 → 고르면 칸에 들어감 → 자유 수정 → 저장/복원 유지', async () => {
+    await newClient('인사말 고객'); await tab('design');
+    await page.fill('#greeting', '내가 쓴 인사말'); await page.locator('#greeting').dispatchEvent('input');
+    assert.equal((await proj()).brand.greeting, '내가 쓴 인사말');
+    assert.equal(await page.locator('#greetingExamples [data-greeting]').count(), 4); assert.equal(await page.inputValue('#greeting'), '내가 쓴 인사말');
+    await page.click('#greetingExamples [data-greeting]:nth-of-type(4)');
+    assert.equal(await page.inputValue('#greeting'), '한 번에 다 읽지 않아도 괜찮아요. 지금 가장 궁금한 이야기부터 펼쳐 보세요.');
+    await page.fill('#greeting', '한 번에 다 읽지 않아도 괜찮아요. 천천히 보세요.'); await page.locator('#greeting').dispatchEvent('input');
+    const p = await proj(); assert.equal(p.brand.greeting, '한 번에 다 읽지 않아도 괜찮아요. 천천히 보세요.');
+    await page.click('#btnSave'); await page.reload(); await page.selectOption('#projectList', p.id);
+    await page.waitForFunction(() => /프로젝트를 열었어요/.test(document.getElementById('globalMsg').textContent));
+    assert.equal(await page.inputValue('#greeting'), '한 번에 다 읽지 않아도 괜찮아요. 천천히 보세요.');
+  });
+  await step('기본 브랜드 상태: 저장 전 "없음" → 저장 후 이름·디자인 표시 → 새 고객에 자동 적용 유지', async () => {
+    await page.evaluate(() => localStorage.removeItem('reportApp.brandProfile.v1')); await page.reload(); await tab('design');
+    assert.match(await page.textContent('#profileStatus'), /저장된 기본 브랜드: 없음/);
+    await page.fill('#brandName', '별빛 연구소'); await page.locator('#brandName').dispatchEvent('input'); await page.click('#btnSaveProfile');
+    assert.match(await page.textContent('#profileStatus'), /별빛 연구소/);
+    await page.click('#btnNew'); await tab('design'); assert.equal(await page.inputValue('#brandName'), '별빛 연구소'); assert.match(await page.textContent('#profileStatus'), /별빛 연구소/);
+  });
+}
 
 await step('네트워크: 같은 사이트의 정적 파일 GET만 있고, 외부 요청·POST·고객 정보가 담긴 요청 없음', async () => {
   const bad = requests.filter((r) => !(r.url.startsWith(BASE) || r.url.startsWith('about:') || r.url.startsWith('data:') || r.url.startsWith('blob:' + BASE.slice(0, -1))));

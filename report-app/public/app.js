@@ -282,8 +282,28 @@ async function preview() {
   const r = await api('/api/preview', { project });
   if (!current(s)) return; // 그사이 프로젝트나 내용이 바뀌었으면 이전 미리보기를 보여 주지 않는다.
   $('previewFrame').srcdoc = r.ok ? r.data : '';
+  $('previewMode').textContent = '고객용 미리보기예요. 인쇄·PDF도 이 화면과 같아요. 단락별 근거와 계산 기준은 "상담자 검토 보기"에서 확인하세요.';
   if (!r.ok) msg((r.data.errors || []).join(' '));
 }
+// 상담자 검토: 단락별 근거·계산 기준(편집 포함)을 보여 준다. 고객용 미리보기·인쇄와는 따로다.
+async function counselorHtml() {
+  if (!project.generated || isStale()) { msg('먼저 현재 입력으로 리포트를 만들어 주세요.'); return null; }
+  formToProject(); const s = snapshot();
+  const r = await api('/api/preview', { project, audience: 'counselor' });
+  if (!current(s)) return null;
+  if (!r.ok) { msg((r.data.errors || []).join(' ')); return null; }
+  return r.data;
+}
+$('btnCounselor').addEventListener('click', async () => {
+  const h = await counselorHtml(); if (h == null) return;
+  $('previewFrame').srcdoc = h; $('previewMode').textContent = '지금은 상담자 검토 화면이에요(고객에게 보내지 마세요). "미리보기 새로고침"을 누르면 고객용으로 돌아가요.';
+});
+$('btnCounselorExport').addEventListener('click', async () => {
+  const h = await counselorHtml(); if (h == null) return;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([h], { type: 'text/html' }));
+  a.download = `counselor-review-${safeName(project.client.name || 'report')}.html`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  msg('상담자 검토 파일을 내려받았어요. 고객에게 보내는 파일이 아니에요.');
+});
 async function makePdf() {
   if (!project.generated || isStale()) return msg('입력이 바뀌어 이전 정보 기준 결과예요. 다시 생성한 뒤 PDF를 만들어 주세요.');
   if (busy.pdf) return;
@@ -422,6 +442,7 @@ $('versionBox').addEventListener('click', (e) => { if (e.target.id === 'btnUpgra
 const DESIGN_CHOICES = Object.entries(DESIGNS);
 const FONT_SAMPLE = '오래 비추는 불빛처럼, 마음을 둔 곳에 시간을 쓰는 사람이에요.';
 function renderDesignUi() {
+  renderProfileStatus();
   const cur = project.brand.cover; const accent = (project.brand.accent || '').toLowerCase();
   const legacy = LEGACY_DESIGNS[cur] ? `<p class="hint" style="grid-column:1/-1">이 프로젝트는 이전 표지("${esc(LEGACY_DESIGNS[cur].label)}")를 쓰고 있어요. 그대로 두거나 아래에서 새 디자인을 고를 수 있어요.</p>` : '';
   $('designCards').innerHTML = legacy + DESIGN_CHOICES.map(([id, d]) => `<button type="button" class="card ${id === cur ? 'on' : ''}" data-design="${id}" aria-pressed="${id === cur}">
@@ -467,9 +488,22 @@ $('btnLogoRemove').addEventListener('click', () => { delete project.brand.logo; 
 
 // 브랜드 프로필: 새 고객에 자동으로 채운다. 이미 있는 고객 프로젝트는 "적용"을 눌렀을 때만 바꾼다.
 function brandOnly() { formToProject(); const b = structuredClone(project.brand); return b; }
+// 저장된 기본 브랜드 상태를 보여 준다(새 고객에 자동으로 채워지는 값).
+function renderProfileStatus() {
+  const b = loadProfile(); const el = $('profileStatus'); if (!el) return;
+  if (!b) { el.innerHTML = '<b>저장된 기본 브랜드: 없음</b> · 새 고객은 빈 브랜드로 시작해요. 아래 "내 브랜드 프로필로 저장"을 누르면 다음 고객부터 자동으로 채워져요.'; return; }
+  const D = DESIGNS[b.cover] || LEGACY_DESIGNS[b.cover];
+  const parts = [`브랜드명 "${esc(b.name || '(없음)')}"`, `디자인 ${esc(D ? D.label : b.cover)}`, b.logo ? '로고 있음' : '로고 없음', b.greeting ? '인사말 있음' : '인사말 없음', b.closing ? '마지막 안내문 있음' : '마지막 안내문 없음'];
+  el.innerHTML = `<b>저장된 기본 브랜드</b> · ${parts.join(' · ')}<br><span class="hint">새 고객을 시작하면 이 설정이 자동으로 채워져요. 이미 만든 고객은 "이 고객에 적용"을 눌러야 바뀌어요.</span>`;
+}
+$('greetingExamples').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-greeting]'); if (!b) return;
+  // 사용자가 직접 고른 때만 칸을 바꾼다. 넣은 뒤에는 칸에서 자유롭게 고칠 수 있다.
+  $('greeting').value = b.dataset.greeting; onDesignChange(); $('greeting').focus(); msg('인사말 예시를 넣었어요. 칸에서 자유롭게 고칠 수 있어요.');
+});
 $('btnSaveProfile').addEventListener('click', () => {
   const b = brandOnly(); const errs = validateBrand(b); if (errs.length) return msg(`브랜드 프로필로 저장하지 못했어요: ${errs[0]}`);
-  try { localStorage.setItem(PROFILE, JSON.stringify(b)); msg('내 브랜드 프로필로 저장했어요. 새 고객을 시작하면 자동으로 채워져요(이 브라우저에만 저장).'); }
+  try { localStorage.setItem(PROFILE, JSON.stringify(b)); renderProfileStatus(); msg('내 브랜드 프로필로 저장했어요. 새 고객을 시작하면 자동으로 채워져요(이 브라우저에만 저장).'); }
   catch { msg('브라우저 저장 공간이 부족해 프로필을 저장하지 못했어요. "브랜드 프로필 백업"으로 파일을 받아 두세요.'); }
 });
 $('btnApplyProfile').addEventListener('click', () => {
@@ -486,7 +520,7 @@ $('profileImport').addEventListener('change', async (e) => {
   const b = j && j.type === 'reportApp.brandProfile' ? j.brand : null; const errs = b ? validateBrand(b) : ['형식 오류'];
   if (errs.length) return msg(`불러올 수 없는 브랜드 프로필이에요: ${errs[0]}`);
   try { localStorage.setItem(PROFILE, JSON.stringify(b)); } catch { return msg('브라우저 저장 공간이 부족해 프로필을 저장하지 못했어요.'); }
-  msg('브랜드 프로필을 불러왔어요. 지금 고객에 쓰려면 "이 고객에 적용"을 누르세요.');
+  renderProfileStatus(); msg('브랜드 프로필을 불러왔어요. 지금 고객에 쓰려면 "이 고객에 적용"을 누르세요.');
 });
 
 // ── 생년월일 빠른 입력 ──

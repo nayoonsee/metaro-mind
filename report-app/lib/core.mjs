@@ -8,7 +8,7 @@ import { generateFullReport as generateV1 } from '../../report/chapters/v1/full.
 import { generateFullReport as generateV2 } from '../../report/chapters/v2/full.mjs';
 import { generateFullReport as generateV3 } from '../../report/chapters/v3/full.mjs';
 import { validateInput } from './validate.mjs';
-import { isBrandSet } from './render.mjs';
+import { isBrandSet, RENDER_REV } from './render.mjs';
 import { validateProjectSchema, EDIT_ID_RE } from '../public/schema.mjs';
 
 // 생성기 버전. 프로젝트는 만든 버전으로 계속 검증·출력하고(편집 문장이 같은 자리에 남도록),
@@ -28,7 +28,7 @@ export function createCore(sha) {
     const edits = Object.fromEntries(Object.entries(project.edits || {}).sort(([a], [b]) => a.localeCompare(b)));
     const b = project.brand || {};
     // 디자인·글꼴·로고·인사말이 바뀌어도 검토 완료가 풀리도록 브랜드 설정 전체를 넣는다.
-    return sha(JSON.stringify({ fp, edits, brand: { name: (b.name || '').trim(), accent: b.accent, cover: b.cover, bodyFont: b.bodyFont || '', headFont: b.headFont || '', logo: b.logo || '', greeting: (b.greeting || '').trim(), closing: (b.closing || '').trim() } }));
+    return sha(JSON.stringify({ fp, edits, render: RENDER_REV, brand: { name: (b.name || '').trim(), accent: b.accent, cover: b.cover, bodyFont: b.bodyFont || '', headFont: b.headFont || '', logo: b.logo || '', greeting: (b.greeting || '').trim(), closing: (b.closing || '').trim() } }));
   };
   async function generateFromInput(client, concern, generator = GENERATOR) {
     if (!isKnownGenerator(generator)) return { errors: ['알 수 없는 생성 버전이에요.'] };

@@ -47,7 +47,7 @@ const core = createCore(sha);
 export const { fingerprintOf, reviewHashOf, verifyProject } = core;
 const { generateFromInput } = core;
 
-const headingsOf = (report) => report.chapters.flatMap((c) => [c.title, ...c.sections.map((s) => s.q)]);
+const headingsOf = (report) => ['나의 명식', ...report.chapters.flatMap((c) => [c.title, ...c.sections.map((s) => s.q)])]; // 고객용 부록 제목은 렌더러가 붙인다
 // 페이지 나눔 검사에 걸리면 줄 간격을 조금씩 바꿔 다시 렌더링한다(끝 페이지가 몇 줄만 남는 것을 막기 위해).
 async function makePdf(trusted, final) {
   let last = null;
@@ -83,7 +83,7 @@ export function createServer({ port }) {
         if (url.pathname === '/api/review') return send(res, 200, { reviewedHash: v.reviewHash, manualDone: v.manualDone });
         if (url.pathname === '/api/preview') {
           res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', ...SECURITY_HEADERS });
-          return res.end(renderReportHtml(v.trusted, { final: v.final }));
+          return res.end(renderReportHtml(v.trusted, { final: v.final, audience: body.audience === 'counselor' ? 'counselor' : 'customer' }));
         }
         if (url.pathname === '/api/pdf') {
           const r = await makePdf(v.trusted, v.final);
