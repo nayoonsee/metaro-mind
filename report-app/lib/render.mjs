@@ -81,8 +81,8 @@ function designCss(B) {
       .intro { background: #F7F4FA; } .summary { background: #F2EDF7; } .summary b { color: var(--ink); } .greeting, .closing { background: #F7F4FA; }
       thead th { background: var(--ink); color: #fff; } tbody th { background: #F7F4FA; }`,
     paper: `@page { background: #FBF6EC; } html, body { background: #FBF6EC; } body { color: #33291F; }
-      h2 { color: var(--ink); text-align: center; border: 0; padding: 0 0 1mm; } h2::after { content: '◆'; display: block; font-size: 7pt; letter-spacing: 2mm; color: var(--accent); margin-top: 2mm; }
-      h3 { color: var(--ink); } h3::before { content: '— '; color: var(--accent); }
+      h2 { color: var(--ink); text-align: center; border: 0; padding: 0 0 1mm; } h2::after { content: ''; display: block; width: 2.2mm; height: 2.2mm; margin: 2.5mm auto 0; background: var(--accent); transform: rotate(45deg); }
+      h3 { color: var(--ink); } h3::before { content: ''; display: inline-block; width: 4mm; height: 0.4mm; background: var(--accent); vertical-align: middle; margin-right: 2mm; }
       .intro { background: #F3EAD8; border-radius: 0; } .summary { background: #F3EAD8; border-radius: 0; border-top: 0.4mm solid var(--accent); } .summary b { color: var(--ink); }
       .k-example { border-left: 0; border-top: 0.3mm dashed #CDB894; border-bottom: 0.3mm dashed #CDB894; padding: 2mm 0; } .box, .quoted { background: #F3EAD8; border: 0.3mm dashed #BFA67A; border-radius: 0; }
       .greeting, .closing { background: none; border: 0.6mm double var(--accent); border-width: 1.4mm; border-style: double; text-align: center; }
@@ -93,7 +93,7 @@ function designCss(B) {
       .k-example { border-left: 0.8mm solid #9AA5A0; } .box, .quoted { background: #F4F1EA; border: 0; border-left: 1.2mm solid var(--accent); border-radius: 0; }
       .greeting, .closing { background: #EEF0EE; border-left: 1.2mm solid var(--accent); }
       thead th { background: var(--ink); color: #fff; } tbody tr:nth-child(even) td { background: #F4F5F3; } tbody th { background: #EEF0EE; }`,
-    nature: `h2 { color: var(--ink); border: 0; background: #EAF2EC; border-radius: 6mm; padding: 2.5mm 6mm; } h3 { color: var(--ink); } h3::before { content: '● '; font-size: 7pt; color: var(--accent); vertical-align: 1.5pt; }
+    nature: `h2 { color: var(--ink); border: 0; background: #EAF2EC; border-radius: 6mm; padding: 2.5mm 6mm; } h3 { color: var(--ink); } h3::before { content: ''; display: inline-block; width: 2mm; height: 2mm; border-radius: 50%; background: var(--accent); vertical-align: middle; margin-right: 2mm; }
       .intro { background: #F1F6F2; border-radius: 4mm; } .summary { background: #EAF2EC; border-radius: 4mm; } .summary b { color: var(--ink); }
       .k-example { border-left: 0; background: #F7FAF7; border-radius: 3mm; padding: 2mm 4mm; } .box, .quoted { background: #F7F3E9; border: 0; border-radius: 4mm; }
       .greeting, .closing { background: #F1F6F2; border-radius: 5mm; }
@@ -127,14 +127,14 @@ export function renderReportHtml(project, { forPdf = false, density = 'normal', 
   }).join('');
   const fonts = fontHref || 'https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600&family=Cormorant+Garamond:ital,wght@0,500;1,400&display=swap';
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><title>${esc(brand)} 사주 리포트</title><link href="${fonts}" rel="stylesheet"><style>
-  @page { size: A4; margin: 20mm 20mm 22mm; @bottom-center { content: counter(page); font-size: 8pt; color: #8a8296; } ${testMark ? `@top-right { content: "${testMark}"; font-size: 7.5pt; color: #b0563a; }` : ''} }
+  @page { size: A4; margin: 20mm 20mm 22mm; @bottom-center { content: counter(page); font-family: 'Noto Sans KR', sans-serif; font-size: 8pt; color: #8a8296; } ${testMark ? `@top-right { content: "${testMark}"; font-family: 'Noto Sans KR', sans-serif; font-size: 7.5pt; color: #b0563a; }` : ''} }
   @page :first { margin: 0; @bottom-center { content: none; } @top-right { content: none; } }
   body { margin: 0; background: #fff; color: #24212B; font-family: 'Noto Sans KR', sans-serif; font-size: ${D.fs}pt; line-height: ${D.lh}; word-break: keep-all; orphans: 3; widows: 3; }
   ${forPdf ? '' : '.cover{box-shadow:0 0 0 1px #ddd;margin-bottom:16px} body{padding:0 0 40px} .chapter,.greeting,.closing{max-width:170mm;margin-left:auto;margin-right:auto} .chapter{padding:0 8mm} @media (max-width:820px){html{zoom:.72}} @media (max-width:620px){html{zoom:.55}} @media (max-width:460px){html{zoom:.42}}'}
   ${COVER_CSS}
-  h2 { font-family: 'Gowun Batang', serif; font-size: 19pt; color: ${accent}; margin: 10mm 0 4mm; padding-bottom: 3mm; border-bottom: 1px solid #D9CFE3; break-after: avoid; }
+  h2 { font-family: 'Gowun Batang', 'Noto Sans KR', serif; font-size: 19pt; color: ${accent}; margin: 10mm 0 4mm; padding-bottom: 3mm; border-bottom: 1px solid #D9CFE3; break-after: avoid; }
   .chapter:first-of-type h2 { margin-top: 0; } .newpage { break-before: page; }
-  h3 { font-family: 'Noto Serif KR', serif; font-size: 12.5pt; color: ${accent}; margin: 7mm 0 2.5mm; break-after: avoid; }
+  h3 { font-family: 'Noto Serif KR', 'Noto Sans KR', serif; font-size: 12.5pt; color: ${accent}; margin: 7mm 0 2.5mm; break-after: avoid; }
   p { margin: 0 0 3mm; } .keep { break-inside: avoid; }
   .intro { color: #4E4858; background: #F7F4FA; padding: 3.5mm 5mm; border-radius: 2mm; }
   .k-example { color: #4E4858; padding-left: 4mm; border-left: 2px solid #E3C595; }
@@ -144,7 +144,7 @@ export function renderReportHtml(project, { forPdf = false, density = 'normal', 
   .summary { margin-top: 6mm; padding: 4mm 5mm; background: #F2EDF7; border-radius: 2mm; } .summary b { display: block; color: ${accent}; margin-bottom: 1mm; }
   table { width: 100%; border-collapse: collapse; break-inside: avoid; margin: 3mm 0 3mm; }
   th, td { border: 1px solid #DDD6E5; padding: 2mm; text-align: center; } thead th { background: ${accent}; color: #fff; font-weight: 500; }
-  tbody th { background: #F7F4FA; font-weight: 500; width: 22mm; } .gz { font-size: 15pt; font-family: 'Noto Serif KR', serif; } .gz small { display: block; font-size: 8.5pt; color: #6B6478; font-family: 'Noto Sans KR'; }
+  tbody th { background: #F7F4FA; font-weight: 500; width: 22mm; } .gz { font-size: 15pt; font-family: 'Noto Serif KR', 'Noto Sans KR', serif; } .gz small { display: block; font-size: 8.5pt; color: #6B6478; font-family: 'Noto Sans KR'; }
   .unknown { color: #8A8296; font-size: 9.5pt; } .tablenote { font-size: 9pt; color: #6B6478; }
   .basis-note { font-size: 8.3pt; color: #7A7484; margin: -1mm 0 3mm; } 
   .greeting, .closing { padding: 5mm 7mm; margin: 0 0 8mm; border-radius: 2mm; white-space: pre-line; } .closing { margin-top: 10mm; } .sign { text-align: right; color: var(--ink); margin: 0; } .closing-logo { display: block; max-height: 12mm; max-width: 36mm; margin: 0 auto 3mm; object-fit: contain; }

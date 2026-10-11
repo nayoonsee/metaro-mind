@@ -63,7 +63,14 @@ async function printToPdf(file) {
   const info = await page.evaluate(() => window.__lastPrint);
   const html = await page.evaluate(() => document.getElementById('printFrame').srcdoc);
   const p2 = await ctx.newPage(); await p2.route(BASE + '__print.html', (rt) => rt.fulfill({ contentType: 'text/html; charset=utf-8', body: html })); await p2.goto(BASE + '__print.html', { waitUntil: 'load' });
-  await p2.evaluate(() => document.fonts.ready);
+  // 앱의 인쇄 준비와 같은 방식으로 문서에 쓰인 글자에 필요한 글꼴 조각을 모두 불러온 뒤 인쇄한다.
+  await p2.evaluate(async () => {
+    const text = [...new Set(document.body.innerText)].join('');
+    const faces = [['Noto Sans KR', [400, 500, 700]], ['Noto Serif KR', [600]], ['Gowun Batang', [400, 700]], ['Nanum Myeongjo', [400, 800]], ['Cormorant Garamond', [500]]];
+    await Promise.all(faces.flatMap(([fam, ws]) => ws.map((w) => document.fonts.load(`${w} 16px "${fam}"`, text).catch(() => []))));
+    await Promise.all(['normal', 'italic'].map((st) => document.fonts.load(`${st} 400 16px "Cormorant Garamond"`, text).catch(() => [])));
+    await document.fonts.ready;
+  });
   const pdf = join(ART, file); await p2.pdf({ path: pdf, preferCSSPageSize: true, printBackground: true }); await p2.close();
   return { pdf, info, text: execFileSync('pdftotext', ['-layout', pdf, '-'], { encoding: 'utf8' }) };
 }
@@ -186,14 +193,6 @@ await step('JSON 백업 파일 이름에 한글 고객명 사용', async () => {
 await step('시작 안내 페이지가 열리고 프로그램으로 연결됨', async () => {
   const g = await ctx.newPage(); await g.goto(BASE + 'guide.html'); assert.match(await g.textContent('h1'), /시작 안내/);
   assert.match(await g.textContent('body'), /JSON 백업/); assert.match(await g.textContent('body'), /연결 준비 중/); await g.screenshot({ path: join(ART, 'guide.png'), fullPage: true }); await g.close();
-});
-await step('네트워크: 같은 사이트의 정적 파일 GET만 있고, 외부 요청·POST·고객 정보가 담긴 요청 없음', async () => {
-  const bad = requests.filter((r) => !(r.url.startsWith(BASE) || r.url.startsWith('about:') || r.url.startsWith('data:') || r.url.startsWith('blob:' + BASE.slice(0, -1))));
-  assert.deepEqual(bad, []);
-  assert.deepEqual(requests.filter((r) => r.method !== 'GET'), []);
-  assert.deepEqual(requests.filter((r) => /%EA%B0%80%EC%83%81|가상|1996|client|name=/i.test(r.url)), []);
-  const kinds = [...new Set(requests.filter((r) => r.url.startsWith(BASE)).map((r) => new URL(r.url).pathname.replace(/files\/.*/, 'files/*')))];
-  writeFileSync(join(ART, 'network-log.json'), JSON.stringify({ total: requests.length, distinctPaths: kinds, nonGet: 0, external: 0 }, null, 2));
 });
 const OUTPUT = async (file) => (await printToPdf(file)).text;
 console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]');
@@ -327,6 +326,127 @@ console.log('\n[가져오기·저장본 열기: 생성 본문 대조·정규화]
   rmSync(bk, { force: true });
 }
 
+console.log('\n[디자인·브랜드·화면 (v2)]');
+const DESIGN_IDS = ['plain', 'mystic', 'paper', 'study', 'nature'];
+const HEAD_FONT_PDF = { plain: 'NotoSansKR', mystic: 'GowunBatang', paper: 'NanumMyeongjo', study: 'NotoSerifKR', nature: 'GowunBatang' };
+async function newClient(name, concern = CASES[0].concern, birth = CASES[0].birth) { await page.click('#btnNew'); await fillInput({ brand: '달빛 상담소', name, birth: { leapMonth: false, hourUnknown: false, ...birth }, concern }); await generate(); }
+await step('디자인을 바꾸면 고친 문장은 그대로, 검토 완료만 풀림(입력 stale 아님)', async () => {
+  await newClient('디자인 전환 고객');
+  const ta = page.locator('#editor .chap').nth(4).locator('textarea').nth(1); const id = await ta.getAttribute('data-id'); await ta.fill('디자인을 바꿔도 남아야 하는 문장');
+  await markReviewed();
+  for (let i = 0; i < 4; i++) await page.click(`nav button[data-tab=design]`).then(() => page.click('[data-design=nature]')); // 반복 클릭
+  await tab('design'); await page.click('[data-design=study]');
+  const p = await proj(); assert.equal(p.brand.cover, 'study'); assert.equal(p.status.reviewedHash, null); assert.equal(p.edits[id], '디자인을 바꿔도 남아야 하는 문장');
+  await tab('preview'); assert.ok(!(await page.isDisabled('#btnPdf'))); assert.ok(!(await page.isVisible('#stalePreview')));
+  await markReviewed(); const r = await printToPdf('design-switch.pdf'); assert.match(r.text.replace(/\s+/g, ''), /디자인을바꿔도남아야하는문장/);
+});
+await step('팔레트·색 선택·글꼴 카드 → 표지와 본문에 반영', async () => {
+  await tab('design'); await page.click('[data-design=paper]'); await page.click('#paletteChips [data-color="#A4472E"]');
+  await page.click('#bodyFontCards [data-body=noto-sans]'); await page.click('#headFontCards [data-head=noto-serif]');
+  const b = (await proj()).brand; assert.equal(b.accent, '#A4472E'); assert.equal(b.bodyFont, 'noto-sans'); assert.equal(b.headFont, 'noto-serif');
+  await tab('preview'); await page.waitForFunction(() => (document.getElementById('previewFrame').getAttribute('srcdoc') || '').includes('cover-paper'));
+  const html = await page.locator('#previewFrame').getAttribute('srcdoc'); assert.match(html, /--accent: #A4472E/); assert.match(html, /--head: 'Noto Serif KR'/); assert.match(html, /--body: 'Noto Sans KR'/);
+});
+const logoPng = join(HERE, '..', '..', 'report-app', 'public', 'design-plain.png');
+await step('로고: PNG는 다시 그려 넣고, SVG·2MB 초과는 거절, 인쇄 문서 표지에 들어감', async () => {
+  await tab('design');
+  const svg = join(ART, 'logo.svg'); writeFileSync(svg, '<svg xmlns="http://www.w3.org/2000/svg"><script>window.__pwned=1</script></svg>');
+  await page.setInputFiles('#logoFile', svg); await page.waitForFunction(() => /PNG·JPEG·WEBP 이미지만/.test(document.getElementById('globalMsg').textContent)); rmSync(svg);
+  const big = join(ART, 'big.png'); writeFileSync(big, Buffer.alloc(2.5 * 1024 * 1024, 1)); await page.setInputFiles('#logoFile', big);
+  await page.waitForFunction(() => /너무 커요/.test(document.getElementById('globalMsg').textContent)); rmSync(big);
+  assert.ok(!(await proj()).brand.logo);
+  await page.setInputFiles('#logoFile', logoPng); await page.waitForFunction(() => /로고를 넣었어요/.test(document.getElementById('globalMsg').textContent));
+  const logo = (await proj()).brand.logo; assert.match(logo, /^data:image\/(png|jpeg);base64,/); assert.ok(logo.length <= 400000);
+  assert.ok(await page.isVisible('#logoPreview'));
+  await markReviewed(); const r = await printToPdf('logo.pdf'); assert.ok(r.info.final);
+  const html = await page.evaluate(() => document.getElementById('printFrame').srcdoc); assert.match(html, /<img class="cpa-logo" src="data:image\/(png|jpeg);base64,/);
+  assert.equal(await page.evaluate(() => window.__pwned), undefined);
+});
+await step('인사말·마지막 안내문: 공격 문자열도 글자로만 표시, 첫 쪽·마지막 쪽에 들어감', async () => {
+  await tab('design'); await page.fill('#greeting', '<img src=x onerror=window.__pwned=1>안녕하세요, 상담 내용을 정리했어요.'); await page.fill('#closing', '궁금한 점은 편하게 물어봐 주세요.');
+  await markReviewed(); const r = await printToPdf('greeting.pdf'); const pages = r.text.split('\f');
+  assert.match(pages[1], /안녕하세요, 상담 내용을 정리했어요/); assert.match(pages[1], /&lt;|<img src=x/); assert.match(pages.filter((x) => x.trim()).at(-1), /궁금한 점은 편하게/);
+  assert.equal(await page.evaluate(() => window.__pwned), undefined);
+});
+await step('브랜드 프로필: 저장 → 새 고객에 자동으로 채움, 기존 고객 프로젝트는 몰래 바뀌지 않음, "적용"을 눌렀을 때만 바뀜', async () => {
+  await newClient('기존 고객'); await tab('design'); await page.click('[data-design=plain]'); await page.click('#btnSave');
+  const oldId = (await proj()).id; const oldBrand = (await proj()).brand;
+  await newClient('프로필 고객'); await tab('design'); await page.fill('#brandName', '별빛 리포트'); await page.click('[data-design=nature]'); await page.fill('#greeting', '프로필 인사말');
+  await page.click('#btnSaveProfile'); await page.waitForFunction(() => /브랜드 프로필로 저장했어요/.test(document.getElementById('globalMsg').textContent));
+  await page.click('#btnNew'); const nb = (await proj()).brand; assert.equal(nb.name, '별빛 리포트'); assert.equal(nb.cover, 'nature'); assert.equal(nb.greeting, '프로필 인사말');
+  const stored = await page.evaluate((id) => JSON.parse(localStorage.getItem('reportApp.projects.v1'))[id], oldId);
+  assert.deepEqual(stored.brand, oldBrand, '기존 프로젝트 브랜드 유지');
+  await page.selectOption('#projectList', oldId); await page.waitForFunction(() => document.getElementById('clientName').value === '기존 고객');
+  assert.equal((await proj()).brand.cover, 'plain');
+  await tab('design'); await page.click('#btnApplyProfile'); const ab = (await proj()).brand; assert.equal(ab.name, '별빛 리포트'); assert.equal((await proj()).status.reviewedHash, null);
+  const dl = page.waitForEvent('download'); await page.click('#btnExportProfile'); const pf = join(ART, 'profile.json'); await (await dl).saveAs(pf);
+  const pj = JSON.parse(readFileSync(pf, 'utf8')); assert.equal(pj.type, 'reportApp.brandProfile'); assert.equal(pj.brand.name, '별빛 리포트');
+  pj.brand.cover = '"><script>'; writeFileSync(pf, JSON.stringify(pj)); await page.setInputFiles('#profileImport', pf);
+  await page.waitForFunction(() => /불러올 수 없는 브랜드 프로필/.test(document.getElementById('globalMsg').textContent)); rmSync(pf);
+});
+await step('이전 버전 프로젝트(bright 표지·v1 본문·옛 문단 편집) 가져오기 → 현재 본문으로 정규화, 편집 보존, 이전 표지 그대로 출력', async () => {
+  await newClient('이전 버전 고객'); const ta = page.locator('#editor .chap').nth(2).locator('textarea').nth(1); const keepId = await ta.getAttribute('data-id'); await ta.fill('이전 버전에서 고친 문장');
+  const dl = page.waitForEvent('download'); await page.click('#btnExport'); const f = join(ART, 'legacy.json'); await (await dl).saveAs(f);
+  const j = JSON.parse(readFileSync(f, 'utf8'));
+  j.brand = { name: '달빛 상담소', accent: '#B4583A', cover: 'bright' }; j.generated.generator = 'full-rule-v1'; j.generated.fingerprint = 'a'.repeat(64);
+  j.edits['ch3:WORK-재성:meaning:1'] = '[옛 문단 편집] 이전 3장에 했던 수정'; writeFileSync(f, JSON.stringify(j));
+  await page.click('#btnNew'); await page.setInputFiles('#fileImport', f); rmSync(f);
+  await page.waitForFunction(() => /JSON 백업을 불러왔어요/.test(document.getElementById('globalMsg').textContent));
+  assert.match(await page.textContent('#globalMsg'), /다시 검토|보존된 편집본/);
+  await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${keepId}"]`), '이전 버전에서 고친 문장'); assert.match(await page.textContent('#orphanBox'), /\[옛 문단 편집\]/);
+  await tab('design'); assert.match(await page.textContent('#designCards'), /이전 표지/);
+  await markReviewed(); const r = await printToPdf('legacy-bright.pdf'); assert.ok(r.info.final);
+  assert.match(await page.evaluate(() => document.getElementById('printFrame').srcdoc), /cover-bright/);
+});
+await step('디자인 5종 × 실제 인쇄: 한글·제목 글꼴 포함, 긴 고객 이름(30자) 표지에 온전히, 표·검토용 표시', async () => {
+  const longName = '가나다라마바사아자차카타파하가나다라마바사아자차카타파하가나';
+  await newClient(longName, CASES[1].concern, CASES[1].birth);
+  for (const id of DESIGN_IDS) {
+    await tab('design'); await page.click(`[data-design=${id}]`);
+    if (id === 'mystic') { const r0 = await printToPdf(`design-${id}-unreviewed.pdf`); assert.match(r0.text, /검토용/); }
+    await markReviewed(); const r = await printToPdf(`design-${id}.pdf`);
+    const fonts = execFileSync('pdffonts', [r.pdf], { encoding: 'utf8' }).replace(/[- ]/g, '');
+    assert.match(fonts, new RegExp(HEAD_FONT_PDF[id]), `${id} 제목 글꼴`); assert.doesNotMatch(fonts, /WenQuanYi|DejaVu|Liberation/, `${id} 대체 글꼴`);
+    const pages = r.text.split('\f'); assert.ok(pages[0].replace(/\s+/g, '').includes(longName), `${id} 긴 이름`);
+    const flat = r.text.replace(/\s+/g, ''); assert.match(flat, /천간십성/, `${id} 명식표`); assert.match(flat, /나\(일간\)/, `${id} 명식표 십성 행`); assert.match(flat, /이번달해볼세가지[^]*?:/, `${id} 마지막 장 본문`); assert.match(flat, /한눈에보는핵심/, `${id} 핵심 요약`); assert.doesNotMatch(r.text, /검토용/, `${id} 최종본`);
+    execFileSync('pdftoppm', ['-r', '50', '-png', '-f', '1', '-l', '3', r.pdf, join(ART, `design-${id}`)]);
+  }
+});
+await step('모바일(390px): 단계마다 가로 넘침 없음, 버튼 잘림 없음, 편집기 안쪽 스크롤 없음', async () => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  try {
+    for (const tb of ['input', 'design', 'edit', 'preview']) {
+      await tab(tb); await page.waitForTimeout(200);
+      const r = await page.evaluate(() => {
+        const W = document.documentElement.clientWidth; const over = document.documentElement.scrollWidth - W;
+        const clipped = [...document.querySelectorAll('button, label.ghost, .chip')].filter((b) => b.offsetParent && b.getBoundingClientRect().right > W + 1).map((b) => b.textContent.trim().slice(0, 20));
+        const inner = [...document.querySelectorAll('#editor .chap, #tab-design fieldset')].filter((el) => el.scrollHeight > el.clientHeight + 2 && getComputedStyle(el).overflowY !== 'visible').length;
+        return { over, clipped, inner };
+      });
+      assert.ok(r.over <= 0, `${tb} 가로 넘침 ${r.over}px`); assert.deepEqual(r.clipped, [], `${tb} 잘린 버튼`); assert.equal(r.inner, 0, `${tb} 안쪽 스크롤`);
+      await page.screenshot({ path: join(ART, `mobile-${tb}.png`), fullPage: false });
+    }
+  } finally { await page.setViewportSize({ width: 1280, height: 900 }); }
+});
+await step('새로고침 → "마지막 작업 이어서 하기"로 같은 프로젝트·편집 복구, 뒤로 가기 단계 이동', async () => {
+  await newClient('새로고침 고객'); const ta = page.locator('#editor .chap').nth(2).locator('textarea').nth(1); const id = await ta.getAttribute('data-id'); await ta.fill('새로고침 전 편집');
+  await page.click('#btnSave'); await page.reload();
+  await page.waitForSelector('#resumeBox', { state: 'visible' }); assert.match(await page.textContent('#resumeText'), /새로고침 고객/);
+  await page.click('#btnResume'); await page.waitForFunction(() => document.getElementById('clientName').value === '새로고침 고객');
+  await tab('edit'); assert.equal(await page.inputValue(`textarea[data-id="${id}"]`), '새로고침 전 편집');
+  await tab('preview'); await tab('design'); await tab('input'); assert.equal(await page.inputValue('#clientName'), '새로고침 고객');
+});
+await step('화면 캡처: 정보 입력·디자인·편집·확인 단계', async () => {
+  for (const tb of ['input', 'design', 'edit', 'preview']) { await tab(tb); await page.waitForTimeout(300); await page.screenshot({ path: join(ART, `ui-${tb}.png`), fullPage: tb !== 'edit' }); }
+});
+await step('네트워크: 같은 사이트의 정적 파일 GET만 있고, 외부 요청·POST·고객 정보가 담긴 요청 없음', async () => {
+  const bad = requests.filter((r) => !(r.url.startsWith(BASE) || r.url.startsWith('about:') || r.url.startsWith('data:') || r.url.startsWith('blob:' + BASE.slice(0, -1))));
+  assert.deepEqual(bad, []);
+  assert.deepEqual(requests.filter((r) => r.method !== 'GET'), []);
+  assert.deepEqual(requests.filter((r) => /%EA%B0%80%EC%83%81|가상|1996|client|name=/i.test(r.url)), []);
+  const kinds = [...new Set(requests.filter((r) => r.url.startsWith(BASE)).map((r) => new URL(r.url).pathname.replace(/files\/.*/, 'files/*')))];
+  writeFileSync(join(ART, 'network-log.json'), JSON.stringify({ total: requests.length, distinctPaths: kinds, nonGet: 0, external: 0 }, null, 2));
+});
 await step('브라우저 콘솔 오류 없음', async () => assert.deepEqual(errors, []));
 
 await browser.close(); srv.close();

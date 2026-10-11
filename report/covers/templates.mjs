@@ -111,20 +111,20 @@ export const COVER_CSS = `
   .cover-mystic { background: radial-gradient(120% 80% at 50% 38%, #3A2E4A 0%, #1B1626 55%, #0F0C16 100%); color: #F3EEF7; }
   .cm-note, .cb-note { position: absolute; top: 6mm; right: 8mm; font-size: 8.5pt; padding: 1.5mm 3mm; border-radius: 2mm; }
   .cm-note { background: rgba(255,255,255,.12); color: #F3EEF7; } .cb-note { background: #E9DFD0; color: #4A4038; }
-  .cm-kicker { position: absolute; top: 26mm; width: 100%; text-align: center; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 13pt; letter-spacing: .22em; color: #D3C4E0; }
+  .cm-kicker { position: absolute; top: 26mm; width: 100%; text-align: center; font-family: 'Cormorant Garamond', 'Noto Sans KR', serif; font-style: italic; font-size: 13pt; letter-spacing: .22em; color: #D3C4E0; }
   .cm-art { position: absolute; top: 48mm; left: 50%; transform: translateX(-50%); width: 104mm; height: 104mm; }
-  .cm-title { position: absolute; top: 166mm; width: 100%; text-align: center; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 32pt; line-height: 1.3; margin: 0; color: #FFFFFF; }
+  .cm-title { position: absolute; top: 166mm; width: 100%; text-align: center; font-family: 'Gowun Batang', 'Noto Sans KR', serif; font-weight: 700; font-size: 32pt; line-height: 1.3; margin: 0; color: #FFFFFF; }
   .cm-sub { position: absolute; top: 196mm; left: 20mm; right: 20mm; text-align: center; font-family: 'Noto Sans KR', sans-serif; font-size: 12.5pt; color: #E6DCEE; }
   .cm-divider { position: absolute; top: 216mm; left: 50%; transform: translateX(-50%); width: 44mm; height: 1px; background: linear-gradient(90deg, transparent, #E3C595, transparent); }
-  .cm-client { position: absolute; top: 224mm; width: 100%; text-align: center; font-family: 'Nanum Myeongjo', serif; font-size: 17pt; letter-spacing: .06em; color: #FFFFFF; }
+  .cm-client { position: absolute; top: 224mm; width: 100%; text-align: center; font-family: 'Nanum Myeongjo', 'Noto Sans KR', serif; font-size: 17pt; letter-spacing: .06em; color: #FFFFFF; }
   .cm-brand { position: absolute; bottom: 20mm; width: 100%; text-align: center; font-family: 'Cormorant Garamond', 'Noto Sans KR', serif; font-size: 14pt; font-weight: 500; letter-spacing: .3em; color: #E8CB9A; }
   .cover-bright { background: #F6F1E8; color: #2B2622; }
   .cb-series { position: absolute; top: 24mm; left: 22mm; font-size: 9.5pt; letter-spacing: .3em; color: #6E6458; font-family: 'Noto Sans KR'; }
   .cb-art { position: absolute; top: 48mm; left: 50%; transform: translateX(-50%); width: 110mm; height: 110mm; }
   .cb-rule { position: absolute; left: 22mm; width: 18mm; top: 172mm; height: 1.4mm; background: #B4583A; }
-  .cb-title { position: absolute; left: 22mm; right: 22mm; top: 178mm; font-family: 'Nanum Myeongjo', serif; font-weight: 800; font-size: 32pt; line-height: 1.25; margin: 0; }
+  .cb-title { position: absolute; left: 22mm; right: 22mm; top: 178mm; font-family: 'Nanum Myeongjo', 'Noto Sans KR', serif; font-weight: 800; font-size: 32pt; line-height: 1.25; margin: 0; }
   .cb-sub { position: absolute; left: 22mm; right: 22mm; top: 206mm; font-family: 'Noto Sans KR'; font-size: 12.5pt; color: #4A4038; }
-  .cb-client { position: absolute; left: 22mm; bottom: 24mm; font-family: 'Gowun Batang', serif; font-size: 16pt; }
+  .cb-client { position: absolute; left: 22mm; bottom: 24mm; font-family: 'Gowun Batang', 'Noto Sans KR', serif; font-size: 16pt; }
   .cb-client span { display: block; font-family: 'Noto Sans KR'; font-size: 9pt; letter-spacing: .2em; color: #6E6458; margin-bottom: 2mm; }
   .cb-brand { position: absolute; right: 22mm; bottom: 24mm; font-family: 'Cormorant Garamond', 'Noto Sans KR', serif; font-size: 14pt; font-weight: 500; letter-spacing: .14em; color: #9C4529; }
 
@@ -139,29 +139,32 @@ export const COVER_CSS = `
   .cp-client { position: absolute; left: 24mm; bottom: 28mm; font-family: 'Noto Sans KR'; font-size: 15pt; font-weight: 500; color: #222; }
   .cover-paper { background: #F6EEDF; color: #3B2E22; }
   .cpa-frame { position: absolute; inset: 14mm; border: 0.6mm double; border-width: 1.6mm; border-style: double; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 18mm 14mm 0; }
-  .cpa-logo { margin-bottom: 4mm; } .cpa-kicker { font-family: 'Gowun Batang', serif; font-size: 12pt; letter-spacing: .3em; }
+  .cpa-logo { margin-bottom: 4mm; } .cpa-kicker { font-family: 'Gowun Batang', 'Noto Sans KR', serif; font-size: 12pt; letter-spacing: .3em; }
   .cpa-art { width: 80mm; height: 80mm; margin: 8mm 0 4mm; }
-  .cpa-title { font-family: 'Nanum Myeongjo', serif; font-weight: 800; font-size: 30pt; line-height: 1.3; margin: 0 0 5mm; }
-  .cpa-sub { font-family: 'Gowun Batang', serif; font-size: 12pt; color: #5A4A3A; }
-  .cpa-client { margin-top: 16mm; font-family: 'Nanum Myeongjo', serif; font-size: 17pt; }
-  .cpa-brand { position: absolute; bottom: 14mm; left: 0; right: 0; font-family: 'Gowun Batang', serif; font-size: 12.5pt; letter-spacing: .2em; }
+  .cpa-title { font-family: 'Nanum Myeongjo', 'Noto Sans KR', serif; font-weight: 800; font-size: 30pt; line-height: 1.3; margin: 0 0 5mm; }
+  .cpa-sub { font-family: 'Gowun Batang', 'Noto Sans KR', serif; font-size: 12pt; color: #5A4A3A; }
+  .cpa-client { margin-top: 16mm; font-family: 'Nanum Myeongjo', 'Noto Sans KR', serif; font-size: 17pt; }
+  .cpa-brand { position: absolute; bottom: 14mm; left: 0; right: 0; font-family: 'Gowun Batang', 'Noto Sans KR', serif; font-size: 12.5pt; letter-spacing: .2em; }
   .cover-study { background: #F4F1EA; color: #23272A; }
   .cs-band { position: absolute; left: 0; top: 0; bottom: 0; width: 62mm; color: #E9E2D2; }
   .cs-series { position: absolute; top: 26mm; left: 12mm; font-family: 'Noto Sans KR'; font-weight: 700; font-size: 11pt; letter-spacing: .3em; line-height: 1.9; }
   .cs-art { position: absolute; bottom: 30mm; left: 6mm; width: 50mm; height: 50mm; opacity: .9; }
   .cs-body { position: absolute; left: 78mm; right: 18mm; top: 92mm; }
   .cs-logo { display: block; margin-bottom: 8mm; }
-  .cs-title { margin: 0; font-family: 'Noto Serif KR', serif; font-weight: 600; font-size: 28pt; line-height: 1.35; }
+  .cs-title { margin: 0; font-family: 'Noto Serif KR', 'Noto Sans KR', serif; font-weight: 600; font-size: 28pt; line-height: 1.35; }
   .cs-sub { margin-top: 6mm; font-family: 'Noto Sans KR'; font-size: 11.5pt; color: #4C5256; }
   .cs-line { margin: 14mm 0 6mm; width: 30mm; height: 1mm; }
-  .cs-client { font-family: 'Noto Serif KR', serif; font-weight: 600; font-size: 16pt; }
+  .cs-client { font-family: 'Noto Serif KR', 'Noto Sans KR', serif; font-weight: 600; font-size: 16pt; }
   .cs-brand { position: absolute; top: 150mm; font-family: 'Noto Sans KR'; font-size: 11pt; letter-spacing: .15em; color: #4C5256; }
   .cover-nature { background: #F3F7F1; color: #24302A; }
   .cn-bg { position: absolute; inset: 0; width: 210mm; height: 297mm; }
   .cn-logo { position: absolute; top: 20mm; left: 50%; transform: translateX(-50%); }
   .cn-art { position: absolute; top: 46mm; left: 50%; transform: translateX(-50%); width: 96mm; height: 96mm; }
-  .cn-title { position: absolute; top: 156mm; left: 18mm; right: 18mm; text-align: center; margin: 0; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 30pt; line-height: 1.3; }
+  .cn-title { position: absolute; top: 156mm; left: 18mm; right: 18mm; text-align: center; margin: 0; font-family: 'Gowun Batang', 'Noto Sans KR', serif; font-weight: 700; font-size: 30pt; line-height: 1.3; }
   .cn-sub { position: absolute; top: 186mm; left: 20mm; right: 20mm; text-align: center; font-family: 'Noto Sans KR'; font-size: 12pt; color: #3E4C44; }
-  .cn-client { position: absolute; top: 210mm; left: 50%; transform: translateX(-50%); padding: 3mm 9mm; border-radius: 20mm; color: #FFFFFF; font-family: 'Gowun Batang', serif; font-size: 15pt; white-space: nowrap; }
-  .cn-brand { position: absolute; bottom: 22mm; width: 100%; text-align: center; font-family: 'Gowun Batang', serif; font-size: 13pt; letter-spacing: .15em; }
+  .cn-client { position: absolute; top: 210mm; left: 50%; transform: translateX(-50%); padding: 3mm 9mm; border-radius: 20mm; color: #FFFFFF; font-family: 'Gowun Batang', 'Noto Sans KR', serif; font-size: 15pt; max-width: 160mm; text-align: center; }
+  .cn-brand { position: absolute; bottom: 22mm; width: 100%; text-align: center; font-family: 'Gowun Batang', 'Noto Sans KR', serif; font-size: 13pt; letter-spacing: .15em; }
+  /* 띄어쓰기 없는 긴 이름도 표지 밖으로 나가지 않게 줄바꿈한다 */
+  .cm-client, .cb-client, .cp-client, .cpa-client, .cs-client, .cn-client { overflow-wrap: anywhere; word-break: break-all; }
+  .cm-client { left: 20mm; right: 20mm; width: auto; } .cp-client { right: 24mm; } .cb-client { max-width: 110mm; } .cpa-client { max-width: 150mm; }
 `;

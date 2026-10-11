@@ -296,6 +296,16 @@ async function makePdf() {
   $('qaBox').innerHTML = final ? '' : `<p class="hint">최종본이 아닌 이유:</p><ul class="qa">${blockers.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
 }
 
+// 인쇄 레이아웃은 화면에서 쓰지 않은 글꼴 조각(unicode-range)을 새로 요청할 수 있어, 문서에 실제로 쓰인 글자에 필요한
+// 글꼴 조각을 굵기별로 모두 먼저 불러온다(불러오기 전에 인쇄하면 글자가 비거나 다른 글꼴로 찍힐 수 있음).
+async function loadPrintFonts(d) {
+  const text = [...new Set((d.body.innerText || '') + (d.title || ''))].join('');
+  const faces = [['Noto Sans KR', [400, 500, 700]], ['Noto Serif KR', [600]], ['Gowun Batang', [400, 700]], ['Nanum Myeongjo', [400, 800]], ['Cormorant Garamond', [500]]];
+  await Promise.all(faces.flatMap(([fam, ws]) => ws.map((w) => d.fonts.load(`${w} 16px "${fam}"`, text).catch(() => [])))).catch(() => {});
+  await Promise.all(['normal', 'italic'].map((st) => d.fonts.load(`${st} 400 16px "Cormorant Garamond"`, text).catch(() => [])));
+  await d.fonts.ready;
+}
+window.__loadPrintFonts = loadPrintFonts; // 시험에서 같은 방식으로 인쇄 문서를 준비하기 위해 노출
 // 정적 배포본: 브라우저 인쇄 창으로 PDF 저장. 글꼴을 모두 불러온 뒤 인쇄하고, 문서 제목(=저장 파일 이름 기본값)은 요청 당시 스냅샷을 쓴다.
 async function printPdf({ html, final, blockers }, s) {
   const old = document.getElementById('printFrame'); if (old) old.remove();
@@ -305,7 +315,7 @@ async function printPdf({ html, final, blockers }, s) {
   $('pdfState').textContent = '인쇄용 문서와 글꼴을 준비하는 중…';
   await new Promise((res) => { f.onload = res; f.srcdoc = html; document.body.appendChild(f); });
   const d = f.contentDocument; void d.body.offsetHeight;
-  await d.fonts.ready;
+  await loadPrintFonts(d);
   if (!current(s)) { f.remove(); $('pdfState').textContent = '인쇄를 준비하는 동안 프로젝트나 내용이 바뀌어 인쇄하지 않았어요. 다시 눌러 주세요.'; return; }
   d.title = safeName(`${final ? s.brandName : '검토용'}_${s.clientName}_사주리포트`);
   $('pdfState').textContent = `${final ? '최종본' : '검토용(최종본 아님)'} 인쇄 창을 열었어요. 대상에서 "PDF로 저장"을 고르세요. 배경 그래픽을 켜야 표지 색이 나와요.`;

@@ -65,7 +65,7 @@ for (const [pkg, weights] of FONTS) {
     const src = readFileSync(join(dir, `${w}.css`), 'utf8')
       .replace(/src: url\(\.\/files\/([^)]+\.woff2)\) format\('woff2'\), url\(\.\/files\/[^)]+\.woff\) format\('woff'\);/g, (m, f) => { copyFileSync(join(dir, 'files', f), join(DIST, 'fonts', 'files', f)); return `src: url(files/${f}) format('woff2');`; });
     if (/\.woff\)/.test(src) || /url\(\.\//.test(src)) throw new Error(`글꼴 CSS 변환 실패: ${pkg} ${w}`);
-    css += src.replace(/font-display: swap;/g, 'font-display: block;') + '\n';
+    css += src + '\n'; // font-display: swap 유지 — 글꼴이 늦어도 글자가 비어 찍히지 않게
   }
 }
 writeFileSync(join(DIST, 'fonts', 'fonts.css'), css);

@@ -3,9 +3,9 @@
 //   Noto Sans KR 400/500/700 · Noto Serif KR 600 · Gowun Batang 400/700 · Nanum Myeongjo 400/800
 export const FONTS = {
   'noto-sans': { label: '노토 산스', family: "'Noto Sans KR', sans-serif", headWeight: 700, boldWeight: 700, body: true, head: true, note: '깔끔한 고딕' },
-  gowun: { label: '고운 바탕', family: "'Gowun Batang', serif", headWeight: 700, boldWeight: 700, body: true, head: true, note: '부드러운 바탕체' },
-  nanum: { label: '나눔 명조', family: "'Nanum Myeongjo', serif", headWeight: 800, boldWeight: 800, body: true, head: true, note: '단정한 명조' },
-  'noto-serif': { label: '노토 세리프', family: "'Noto Serif KR', serif", headWeight: 600, boldWeight: 600, body: false, head: true, note: '제목 전용(600 굵기만 포함)' },
+  gowun: { label: '고운 바탕', family: "'Gowun Batang', 'Noto Sans KR', serif", headWeight: 700, boldWeight: 700, body: true, head: true, note: '부드러운 바탕체' },
+  nanum: { label: '나눔 명조', family: "'Nanum Myeongjo', 'Noto Sans KR', serif", headWeight: 800, boldWeight: 800, body: true, head: true, note: '단정한 명조' },
+  'noto-serif': { label: '노토 세리프', family: "'Noto Serif KR', 'Noto Sans KR', serif", headWeight: 600, boldWeight: 600, body: false, head: true, note: '제목 전용(600 굵기만 포함)' },
 };
 
 export const DESIGNS = {
