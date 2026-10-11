@@ -1,0 +1,145 @@
+KST_CORRECTION_MINUTES = 60 (expect 60)
+
+1. 2026년 24절기 전체가 라이브러리 원본보다 KST에서 정확히 1시간 뒤인지
+  ok  - DA_XUE: KST = raw + 60min
+  ok  - 冬至: KST = raw + 60min
+  ok  - 小寒: KST = raw + 60min
+  ok  - 大寒: KST = raw + 60min
+  ok  - 立春: KST = raw + 60min
+  ok  - 雨水: KST = raw + 60min
+  ok  - 惊蛰: KST = raw + 60min
+  ok  - 春分: KST = raw + 60min
+  ok  - 清明: KST = raw + 60min
+  ok  - 谷雨: KST = raw + 60min
+  ok  - 立夏: KST = raw + 60min
+  ok  - 小满: KST = raw + 60min
+  ok  - 芒种: KST = raw + 60min
+  ok  - 夏至: KST = raw + 60min
+  ok  - 小暑: KST = raw + 60min
+  ok  - 大暑: KST = raw + 60min
+  ok  - 立秋: KST = raw + 60min
+  ok  - 处暑: KST = raw + 60min
+  ok  - 白露: KST = raw + 60min
+  ok  - 秋分: KST = raw + 60min
+  ok  - 寒露: KST = raw + 60min
+  ok  - 霜降: KST = raw + 60min
+  ok  - 立冬: KST = raw + 60min
+  ok  - 小雪: KST = raw + 60min
+  ok  - 大雪: KST = raw + 60min
+  ok  - DONG_ZHI: KST = raw + 60min
+  ok  - XIAO_HAN: KST = raw + 60min
+  ok  - DA_HAN: KST = raw + 60min
+  ok  - LI_CHUN: KST = raw + 60min
+  ok  - YU_SHUI: KST = raw + 60min
+  ok  - JING_ZHE: KST = raw + 60min
+
+2. 입춘 실제 KST 경계 1분 전·1분 후의 연주가 올바르게 달라지는지
+  ok  - 1분 전 = 乙巳(전년)
+  ok  - 1분 후 = 丙午(신년)
+  ok  - 보정 전(버그) 로직이라면 이 시각들에서 이미 틀렸을 것 — 버그 재현 확인
+
+3. 12개 절입 각각 1분 전·1분 후의 월주가 올바르게 달라지는지
+  ok  - 立春 경계 전후 월주 변화
+  ok  - 惊蛰 경계 전후 월주 변화
+  ok  - 清明 경계 전후 월주 변화
+  ok  - 立夏 경계 전후 월주 변화
+  ok  - 芒种 경계 전후 월주 변화
+  ok  - 小暑 경계 전후 월주 변화
+  ok  - 立秋 경계 전후 월주 변화
+  ok  - 白露 경계 전후 월주 변화
+  ok  - 寒露 경계 전후 월주 변화
+  ok  - 立冬 경계 전후 월주 변화
+  ok  - 大雪 경계 전후 월주 변화
+  ok  - 小寒 경계 전후 월주 변화
+
+4. 경계에서 61분 이상 떨어진 일반 출생자의 원국이 기존과 동일한지
+  ok  - 1983-7-19 10:30 — 원국 무변화
+  ok  - 2000-1-1 0:0 — 원국 무변화
+  ok  - 1995-6-15 14:0 — 원국 무변화
+  ok  - 2010-11-20 8:0 — 원국 무변화
+
+5. 나윤 1983-07-19 10:30 서울의 癸亥/己未/戊申/丁巳가 그대로 유지되는지
+  ok  - 연주 癸亥
+  ok  - 월주 己未
+  ok  - 일주 戊申
+  ok  - 시주 丁巳
+  ok  - 일간 戊
+  ok  - 오행 개수 木0火2土3金1水2
+
+6. 일주·시주가 보정 과정에서 절대 바뀌지 않는지 (경계 케이스로 스트레스 테스트)
+  ok  - 2026-02-04 04:31:00 — day/time pillar unaffected by KST fix
+  ok  - 2026-09-07 23:30:00 — day/time pillar unaffected by KST fix
+
+7. 대운 순서와 시작 연도는 유지되는지 (나윤)
+  ok  - 대운 리스트가 기존과 완전히 동일 (9개 블록)
+
+8. 교운/대운: 이번 PR은 KST 보정을 적용하지 않음을 코드·실행값으로 확인
+  ok  - _saju-core.js가 KST 어댑터에서 오직 getKstYearMonthPillars만 import (getKstYun 없음)
+  ok  - buildDaYun이 trueEightChar.getYun(...)을 직접 사용 (probe/shift 경유 없음)
+  ok  - 어댑터 파일 자체에 getKstYun export가 존재하지 않음
+
+9. 2026-09-03은 백로 전 丙申월, 백로 KST 경계 이후에는 丁酉월로 판정되는지
+  ok  - 2026-09-03 00:00 -> 丙申월 (백로 훨씬 전)
+  ok  - 백로 KST 경계 1분 전(2026-09-07 23:40) -> 丙申월
+  ok  - 백로 KST 경계 이후(2026-09-08 00:30) -> 丁酉월
+  ok  - 보정 전(버그) 경로는 2026-09-07 23:30에 이미 丁酉로 잘못 판정 — 버그 재현
+
+10. 서버 실행환경의 TZ가 UTC/Asia/Seoul로 달라도 결과가 동일한지
+  ok  - TZ=UTC와 TZ=Asia/Seoul 결과가 완전히 동일
+     결과(양쪽 동일): {"year":"乙巳","month":"己丑"}
+
+11. 독립 KST fixture 대조 (라이브러리 원본에 런타임 +60 하여 만들지 않음)
+  ok  - 立春(입춘): 라이브러리 원본이 hardcoded raw fixture와 일치
+  ok  - 立春(입춘): 어댑터 출력이 독립 hardcoded KST fixture와 일치
+  ok  - 立秋(입추): 라이브러리 원본이 hardcoded raw fixture와 일치
+  ok  - 立秋(입추): 어댑터 출력이 독립 hardcoded KST fixture와 일치
+  ok  - 白露(백로): 라이브러리 원본이 hardcoded raw fixture와 일치
+  ok  - 白露(백로): 어댑터 출력이 독립 hardcoded KST fixture와 일치
+  ok  - 寒露(한로): 라이브러리 원본이 hardcoded raw fixture와 일치
+  ok  - 寒露(한로): 어댑터 출력이 독립 hardcoded KST fixture와 일치
+  ok  - 立冬(입동): 라이브러리 원본이 hardcoded raw fixture와 일치
+  ok  - 立冬(입동): 어댑터 출력이 독립 hardcoded KST fixture와 일치
+  ok  - 大雪(대설): 라이브러리 원본이 hardcoded raw fixture와 일치
+  ok  - 大雪(대설): 어댑터 출력이 독립 hardcoded KST fixture와 일치
+
+12. 대운 교운 계산 재검증 (source + 실행값)
+  12-1. KST 어댑터가 getYun() 내부 다음/이전 절기 시각에도 실제 적용되는지
+        true birth=1983-07-19 10:30:00  probe birth=1983-07-19 09:30:00 (-60min)
+        true-path nextJie(입추, raw)  = 1983-08-08 10:29:37
+        probe-path nextJie(입추, raw) = 1983-08-08 10:29:37
+  ok  - 결론: getNextJie()는 shift와 무관하게 항상 동일한 원본(raw, UTC+8) 값을 반환 — 적용되지 않음
+        이유: getNextJie()/getPrevJie()는 Lunar 생성 시점에 연도 단위로 미리 계산·캐싱된 절기표를 조회만 할 뿐,
+        조회에 쓰인 시:분(query hour)에 따라 다시 계산되지 않음 — 그래서 birth를 아무리 shift해도 nextJie 자체는 바뀌지 않음.
+
+  12-2. 연주·월주만 보정되고 대운은 기존 EightChar(비보정)를 쓰는지 — 소스 재확인
+  ok  - calcSaju()가 미검증 대운을 결과에 넣지 않음 (buildDaYun 호출 없음)
+
+  12-3. 출생시각-절입시각 실제 차이 (시:분 단위, 수정 전/후 동일 — 대운은 애초에 미수정)
+        현재(라이브러리 원본, buggy) 차이 = 28800분 (480.00시간)
+        실제 KST 기준 차이(참고, 미적용) = 28860분 (481.00시간)  <- raw보다 60분 더 큼
+  ok  - 실제 KST 차이가 raw(buggy) 차이보다 정확히 60분 더 큼
+
+  12-4. 라이브러리가 이 차이를 년/월/일/시로 환산하는 중간값 (getYun sect=1, "3일=1년" 공식)
+        [현재] start시진idx=5 end시진idx=5 hourDiff=0 dayDiff=20
+        [현재] => 환산 offset: 6년 8개월 0일 (교운 = 출생 + 이 offset)
+  ok  - 현재(비보정) 환산 결과가 실제 라이브러리 getYun() 출력과 일치 (재구현 정확성 검증)
+
+  12-5. 절기 보정으로 시진 경계를 넘는 사례 (최소 2개)
+        [사례A] 나윤 1983년 입추: raw=10:29(시진idx=5) -> KST 보정시=11:29(시진idx=6)
+  ok  - 사례A: 나윤 입추가 KST 보정 시 시진 경계(巳→午)를 넘음
+        [사례A] 만약 보정을 적용했다면: hourDiff=1 dayDiff=20 => 6년 8개월 10일
+        [사례A] 현재(비보정) 결과와 비교: 6년 8개월 0일  <- day 값이 다름(오프셋이 달라짐을 시연)
+  ok  - 사례A: 시진 경계를 넘으면 환산 offset의 day 값이 실제로 달라짐 (보정 vs 비보정)
+        [사례B] 2026년 청명: raw=2026-04-05 02:40:00(시진idx=1) -> KST 보정시=2026-04-05 03:40:00(시진idx=2)
+  ok  - 사례B: 2026년 청명이 KST 보정 시 시진 경계(卯→辰)를 넘음
+
+  12-6. 보정 전후 교운일이 나윤 케이스에서 "우연히" 같았던 이유 / 일반적으로는 달라져야 하는 이유
+        나윤의 실제 출생시각(10:30)과 raw nextJie(10:29:37)이 둘 다 같은 시진 버킷(09:00-10:59, 巳)에
+        위치해서, 이전 버전 PR이 시도한 "birth만 -60분 shift" 방식으로는 버킷 인덱스 차이(hourDiff)가
+        0에서 안 움직였다 — 이는 "보정이 통했다"가 아니라 "이 케이스에서만 우연히 버킷을 안 넘었다"는 뜻.
+        사례A(위)가 보여주듯, nextJie의 raw 시각 자체가 시진 경계 부근(마지막 ~1시간 이내)에 있는
+        출생자라면 실제로 day 오프셋이 달라져야 하며, "birth shift" 방식은 그 경우를 못 잡는다.
+        결론: 대운/교운은 이번 PR 범위에서 KST 미검증 상태로 남겨둔다 (섹션 8 참고, 별도 과제).
+
+86 checks passed.
+ALL CHECKS PASSED.

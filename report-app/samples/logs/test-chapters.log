@@ -1,0 +1,67 @@
+
+[개인화 1] A vs B — 고민 같음, 명식 다름
+  1장 규칙 차이: {"onlyA":["DM-丁","SHOWN-재성","DM-丁+SHOWN-재성","MREL-support","ROOT-인성","DREL-same"],"onlyB":["DM-辛","SHOWN-관성","DM-辛+SHOWN-관성","MREL-pressure","ROOT-관성","DREL-output"]}
+  계산 키 A: {"dm":"丁","dayEl":"火","monthStem":"辛","monthZhi":"卯","dayZhi":"巳","shownTg":"偏财","rootGan":"乙","rootTg":"偏印","shownGroup":"재성","rootGroup":"인성","monthRel":"support","dayRel":"same"} 
+  계산 키 B: {"dm":"辛","dayEl":"金","monthStem":"丙","monthZhi":"午","dayZhi":"亥","shownTg":"正官","rootGan":"丁","rootTg":"七杀","shownGroup":"관성","rootGroup":"관성","monthRel":"pressure","dayRel":"output"}
+  ok  - 1장: A와 B가 쓰는 규칙이 서로 다름(일간·월간·월지·일지 키)
+  ok  - 1장: 문장 겹침 20% 미만
+  8장 규칙 차이: {"onlyA":["W-drive-support","SHOWN-재성","W-keep-fit-재성","W-keep-caution-재성","W-keep-action-재성","W-change-fit-재성","W-change-caution-재성","PERIOD+MREL-support","PERIOD+SHOWN-재성"],"onlyB":["W-drive-pressure","SHOWN-관성","W-keep-fit-관성","W-keep-caution-관성","W-keep-action-관성","W-change-fit-관성","W-change-caution-관성","PERIOD+MREL-pressure","PERIOD+SHOWN-관성"]}
+  ok  - 8장: 같은 고민이어도 성향 문단 규칙이 다름
+  8장 문장 겹침: 39% (고정 안내문·현실 점검·기간 틀 포함)
+  ok  - 8장: 문장 겹침 60% 미만
+
+[개인화 2] A vs C — 명식 같음, 고민 다름
+  ok  - 1장: 명식이 같으면 1장 본문이 같음(기대된 동작)
+  ok  - 8장: 고민 유형이 다름(work vs money)
+  8장 규칙 차이: {"onlyA":["W-drive-support","SHOWN-재성","W-keep-fit-재성","W-keep-caution-재성","W-keep-action-재성","W-change-fit-재성","W-change-caution-재성","W-change-action","W-reality"],"onlyB":["MONEY-style-재성","MONEY-caution-support","MONEY-action-재성","MONEY-reality"]}
+  ok  - 8장: 사용 규칙이 다름
+
+[입력 되풀이 방지]
+  ok  - case-a: 8장에 입력 문장을 되풀이하지 않은 문장 26개, 명식 근거 문단 9개(≥3)
+  ok  - case-a: 1장에 고민 입력 문장이 섞이지 않음
+  ok  - case-b: 8장에 입력 문장을 되풀이하지 않은 문장 24개, 명식 근거 문단 9개(≥3)
+  ok  - case-b: 1장에 고민 입력 문장이 섞이지 않음
+  ok  - case-c: 8장에 입력 문장을 되풀이하지 않은 문장 18개, 명식 근거 문단 4개(≥3)
+  ok  - case-c: 1장에 고민 입력 문장이 섞이지 않음
+  ok  - 분류: 상황란의 단어가 질문 유형을 바꾸지 않음(회귀 테스트)
+  ok  - 기간 표기 "1개월" → 처음 2주 / 마지막 2주
+  ok  - 기간 표기 "2개월" → 1개월 차 / 2개월 차
+  ok  - 기간 표기 "3개월" → 1개월 차 / 2개월 차 / 3개월 차
+  ok  - 기간 표기 "4개월" → 1개월 차 / 2~3개월 차 / 4개월 차
+  ok  - 기간 표기 "6개월" → 1~2개월 차 / 3~4개월 차 / 5~6개월 차
+  ok  - 기간 표기 "올해" → 1~4개월 차 / 5~8개월 차 / 9~12개월 차
+
+[예외 처리]
+  ok  - 고민 미입력: 8장 비움, 답을 만들지 않음, 검토 항목 기록
+  ok  - 지원하지 않는 질문(재회): 검토 필요 표시, 답을 만들지 않음
+  ok  - 출생 시간 모름(A): 시주를 본문 근거로 쓰지 않음, 검토 항목 기록
+  ok  - 출생 시간 있음(B): 서머타임 안내가 검토 항목에 기록
+
+[금지 표현 · 반복]
+  ok  - case-a: 결과 확정·시기 예측·대운·두려움 표현 없음
+  ok  - case-a: 오행 개수로 강도 단정 없음
+  ok  - case-a: 같은 문장 반복 없음
+  ok  - case-a: 제작 메모·코드명이 고객 본문에 없음
+  ok  - case-a: 조사 표식 오류 없음
+  ok  - case-b: 결과 확정·시기 예측·대운·두려움 표현 없음
+  ok  - case-b: 오행 개수로 강도 단정 없음
+  ok  - case-b: 같은 문장 반복 없음
+  ok  - case-b: 제작 메모·코드명이 고객 본문에 없음
+  ok  - case-b: 조사 표식 오류 없음
+  ok  - case-c: 결과 확정·시기 예측·대운·두려움 표현 없음
+  ok  - case-c: 오행 개수로 강도 단정 없음
+  ok  - case-c: 같은 문장 반복 없음
+  ok  - case-c: 제작 메모·코드명이 고객 본문에 없음
+  ok  - case-c: 조사 표식 오류 없음
+  ok  - edge-no-concern: 결과 확정·시기 예측·대운·두려움 표현 없음
+  ok  - edge-no-concern: 오행 개수로 강도 단정 없음
+  ok  - edge-no-concern: 같은 문장 반복 없음
+  ok  - edge-no-concern: 제작 메모·코드명이 고객 본문에 없음
+  ok  - edge-no-concern: 조사 표식 오류 없음
+  ok  - edge-unsupported: 결과 확정·시기 예측·대운·두려움 표현 없음
+  ok  - edge-unsupported: 오행 개수로 강도 단정 없음
+  ok  - edge-unsupported: 같은 문장 반복 없음
+  ok  - edge-unsupported: 제작 메모·코드명이 고객 본문에 없음
+  ok  - edge-unsupported: 조사 표식 오류 없음
+
+49 passed, 0 failed

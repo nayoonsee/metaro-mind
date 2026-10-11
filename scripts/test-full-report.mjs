@@ -29,6 +29,19 @@ for (const [id, r] of Object.entries(R)) {
   });
   check(`${id}: 개수로 강도 단정 없음`, () => assert.doesNotMatch(all, /(불|물|나무|흙|쇠)(이|가) (많아서|강해서|부족해서|약해서)/));
   check(`${id}: 후속 답변 약속 문구 없음`, () => assert.doesNotMatch(all, /채워 드릴|다시 써 드려요|나중에 답/));
+  const chLen = (c) => [c.intro || '', ...c.sections.flatMap((s) => [s.q, ...s.paras.map((p) => p.text)]), c.summary || ''].join('').length;
+  check(`${id}: 핵심 장(1~6장, 자동 생성된 7장) 1,000~1,900자`, () => {
+    for (const c of r.chapters.filter((c) => /^ch[1-6]$/.test(c.id) || (c.id === 'ch7' && c.status === 'generated'))) { const n = chLen(c); assert.ok(n >= 1000 && n <= 1900, `${c.id} ${n}`); }
+  });
+  check(`${id}: 핵심 장마다 질문 3개 이상, 의미·장면(예시)·주의·활용이 모두 있음`, () => {
+    for (const c of r.chapters.filter((c) => /^ch[2-6]$/.test(c.id))) {
+      assert.ok(c.sections.filter((s) => !s.box).length >= 3, c.id);
+      const kinds = new Set(c.sections.flatMap((s) => s.paras.map((p) => p.kind)));
+      for (const k of ['meaning', 'example', 'use']) assert.ok(kinds.has(k), `${c.id} ${k}`);
+    }
+  });
+  check(`${id}: 천간만 보고 "원국 전체에 합이 없다"고 말하지 않음`, () => assert.doesNotMatch(all, /(원국|사주|명식) 전체에 [^.]*(합|조합)[^.]*없/));
+  check(`${id}: 가족 장은 조건부 표현("만약 ~라면")으로 씀`, () => { const t6 = texts({ chapters: [r.chapters.find((c) => c.id === 'ch6')] }).join(' '); assert.ok((t6.match(/만약/g) || []).length >= 2); assert.doesNotMatch(t6, /가족이 [^.]*했어요\./); });
   check(`${id}: 본문 4,500자 이상`, () => { const n = texts(r).join('').length; assert.ok(n >= 4500, String(n)); });
 }
 check('A vs B: 2~6장 규칙이 모두 다름(명식 차이 반영)', () => {

@@ -1,0 +1,73 @@
+  ok  - case-a: 합의한 10개 장 순서
+  ok  - case-a: 장마다 질문 제목이 서로 다름
+  ok  - case-a: 문장 반복 없음
+  ok  - case-a: 결과 확정·시기 예측·대운 문장 없음(제외 안내 제외)
+  ok  - case-a: 개수로 강도 단정 없음
+  ok  - case-a: 후속 답변 약속 문구 없음
+  ok  - case-a: 핵심 장(1~6장, 자동 생성된 7장) 1,000~1,900자
+  ok  - case-a: 핵심 장마다 질문 3개 이상, 의미·장면(예시)·주의·활용이 모두 있음
+  ok  - case-a: 천간만 보고 "원국 전체에 합이 없다"고 말하지 않음
+  ok  - case-a: 가족 장은 조건부 표현("만약 ~라면")으로 씀
+  ok  - case-a: 본문 4,500자 이상
+  ok  - case-b: 합의한 10개 장 순서
+  ok  - case-b: 장마다 질문 제목이 서로 다름
+  ok  - case-b: 문장 반복 없음
+  ok  - case-b: 결과 확정·시기 예측·대운 문장 없음(제외 안내 제외)
+  ok  - case-b: 개수로 강도 단정 없음
+  ok  - case-b: 후속 답변 약속 문구 없음
+  ok  - case-b: 핵심 장(1~6장, 자동 생성된 7장) 1,000~1,900자
+  ok  - case-b: 핵심 장마다 질문 3개 이상, 의미·장면(예시)·주의·활용이 모두 있음
+  ok  - case-b: 천간만 보고 "원국 전체에 합이 없다"고 말하지 않음
+  ok  - case-b: 가족 장은 조건부 표현("만약 ~라면")으로 씀
+  ok  - case-b: 본문 4,500자 이상
+  ok  - case-c: 합의한 10개 장 순서
+  ok  - case-c: 장마다 질문 제목이 서로 다름
+  ok  - case-c: 문장 반복 없음
+  ok  - case-c: 결과 확정·시기 예측·대운 문장 없음(제외 안내 제외)
+  ok  - case-c: 개수로 강도 단정 없음
+  ok  - case-c: 후속 답변 약속 문구 없음
+  ok  - case-c: 핵심 장(1~6장, 자동 생성된 7장) 1,000~1,900자
+  ok  - case-c: 핵심 장마다 질문 3개 이상, 의미·장면(예시)·주의·활용이 모두 있음
+  ok  - case-c: 천간만 보고 "원국 전체에 합이 없다"고 말하지 않음
+  ok  - case-c: 가족 장은 조건부 표현("만약 ~라면")으로 씀
+  ok  - case-c: 본문 4,500자 이상
+  ok  - edge-no-concern: 합의한 10개 장 순서
+  ok  - edge-no-concern: 장마다 질문 제목이 서로 다름
+  ok  - edge-no-concern: 문장 반복 없음
+  ok  - edge-no-concern: 결과 확정·시기 예측·대운 문장 없음(제외 안내 제외)
+  ok  - edge-no-concern: 개수로 강도 단정 없음
+  ok  - edge-no-concern: 후속 답변 약속 문구 없음
+  ok  - edge-no-concern: 핵심 장(1~6장, 자동 생성된 7장) 1,000~1,900자
+  ok  - edge-no-concern: 핵심 장마다 질문 3개 이상, 의미·장면(예시)·주의·활용이 모두 있음
+  ok  - edge-no-concern: 천간만 보고 "원국 전체에 합이 없다"고 말하지 않음
+  ok  - edge-no-concern: 가족 장은 조건부 표현("만약 ~라면")으로 씀
+  ok  - edge-no-concern: 본문 4,500자 이상
+  ok  - edge-unsupported: 합의한 10개 장 순서
+  ok  - edge-unsupported: 장마다 질문 제목이 서로 다름
+  ok  - edge-unsupported: 문장 반복 없음
+  ok  - edge-unsupported: 결과 확정·시기 예측·대운 문장 없음(제외 안내 제외)
+  ok  - edge-unsupported: 개수로 강도 단정 없음
+  ok  - edge-unsupported: 후속 답변 약속 문구 없음
+  ok  - edge-unsupported: 핵심 장(1~6장, 자동 생성된 7장) 1,000~1,900자
+  ok  - edge-unsupported: 핵심 장마다 질문 3개 이상, 의미·장면(예시)·주의·활용이 모두 있음
+  ok  - edge-unsupported: 천간만 보고 "원국 전체에 합이 없다"고 말하지 않음
+  ok  - edge-unsupported: 가족 장은 조건부 표현("만약 ~라면")으로 씀
+  ok  - edge-unsupported: 본문 4,500자 이상
+  ok  - edge-jasi: 합의한 10개 장 순서
+  ok  - edge-jasi: 장마다 질문 제목이 서로 다름
+  ok  - edge-jasi: 문장 반복 없음
+  ok  - edge-jasi: 결과 확정·시기 예측·대운 문장 없음(제외 안내 제외)
+  ok  - edge-jasi: 개수로 강도 단정 없음
+  ok  - edge-jasi: 후속 답변 약속 문구 없음
+  ok  - edge-jasi: 핵심 장(1~6장, 자동 생성된 7장) 1,000~1,900자
+  ok  - edge-jasi: 핵심 장마다 질문 3개 이상, 의미·장면(예시)·주의·활용이 모두 있음
+  ok  - edge-jasi: 천간만 보고 "원국 전체에 합이 없다"고 말하지 않음
+  ok  - edge-jasi: 가족 장은 조건부 표현("만약 ~라면")으로 씀
+  ok  - edge-jasi: 본문 4,500자 이상
+  ok  - A vs B: 2~6장 규칙이 모두 다름(명식 차이 반영)
+  ok  - A vs C: 1~6장은 같고 7장만 다름(같은 명식, 다른 고민)
+  ok  - 지원 밖 질문: 7장은 직접 작성 칸만, 자동 답 없음
+  ok  - 밤 11시대 출생: 검토 대상으로 표시, 부록에 현재 구현 기준 안내
+  ok  - 입력 검증: 존재하지 않는 날짜·윤달·시간 누락 거절
+
+71 passed, 0 failed

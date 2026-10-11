@@ -19,13 +19,13 @@ function pillarTable(saju) {
   const cols = [['time', '시주'], ['day', '일주'], ['month', '월주'], ['year', '년주']];
   const cell = (k, f) => (saju.pillars[k] ? f(saju.pillars[k]) : '<span class="unknown">모름</span>');
   return `<table class="pillars"><thead><tr><th></th>${cols.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead><tbody>
-    <tr><th>천간</th>${cols.map(([k]) => `<td class="gz">${cell(k, (p) => `${p.ganzhi[0]}<small>${GAN_KO[p.ganzhi[0]]}</small>`)}</td>`).join('')}</tr>
-    <tr><th>지지</th>${cols.map(([k]) => `<td class="gz">${cell(k, (p) => `${p.ganzhi[1]}<small>${ZHI_KO[p.ganzhi[1]]}</small>`)}</td>`).join('')}</tr>
-    <tr><th>천간 십성</th>${cols.map(([k]) => `<td>${cell(k, (p) => TG_KO[p.tenGod] || p.tenGod)}</td>`).join('')}</tr>
-    <tr><th>지장간</th>${cols.map(([k]) => `<td>${saju.hideGan[k] ? saju.hideGan[k].join(' ') : '<span class="unknown">모름</span>'}</td>`).join('')}</tr>
+    <tr><th>천간</th>${cols.map(([k]) => `<td class="gz">${cell(k, (p) => `${esc(p.ganzhi[0])}<small>${esc(GAN_KO[p.ganzhi[0]])}</small>`)}</td>`).join('')}</tr>
+    <tr><th>지지</th>${cols.map(([k]) => `<td class="gz">${cell(k, (p) => `${esc(p.ganzhi[1])}<small>${esc(ZHI_KO[p.ganzhi[1]])}</small>`)}</td>`).join('')}</tr>
+    <tr><th>천간 십성</th>${cols.map(([k]) => `<td>${cell(k, (p) => esc(TG_KO[p.tenGod] || p.tenGod))}</td>`).join('')}</tr>
+    <tr><th>지장간</th>${cols.map(([k]) => `<td>${saju.hideGan[k] ? esc(saju.hideGan[k].join(' ')) : '<span class="unknown">모름</span>'}</td>`).join('')}</tr>
   </tbody></table>
   <table class="elements"><thead><tr>${['木 나무', '火 불', '土 흙', '金 쇠', '水 물'].map((x) => `<th>${x}</th>`).join('')}</tr></thead>
-  <tbody><tr>${['木', '火', '土', '金', '水'].map((e) => `<td>${saju.wuxingCount[e]}</td>`).join('')}</tr></tbody></table>
+  <tbody><tr>${['木', '火', '土', '金', '水'].map((e) => `<td>${esc(saju.wuxingCount[e])}</td>`).join('')}</tr></tbody></table>
   <p class="tablenote">오행 표는 겉으로 드러난 글자 개수예요${saju.hourKnown ? '' : '(시주 제외)'}. 개수만으로 어떤 기운이 강하거나 약하다고 판단하지 않아요.</p>`;
 }
 
@@ -51,16 +51,20 @@ function sectionHtml(project, s) {
   return `<div class="sec"><div class="keep"><h3>${esc(s.q)}</h3>${blocks[0].join('')}</div>${blocks.slice(1).map((b) => `<div class="keep">${b.join('')}</div>`).join('')}</div>`;
 }
 
-export const DENSITIES = { normal: { lh: 1.85, fs: 10.8 }, compact: { lh: 1.75, fs: 10.6 }, loose: { lh: 1.95, fs: 11 } };
-export function renderReportHtml(project, { forPdf = false, density = 'normal' } = {}) {
+export const DENSITIES = { normal: { lh: 1.85, fs: 10.8 }, compact: { lh: 1.75, fs: 10.6 }, loose: { lh: 1.95, fs: 11 }, tight: { lh: 1.7, fs: 10.4 }, airy: { lh: 2.0, fs: 11.2 } };
+export function renderReportHtml(project, { forPdf = false, density = 'normal', final = false } = {}) {
   const D = DENSITIES[density] || DENSITIES.normal;
   const g = project.generated; const saju = g.saju; const brandOk = isBrandSet(project);
   const brand = brandOk ? project.brand.name.trim() : DEFAULT_BRAND;
   const accent = /^#[0-9a-fA-F]{6}$/.test(project.brand?.accent || '') ? project.brand.accent : '#3A2E4A';
-  const testMark = brandOk ? '' : '시험본 · 브랜드 미설정';
+  const testMark = final ? '' : (brandOk ? '검토용 · 최종본 아님' : '검토용 · 브랜드 미설정');
   const sampleNote = [project.client?.isSample ? '가상 사례 · 실제 내담자 아님' : '', testMark].filter(Boolean).join(' · ');
   const chapters = g.report.chapters.map((ch) => {
-    const intro = textOf(project, `${ch.id}:intro`, ch.intro);
+    const manual = ch.sections.find((s) => s.manual);
+    const manualText = manual ? textOf(project, manual.paras[0].id, '') : '';
+    // 직접 작성 칸이 채워졌으면 "풀이를 싣지 않았어요" 안내 대신 중립 문장을 쓴다(편집한 도입이 있으면 그것을 우선).
+    const defaultIntro = manual && manualText.trim() ? '알려 주신 질문에 대한 풀이예요.' : ch.intro;
+    const intro = textOf(project, `${ch.id}:intro`, defaultIntro);
     const body = ch.sections.map((s) => sectionHtml(project, s)).join('');
     const quoted = ch.quoted ? `<div class="quoted keep">${esc(ch.quoted)}</div>` : '';
     const summary = ch.summary ? `<div class="summary keep"><b>이 장의 한 줄 정리</b>${esc(textOf(project, `${ch.id}:summary`, ch.summary))}</div>` : '';
