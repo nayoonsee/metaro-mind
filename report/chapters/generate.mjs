@@ -45,7 +45,7 @@ const iyeyo = (w) => `${w}${batchim(w) ? '이에요' : '예요'}`;
 const iga = (w) => `${w}${batchim(w) ? '이' : '가'}`;
 const P = (kind, text, rule, evidence) => ({ kind, text, rule, evidence });
 
-function chapter1(saju, k) {
+export function chapter1(saju, k) {
   const D = DAY_MASTER[k.dm]; const S = SHOWN_GROUP[k.shownGroup]; const M = MONTH_RELATION[k.monthRel];
   const R = k.rootGroup ? ROOT_GROUP[k.rootGroup] : null; const B = DAY_BRANCH[k.dayRel];
   const sections = [];
@@ -98,17 +98,17 @@ export function classifyConcern(c) {
 const classifyOption = (o) => (CHANGE_RE.test(o) ? 'change' : KEEP_RE.test(o) ? 'keep' : 'unknown');
 function periodMonths(p) { const m = /(\d+)\s*개월/.exec(p || ''); if (m) return +m[1]; if (/올해|1년|일 년/.test(p || '')) return 12; return null; }
 
-function chapter8(saju, k, concern, review) {
+export function chapter8(saju, k, concern, review) {
   const topic = classifyConcern(concern);
   const base = { id: 'ch8', title: '8장. 지금 내 고민, 어떻게 볼까요?', topic };
   if (topic === 'none') {
     review.push('고민 미입력: 8장은 비워 두었어요. 상담 후 질문을 받아 다시 생성하세요.');
-    return { ...base, status: 'empty', intro: '이번 리포트에는 따로 적어 주신 고민이 없어서, 이 장은 비워 두었어요. 궁금한 질문이 생기면 상담자에게 알려 주세요. 그 질문을 중심으로 이 장을 다시 써 드려요.', sections: [] };
+    return { ...base, status: 'empty', intro: '이번 리포트에는 따로 적어 주신 고민이 없어서, 이 장에는 집중 풀이를 싣지 않았어요.', sections: [] };
   }
   const quoted = `알려 주신 질문: "${concern.question.trim()}"${concern.situation ? ` / 알려 주신 상황: ${concern.situation.trim()}` : ''}`;
   if (topic === 'unsupported') {
     review.push(`검토 필요: 질문 유형을 자동 풀이가 지원하지 않아요(현재 지원: 일·진로 선택, 돈 관리). 질문: "${concern.question.trim()}" → 상담자가 직접 작성하세요.`);
-    return { ...base, status: 'review', quoted, intro: '이 질문은 현재 자동 풀이 범위 밖이라, 상담자가 직접 살펴보고 이 장을 채워 드릴 예정이에요. 근거 없이 답을 만들지 않기 위해 비워 두었어요.', sections: [] };
+    return { ...base, status: 'review', quoted, intro: '이 질문은 이 리포트의 자동 풀이 범위(일·진로 선택, 돈 관리) 밖이라, 근거 없이 답을 만들지 않기 위해 이 장에는 풀이를 싣지 않았어요.', sections: [] };
   }
   const S = SHOWN_GROUP[k.shownGroup]; const M = MONTH_RELATION[k.monthRel];
   const intro = '먼저 분명히 해 둘게요. 사주는 선택의 결과를 알려 주지 않아요. 이 장이 도와줄 수 있는 건, 이 고민 앞에서 당신의 성향이 어떻게 작동하기 쉬운지, 그리고 무엇을 확인하면 덜 흔들리고 고를 수 있는지예요. 아래 질문과 상황은 사주로 알아낸 것이 아니라 직접 적어 주신 내용이에요.';

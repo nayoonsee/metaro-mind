@@ -19,7 +19,7 @@ function symbol(element, stroke, fill, glow) {
 export function coverHtml({ template = 'mystic', title, subtitle, clientName, brand, element, sampleNote }) {
   if (template === 'bright') {
     return `<section class="cover cover-bright">
-      <div class="cb-note">${esc(sampleNote)}</div>
+      ${sampleNote ? `<div class="cb-note">${esc(sampleNote)}</div>` : ''}
       <div class="cb-series">SAJU READING</div>
       <svg class="cb-art" viewBox="0 0 200 200" aria-hidden="true">
         <defs><radialGradient id="cbg" cx="50%" cy="48%" r="50%"><stop offset="0" stop-color="#F6DCC0"/><stop offset="1" stop-color="#F6DCC0" stop-opacity="0"/></radialGradient></defs>
@@ -35,7 +35,7 @@ export function coverHtml({ template = 'mystic', title, subtitle, clientName, br
     </section>`;
   }
   return `<section class="cover cover-mystic">
-    <div class="cm-note">${esc(sampleNote)}</div>
+    ${sampleNote ? `<div class="cm-note">${esc(sampleNote)}</div>` : ''}
     <div class="cm-kicker">a reading of one's nature</div>
     <svg class="cm-art" viewBox="0 0 200 200" aria-hidden="true">
       <defs><radialGradient id="cmg" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#F4D6A0" stop-opacity=".5"/><stop offset=".6" stop-color="#C98A5A" stop-opacity=".1"/><stop offset="1" stop-color="#C98A5A" stop-opacity="0"/></radialGradient></defs>

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사주 리포트 제작</title>
+<style>
+  :root { --ink:#24212B; --muted:#6B6478; --line:#E2DCE9; --soft:#F7F4FA; --accent:#3A2E4A; --warn:#B0563A; --ok:#2F6B4F; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, 'Noto Sans KR', sans-serif; color: var(--ink); background: #FBFAFC; font-size: 15px; }
+  header { display:flex; align-items:center; gap:12px; padding: 12px 20px; border-bottom: 1px solid var(--line); background:#fff; position: sticky; top:0; z-index:5; flex-wrap: wrap; }
+  header h1 { font-size: 17px; margin: 0 12px 0 0; }
+  nav button { border:0; background:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:14px; color: var(--muted); }
+  nav button.on { background: var(--soft); color: var(--accent); font-weight:600; }
+  .proj { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  section.tab { display:none; } section.tab.on { display:block; }
+  fieldset { border:1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 0 0 16px; background:#fff; }
+  legend { font-weight: 600; padding: 0 6px; }
+  label { display:block; margin: 8px 0 4px; font-size: 13px; color: var(--muted); }
+  input[type=text], input[type=number], input[type=email], select, textarea { width:100%; padding: 8px 10px; border:1px solid var(--line); border-radius:8px; font: inherit; background:#fff; }
+  .row { display:flex; gap:10px; flex-wrap: wrap; } .row > * { flex:1; min-width: 110px; }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+  button.primary { background: var(--accent); color:#fff; border:0; border-radius:10px; padding: 10px 16px; font-size: 15px; cursor:pointer; }
+  button.ghost { background:#fff; border:1px solid var(--line); border-radius:10px; padding: 8px 12px; cursor:pointer; font-size: 14px; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .errors { color: var(--warn); background:#FBEFEA; border-radius:8px; padding: 8px 12px; margin: 10px 0; display:none; white-space: pre-line; }
+  .msg { color: var(--ok); margin: 10px 0; min-height: 1em; white-space: pre-line; }
+  .chap { background:#fff; border:1px solid var(--line); border-radius:12px; padding: 12px 16px; margin-bottom: 14px; }
+  .chap h2 { font-size: 16px; margin: 4px 0 10px; color: var(--accent); }
+  .chap h3 { font-size: 14px; margin: 14px 0 6px; }
+  .para { margin-bottom: 8px; } .para textarea { min-height: 64px; line-height: 1.6; }
+  .para.edited textarea { border-color: #C9A35E; background: #FFFCF4; }
+  .para .meta { font-size: 11.5px; color: var(--muted); display:flex; gap:8px; align-items:center; margin-top:2px; }
+  .para .meta button { font-size: 11.5px; padding: 2px 6px; }
+  .badge { display:inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; background:#FBEFEA; color: var(--warn); margin-left: 6px; }
+  .badge.ok { background:#EAF4EE; color: var(--ok); }
+  .review { background:#FFF8EC; border:1px solid #EADDC6; border-radius:12px; padding: 10px 16px; margin-bottom: 14px; }
+  .review li { margin: 4px 0; }
+  iframe { width:100%; height: 78vh; border:1px solid var(--line); border-radius: 12px; background:#fff; }
+  .qa li { color: var(--warn); } .qa.pass { color: var(--ok); }
+  .orphans { background:#F4F4F4; border-radius: 10px; padding: 8px 14px; margin-bottom: 14px; display:none; }
+  table.outbox { width:100%; border-collapse: collapse; font-size: 13px; } table.outbox td, table.outbox th { border-bottom:1px solid var(--line); padding:6px; text-align:left; }
+</style>
+</head>
+<body>
+<header>
+  <h1>종합사주 리포트 제작</h1>
+  <nav>
+    <button data-tab="input" class="on">1. 입력</button>
+    <button data-tab="edit">2. 내용 확인·수정</button>
+    <button data-tab="preview">3. 미리보기·PDF</button>
+    <button data-tab="deliver">4. 전달</button>
+  </nav>
+  <div class="proj">
+    <select id="projectList" aria-label="저장된 프로젝트"><option value="">저장된 프로젝트 열기…</option></select>
+    <button class="ghost" id="btnNew">새 프로젝트</button>
+    <button class="ghost" id="btnSave">저장</button>
+    <button class="ghost" id="btnExport">JSON 백업</button>
+    <label class="ghost" style="margin:0;display:inline-block;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:14px;color:var(--ink)">JSON 불러오기<input type="file" id="fileImport" accept="application/json" hidden></label>
+  </div>
+</header>
+<main>
+  <div class="msg" id="globalMsg"></div>
+
+  <section class="tab on" id="tab-input">
+    <fieldset><legend>브랜드</legend>
+      <div class="row">
+        <div><label for="brandName">브랜드명 (표지·본문에 표시)</label><input type="text" id="brandName" maxlength="40" placeholder="예: 달빛 상담소"></div>
+        <div><label for="brandAccent">대표 색</label><input type="text" id="brandAccent" value="#3A2E4A" maxlength="7"></div>
+        <div><label for="brandCover">표지</label><select id="brandCover"><option value="mystic">차분하고 신비로운 (임시 기본)</option><option value="bright">밝고 세련된</option></select></div>
+      </div>
+      <p class="hint">브랜드명을 비워 두면 "시험본"으로만 PDF를 만들 수 있고, 발송 대기에 넣을 수 없어요.</p>
+    </fieldset>
+    <fieldset><legend>고객 정보</legend>
+      <div class="row">
+        <div><label for="clientName">고객 이름</label><input type="text" id="clientName" maxlength="30"></div>
+        <div><label for="calendar">달력</label><select id="calendar"><option value="solar">양력</option><option value="lunar">음력</option></select></div>
+        <div id="leapWrap" style="display:none"><label for="leapMonth">윤달</label><select id="leapMonth"><option value="">평달</option><option value="1">윤달</option></select></div>
+      </div>
+      <div class="row">
+        <div><label for="year">태어난 해</label><input type="number" id="year" min="1900" max="2099"></div>
+        <div><label for="month">월</label><input type="number" id="month" min="1" max="12"></div>
+        <div><label for="day">일</label><input type="number" id="day" min="1" max="31"></div>
+      </div>
+      <div class="row">
+        <div><label for="hour">시 (0~23)</label><input type="number" id="hour" min="0" max="23"></div>
+        <div><label for="minute">분</label><input type="number" id="minute" min="0" max="59"></div>
+        <div><label><input type="checkbox" id="hourUnknown"> 출생 시간 모름</label></div>
+      </div>
+      <p class="hint">지원 범위: 1900~2099년, 한국에서 태어난 경우(한국 표준시 기준, 당시 서머타임 자동 보정). 시간을 모르면 시주 없이 만들어요. 밤 11시대(23시) 출생은 처리 기준이 학파마다 달라 검토 항목으로 표시돼요.</p>
+      <label><input type="checkbox" id="isSample"> 가상 사례(시험용)로 표시</label>
+    </fieldset>
+    <fieldset><legend>현재 고민 (선택)</legend>
+      <label for="question">가장 궁금한 질문</label><textarea id="question" rows="2" maxlength="300"></textarea>
+      <p class="hint" id="topicHint"></p>
+      <label for="situation">현재 상황</label><textarea id="situation" rows="2" maxlength="300"></textarea>
+      <div class="row">
+        <div><label for="opt1">선택지 1</label><input type="text" id="opt1" maxlength="100"></div>
+        <div><label for="opt2">선택지 2</label><input type="text" id="opt2" maxlength="100"></div>
+        <div><label for="opt3">선택지 3</label><input type="text" id="opt3" maxlength="100"></div>
+      </div>
+      <label for="period">알고 싶은 기간</label><select id="period"><option value="">선택 안 함</option><option>앞으로 1개월</option><option>앞으로 3개월</option><option>앞으로 6개월</option><option>올해</option></select>
+    </fieldset>
+    <div class="errors" id="inputErrors"></div>
+    <button class="primary" id="btnGenerate">리포트 생성</button>
+    <span class="hint" id="regenHint"></span>
+  </section>
+
+  <section class="tab" id="tab-edit">
+    <div class="review" id="reviewBox"></div>
+    <div class="orphans" id="orphanBox"></div>
+    <div id="editor"><p class="hint">먼저 1단계에서 리포트를 생성해 주세요.</p></div>
+  </section>
+
+  <section class="tab" id="tab-preview">
+    <div class="row" style="align-items:center;margin-bottom:10px">
+      <button class="ghost" id="btnPreview" style="flex:0">미리보기 새로고침</button>
+      <button class="primary" id="btnPdf" style="flex:0;white-space:nowrap">PDF 만들기</button>
+      <span class="hint" id="pdfState" style="flex:1"></span>
+    </div>
+    <div id="qaBox"></div>
+    <iframe id="previewFrame" title="리포트 미리보기"></iframe>
+  </section>
+
+  <section class="tab" id="tab-deliver">
+    <fieldset><legend>1단계 · 검토 완료</legend>
+      <label><input type="checkbox" id="reviewed"> 본문과 검토 항목을 모두 확인했어요</label>
+    </fieldset>
+    <fieldset><legend>2단계 · 수신자·제목·첨부 확인</legend>
+      <label for="mailTo">받는 사람 이메일</label><input type="email" id="mailTo">
+      <label for="mailSubject">제목</label><input type="text" id="mailSubject">
+      <label for="mailBody">본문</label><textarea id="mailBody" rows="4"></textarea>
+      <p class="hint" id="attachInfo">첨부: 발송 대기에 넣을 때 현재 편집본으로 PDF를 다시 만들어 첨부해요.</p>
+    </fieldset>
+    <fieldset><legend>3단계 · 발송 대기</legend>
+      <p class="hint" id="transportInfo"></p>
+      <div class="errors" id="mailErrors"></div>
+      <button class="primary" id="btnQueue">발송 대기에 넣기</button>
+      <div class="msg" id="mailMsg"></div>
+      <table class="outbox" id="outbox"></table>
+    </fieldset>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

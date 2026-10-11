@@ -52,6 +52,8 @@ node scripts/test-cost-and-privacy.mjs
 node scripts/test-brand-report.mjs
 node --test vendor/jeomjjik/tests/accuracy.test.mjs
 node scripts/test-chapters.mjs
+node scripts/test-full-report.mjs
+node report-app/test/e2e.mjs   # 리포트 제작 프로그램 브라우저 테스트
 ```
 
 ## 브랜드 사주 리포트 (규칙 기반 원고, 실험 단계)
@@ -67,3 +69,7 @@ node scripts/test-chapters.mjs
 - `report/chapters/generate.mjs`: 계산 결과 + 선택 입력(질문·상황·선택지·기간) → 1장·8장. 8장 지원 유형은 일·진로 선택, 돈 관리뿐이고 그 밖의 질문은 "검토 필요"로 비워 둔다.
 - `report/covers/templates.mjs`: 표지 2종(`mystic` 기본, `bright`). 확정 아님.
 - 실행: `node report/chapters/build.mjs` → `report/output/chapters/*.pdf`, `*.review.md`(상담자용). 표지 교체: `COVER=bright node report/chapters/build.mjs case-a`
+
+## 종합사주 리포트 제작 프로그램 (로컬 MVP)
+
+`report-app/` — 사용법·남은 일은 `report-app/README.md`. 현담(`/fortune`)·타로·점찍과 분리돼 있다.
