@@ -16,7 +16,62 @@ function symbol(element, stroke, fill, glow) {
   return g;
 }
 
-export function coverHtml({ template = 'mystic', title, subtitle, clientName, brand, element, sampleNote }) {
+// logo: 검증된 data:image URL만 받는다(렌더러가 LOGO_RE로 확인). accent: 대표 색(#RRGGBB), ink: 글자용으로 보정한 대표 색.
+const logoImg = (logo, cls) => (logo ? `<img class="${cls}" src="${esc(logo)}" alt="">` : '');
+export function coverHtml({ template = 'mystic', title, subtitle, clientName, brand, element, sampleNote, logo = '', accent = '#3A2E4A', ink = '#3A2E4A' }) {
+  if (template === 'plain') {
+    return `<section class="cover cover-plain">
+      ${sampleNote ? `<div class="cp-note">${esc(sampleNote)}</div>` : ''}
+      <div class="cp-top">${logoImg(logo, 'cp-logo')}<span>${esc(brand)}</span></div>
+      <div class="cp-rule" style="background:${esc(accent)}"></div>
+      <h1 class="cp-title" style="color:${esc(ink)}">${esc(title)}</h1>
+      <div class="cp-sub">${esc(subtitle)}</div>
+      <div class="cp-client">${esc(clientName)} 님</div>
+    </section>`;
+  }
+  if (template === 'paper') {
+    return `<section class="cover cover-paper">
+      ${sampleNote ? `<div class="cpa-note">${esc(sampleNote)}</div>` : ''}
+      <div class="cpa-frame" style="border-color:${esc(accent)}">
+        ${logoImg(logo, 'cpa-logo')}
+        <div class="cpa-kicker" style="color:${esc(ink)}">사주로 읽는 나의 이야기</div>
+        <svg class="cpa-art" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="80" fill="none" stroke="${esc(accent)}" stroke-width=".8" opacity=".5"/>${symbol(element, accent, accent, '#F6E7CF')}</svg>
+        <h1 class="cpa-title" style="color:${esc(ink)}">${esc(title)}</h1>
+        <div class="cpa-sub">${esc(subtitle)}</div>
+        <div class="cpa-client">${esc(clientName)} 님께</div>
+        <div class="cpa-brand" style="color:${esc(ink)}">${esc(brand)}</div>
+      </div>
+    </section>`;
+  }
+  if (template === 'study') {
+    return `<section class="cover cover-study">
+      <div class="cs-band" style="background:${esc(ink)}">
+        <div class="cs-series">PERSONAL<br>SAJU<br>REPORT</div>
+        <svg class="cs-art" viewBox="0 0 200 200" aria-hidden="true">${symbol(element, '#E9E2D2', '#E9E2D2', '#FFFFFF')}</svg>
+      </div>
+      ${sampleNote ? `<div class="cs-note">${esc(sampleNote)}</div>` : ''}
+      <div class="cs-body">
+        ${logoImg(logo, 'cs-logo')}
+        <h1 class="cs-title" style="color:${esc(ink)}">${esc(title)}</h1>
+        <div class="cs-sub">${esc(subtitle)}</div>
+        <div class="cs-line" style="background:${esc(accent)}"></div>
+        <div class="cs-client">${esc(clientName)} 님</div>
+        <div class="cs-brand">${esc(brand)}</div>
+      </div>
+    </section>`;
+  }
+  if (template === 'nature') {
+    return `<section class="cover cover-nature">
+      ${sampleNote ? `<div class="cn-note">${esc(sampleNote)}</div>` : ''}
+      <svg class="cn-bg" viewBox="0 0 210 297" preserveAspectRatio="none" aria-hidden="true"><circle cx="175" cy="40" r="70" fill="${esc(accent)}" opacity=".12"/><circle cx="20" cy="250" r="90" fill="${esc(accent)}" opacity=".09"/></svg>
+      ${logoImg(logo, 'cn-logo')}
+      <svg class="cn-art" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="78" fill="#FFFFFF" opacity=".75"/>${symbol(element, accent, accent, '#FFF7E6')}</svg>
+      <h1 class="cn-title" style="color:${esc(ink)}">${esc(title)}</h1>
+      <div class="cn-sub">${esc(subtitle)}</div>
+      <div class="cn-client" style="background:${esc(accent)}">${esc(clientName)} 님</div>
+      <div class="cn-brand" style="color:${esc(ink)}">${esc(brand)}</div>
+    </section>`;
+  }
   if (template === 'bright') {
     return `<section class="cover cover-bright">
       ${sampleNote ? `<div class="cb-note">${esc(sampleNote)}</div>` : ''}
@@ -31,7 +86,7 @@ export function coverHtml({ template = 'mystic', title, subtitle, clientName, br
       <h1 class="cb-title">${esc(title)}</h1>
       <div class="cb-sub">${esc(subtitle)}</div>
       <div class="cb-client"><span>FOR</span>${esc(clientName)} 님</div>
-      <div class="cb-brand">${esc(brand)}</div>
+      <div class="cb-brand">${logoImg(logo, 'cb-logo')}${esc(brand)}</div>
     </section>`;
   }
   return `<section class="cover cover-mystic">
@@ -47,7 +102,7 @@ export function coverHtml({ template = 'mystic', title, subtitle, clientName, br
     <div class="cm-sub">${esc(subtitle)}</div>
     <div class="cm-divider"></div>
     <div class="cm-client">${esc(clientName)} 님</div>
-    <div class="cm-brand">${esc(brand)}</div>
+    ${logo ? `<div class="cm-brand cm-brand-logo">${logoImg(logo, 'cm-logo')}<span>${esc(brand)}</span></div>` : `<div class="cm-brand">${esc(brand)}</div>`}
   </section>`;
 }
 
@@ -72,4 +127,41 @@ export const COVER_CSS = `
   .cb-client { position: absolute; left: 22mm; bottom: 24mm; font-family: 'Gowun Batang', serif; font-size: 16pt; }
   .cb-client span { display: block; font-family: 'Noto Sans KR'; font-size: 9pt; letter-spacing: .2em; color: #6E6458; margin-bottom: 2mm; }
   .cb-brand { position: absolute; right: 22mm; bottom: 24mm; font-family: 'Cormorant Garamond', 'Noto Sans KR', serif; font-size: 14pt; font-weight: 500; letter-spacing: .14em; color: #9C4529; }
+
+  .cm-logo, .cb-logo, .cp-logo, .cpa-logo, .cs-logo, .cn-logo { max-height: 14mm; max-width: 40mm; object-fit: contain; }
+  .cm-brand-logo { display: flex; flex-direction: column; align-items: center; gap: 3mm; } .cb-logo { display: block; margin: 0 0 2mm auto; }
+  .cover-plain { background: #FFFFFF; color: #222; }
+  .cp-note, .cpa-note, .cs-note, .cn-note { position: absolute; top: 6mm; right: 8mm; font-size: 8.5pt; padding: 1.5mm 3mm; border-radius: 2mm; background: #EFEFEF; color: #444; z-index: 2; }
+  .cp-top { position: absolute; top: 24mm; left: 24mm; right: 24mm; display: flex; align-items: center; gap: 4mm; font-family: 'Noto Sans KR'; font-size: 11pt; font-weight: 500; color: #333; letter-spacing: .04em; }
+  .cp-rule { position: absolute; left: 24mm; top: 120mm; width: 22mm; height: 1.2mm; }
+  .cp-title { position: absolute; left: 24mm; right: 24mm; top: 128mm; margin: 0; font-family: 'Noto Sans KR'; font-weight: 700; font-size: 30pt; line-height: 1.3; }
+  .cp-sub { position: absolute; left: 24mm; right: 24mm; top: 160mm; font-size: 12pt; color: #555; font-family: 'Noto Sans KR'; }
+  .cp-client { position: absolute; left: 24mm; bottom: 28mm; font-family: 'Noto Sans KR'; font-size: 15pt; font-weight: 500; color: #222; }
+  .cover-paper { background: #F6EEDF; color: #3B2E22; }
+  .cpa-frame { position: absolute; inset: 14mm; border: 0.6mm double; border-width: 1.6mm; border-style: double; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 18mm 14mm 0; }
+  .cpa-logo { margin-bottom: 4mm; } .cpa-kicker { font-family: 'Gowun Batang', serif; font-size: 12pt; letter-spacing: .3em; }
+  .cpa-art { width: 80mm; height: 80mm; margin: 8mm 0 4mm; }
+  .cpa-title { font-family: 'Nanum Myeongjo', serif; font-weight: 800; font-size: 30pt; line-height: 1.3; margin: 0 0 5mm; }
+  .cpa-sub { font-family: 'Gowun Batang', serif; font-size: 12pt; color: #5A4A3A; }
+  .cpa-client { margin-top: 16mm; font-family: 'Nanum Myeongjo', serif; font-size: 17pt; }
+  .cpa-brand { position: absolute; bottom: 14mm; left: 0; right: 0; font-family: 'Gowun Batang', serif; font-size: 12.5pt; letter-spacing: .2em; }
+  .cover-study { background: #F4F1EA; color: #23272A; }
+  .cs-band { position: absolute; left: 0; top: 0; bottom: 0; width: 62mm; color: #E9E2D2; }
+  .cs-series { position: absolute; top: 26mm; left: 12mm; font-family: 'Noto Sans KR'; font-weight: 700; font-size: 11pt; letter-spacing: .3em; line-height: 1.9; }
+  .cs-art { position: absolute; bottom: 30mm; left: 6mm; width: 50mm; height: 50mm; opacity: .9; }
+  .cs-body { position: absolute; left: 78mm; right: 18mm; top: 92mm; }
+  .cs-logo { display: block; margin-bottom: 8mm; }
+  .cs-title { margin: 0; font-family: 'Noto Serif KR', serif; font-weight: 600; font-size: 28pt; line-height: 1.35; }
+  .cs-sub { margin-top: 6mm; font-family: 'Noto Sans KR'; font-size: 11.5pt; color: #4C5256; }
+  .cs-line { margin: 14mm 0 6mm; width: 30mm; height: 1mm; }
+  .cs-client { font-family: 'Noto Serif KR', serif; font-weight: 600; font-size: 16pt; }
+  .cs-brand { position: absolute; top: 150mm; font-family: 'Noto Sans KR'; font-size: 11pt; letter-spacing: .15em; color: #4C5256; }
+  .cover-nature { background: #F3F7F1; color: #24302A; }
+  .cn-bg { position: absolute; inset: 0; width: 210mm; height: 297mm; }
+  .cn-logo { position: absolute; top: 20mm; left: 50%; transform: translateX(-50%); }
+  .cn-art { position: absolute; top: 46mm; left: 50%; transform: translateX(-50%); width: 96mm; height: 96mm; }
+  .cn-title { position: absolute; top: 156mm; left: 18mm; right: 18mm; text-align: center; margin: 0; font-family: 'Gowun Batang', serif; font-weight: 700; font-size: 30pt; line-height: 1.3; }
+  .cn-sub { position: absolute; top: 186mm; left: 20mm; right: 20mm; text-align: center; font-family: 'Noto Sans KR'; font-size: 12pt; color: #3E4C44; }
+  .cn-client { position: absolute; top: 210mm; left: 50%; transform: translateX(-50%); padding: 3mm 9mm; border-radius: 20mm; color: #FFFFFF; font-family: 'Gowun Batang', serif; font-size: 15pt; white-space: nowrap; }
+  .cn-brand { position: absolute; bottom: 22mm; width: 100%; text-align: center; font-family: 'Gowun Batang', serif; font-size: 13pt; letter-spacing: .15em; }
 `;

@@ -14,7 +14,9 @@ export function createCore(sha) {
   const fingerprintOf = (value) => sha(JSON.stringify({ g: GENERATOR, name: value.name, s: value.sajuInput, c: value.concern }));
   const reviewHashOf = (fp, project) => {
     const edits = Object.fromEntries(Object.entries(project.edits || {}).sort(([a], [b]) => a.localeCompare(b)));
-    return sha(JSON.stringify({ fp, edits, brand: { name: (project.brand.name || '').trim(), accent: project.brand.accent, cover: project.brand.cover } }));
+    const b = project.brand || {};
+    // 디자인·글꼴·로고·인사말이 바뀌어도 검토 완료가 풀리도록 브랜드 설정 전체를 넣는다.
+    return sha(JSON.stringify({ fp, edits, brand: { name: (b.name || '').trim(), accent: b.accent, cover: b.cover, bodyFont: b.bodyFont || '', headFont: b.headFont || '', logo: b.logo || '', greeting: (b.greeting || '').trim(), closing: (b.closing || '').trim() } }));
   };
   async function generateFromInput(client, concern) {
     const v = validateInput({ client, concern });

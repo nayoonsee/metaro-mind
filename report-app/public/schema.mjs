@@ -5,6 +5,27 @@ const numish = (v) => v === '' || v === null || v === undefined || (typeof v ===
 const onlyKeys = (o, keys, path, errs) => { for (const k of Object.keys(o)) if (!keys.includes(k)) errs.push(`${path}: 알 수 없는 항목 "${String(k).slice(0, 30)}"`); };
 export const EDIT_ID_RE = /^[A-Za-z0-9가-힣\u4E00-\u9FFF_:+\-]{1,100}$/;
 
+// 브랜드·디자인 설정(프로젝트와 브랜드 프로필이 함께 쓴다). 값 목록은 report/design/designs.mjs와 같아야 한다(테스트로 확인).
+export const DESIGN_IDS = ['plain', 'mystic', 'paper', 'study', 'nature', 'bright'];
+export const BODY_FONTS = ['noto-sans', 'gowun', 'nanum'];
+export const HEAD_FONTS = ['noto-sans', 'gowun', 'nanum', 'noto-serif'];
+export const LOGO_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+export const LOGO_MAX_CHARS = 400000;
+export function validateBrand(b) {
+  const e = [];
+  if (!isObj(b)) return ['brand 없음'];
+  onlyKeys(b, ['name', 'accent', 'cover', 'bodyFont', 'headFont', 'logo', 'greeting', 'closing'], 'brand', e);
+  if (!str(b.name, 40)) e.push('brand.name 형식 오류');
+  if (!/^#[0-9a-fA-F]{6}$/.test(b.accent || '')) e.push('brand.accent는 #RRGGBB 형식이어야 해요.');
+  if (!DESIGN_IDS.includes(b.cover)) e.push('brand.cover 값 오류');
+  if (b.bodyFont != null && !BODY_FONTS.includes(b.bodyFont)) e.push('brand.bodyFont 값 오류');
+  if (b.headFont != null && !HEAD_FONTS.includes(b.headFont)) e.push('brand.headFont 값 오류');
+  if (b.logo != null && b.logo !== '' && !(typeof b.logo === 'string' && b.logo.length <= LOGO_MAX_CHARS && LOGO_RE.test(b.logo))) e.push('brand.logo는 PNG·JPEG·WEBP 이미지(약 300KB 이하)만 쓸 수 있어요.');
+  if (b.greeting != null && !str(b.greeting, 300)) e.push('brand.greeting 형식 오류(300자 이하)');
+  if (b.closing != null && !str(b.closing, 400)) e.push('brand.closing 형식 오류(400자 이하)');
+  return e;
+}
+
 export function validateProjectSchema(p) {
   const e = [];
   if (!isObj(p)) return ['프로젝트 형식이 아니에요.'];
@@ -15,10 +36,7 @@ export function validateProjectSchema(p) {
   if (p.inputRev != null && !Number.isInteger(p.inputRev)) e.push('inputRev 형식 오류');
   const b = p.brand;
   if (!isObj(b)) e.push('brand 없음'); else {
-    onlyKeys(b, ['name', 'accent', 'cover'], 'brand', e);
-    if (!str(b.name, 40)) e.push('brand.name 형식 오류');
-    if (!/^#[0-9a-fA-F]{6}$/.test(b.accent || '')) e.push('brand.accent는 #RRGGBB 형식이어야 해요.');
-    if (!['mystic', 'bright'].includes(b.cover)) e.push('brand.cover 값 오류');
+    const be = validateBrand(b); e.push(...be);
   }
   const c = p.client;
   if (!isObj(c)) e.push('client 없음'); else {
